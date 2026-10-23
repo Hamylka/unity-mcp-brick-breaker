@@ -12,7 +12,7 @@ using UnityEngine.InputSystem;
 [DisallowMultipleComponent]
 public class BallController : MonoBehaviour
 {
-    private enum State { Waiting, Flying }
+    private enum State { Waiting, Flying, Lost }
 
     [Header("Speed")]
     [SerializeField, Min(0.1f)] private float baseSpeed = 10f;
@@ -41,7 +41,7 @@ public class BallController : MonoBehaviour
     [Tooltip("World Z below which the ball counts as lost.")]
     [SerializeField] private float loseZ = -3f;
 
-    /// <summary>Raised when the ball falls past the paddle. By default it then returns to the paddle.</summary>
+    /// <summary>Raised when the ball falls past the paddle. It then returns to the paddle, unless <see cref="AutoReset"/> is off.</summary>
     public event Action<BallController> BallLost;
     /// <summary>Raised after every bounce, once the final direction is set.</summary>
     public event Action<BallController, Collision> Bounced;
@@ -50,6 +50,12 @@ public class BallController : MonoBehaviour
     public Vector3 Direction { get; private set; } = Vector3.forward;
     public float CurrentSpeed => baseSpeed * (1f + boost);
     public bool IsFlying => state == State.Flying;
+
+    /// <summary>
+    /// When true (default) a lost ball goes back to the paddle. When false it stops where it is and stays lost,
+    /// so a game manager can end the run.
+    /// </summary>
+    public bool AutoReset { get; set; } = true;
 
     /// <summary>Hit points removed from a brick per hit.</summary>
     public int Damage => Mathf.Max(1, damage);
@@ -89,6 +95,8 @@ public class BallController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (state == State.Lost) return;
+
         if (state == State.Waiting)
         {
             FollowPaddle();
@@ -103,8 +111,19 @@ public class BallController : MonoBehaviour
 
         if (body.position.z < loseZ)
         {
-            BallLost?.Invoke(this);
-            ResetToPaddle();
+            if (AutoReset)
+            {
+                BallLost?.Invoke(this);
+                ResetToPaddle();
+            }
+            else
+            {
+                // Stop for good (set the state first so the event is raised only once).
+                state = State.Lost;
+                body.linearVelocity = Vector3.zero;
+                body.isKinematic = true;
+                BallLost?.Invoke(this);
+            }
         }
     }
 
