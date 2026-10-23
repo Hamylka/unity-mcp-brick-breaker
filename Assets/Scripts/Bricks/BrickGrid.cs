@@ -302,7 +302,7 @@ public class BrickGrid : MonoBehaviour
         {
             Brick brick = Instantiate(brickPrefab, stackObject.transform);
             brick.name = $"Brick_{layer}";
-            brick.transform.localScale = size;
+            brick.ApplySize(size);
             brick.Initialize(layerHitPoints[layer], palette);
             stack.AddBrick(brick);
             brick.Destroyed += HandleBrickDestroyed;

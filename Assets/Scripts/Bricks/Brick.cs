@@ -22,6 +22,13 @@ public class Brick : MonoBehaviour
     [Tooltip("Glow strength of the neon outline (the material's emission map). Above 1 the bloom picks it up.")]
     [SerializeField, Min(0f)] private float glowIntensity = 2.4f;
 
+    [Header("Shape")]
+    [Tooltip("Rounded corners with a built-in neon outline (visual only, the stack's box collider is unchanged).")]
+    [SerializeField] private bool roundedShape = true;
+    [SerializeField, Min(0f)] private float cornerRadius = 0.12f;
+    [Tooltip("Width of the glowing outline band, in world units.")]
+    [SerializeField, Min(0.005f)] private float outlineWidth = 0.05f;
+
     [Header("Hit Juice")]
     [SerializeField, Min(0f)] private float colorFadeTime = 0.12f;
     [SerializeField, Min(0f)] private float hitPunchScale = 0.15f;
@@ -76,7 +83,25 @@ public class Brick : MonoBehaviour
         enabled = false; // Update only runs while an animation is playing.
     }
 
-    /// <summary>Called by the grid right after spawning and scaling the brick.</summary>
+    /// <summary>
+    /// Sets the brick's size. With the rounded shape the mesh is built at that size and the scale stays 1,
+    /// so the corners stay round instead of being stretched. Call before <see cref="Initialize"/>.
+    /// </summary>
+    public void ApplySize(Vector3 size)
+    {
+        var filter = GetComponent<MeshFilter>();
+        if (roundedShape && filter != null)
+        {
+            filter.sharedMesh = RoundedBoxMesh.GetShared(size, cornerRadius, outlineWidth);
+            transform.localScale = Vector3.one;
+        }
+        else
+        {
+            transform.localScale = size;
+        }
+    }
+
+    /// <summary>Called by the grid right after spawning and sizing the brick.</summary>
     public void Initialize(int hitPoints, BrickPalette brickPalette)
     {
         palette = brickPalette;
