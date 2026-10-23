@@ -105,8 +105,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Brick
   targetRenderer: {fileID: 7656850491374869054}
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
-  bodyBrightness: 0.45
-  glowIntensity: 0.9
+  bodyBrightness: 0.15
+  glowIntensity: 2.4
   colorFadeTime: 0.12
   hitPunchScale: 0.15
   punchTime: 0.12

@@ -18,9 +18,9 @@ public class Brick : MonoBehaviour
 
     [Header("Neon")]
     [Tooltip("Brightness of the brick body compared to its HP color (the glow does the rest).")]
-    [SerializeField, Range(0f, 1f)] private float bodyBrightness = 0.45f;
-    [Tooltip("Glow strength. Above 1 the bloom picks it up. The material needs emission enabled.")]
-    [SerializeField, Min(0f)] private float glowIntensity = 0.9f;
+    [SerializeField, Range(0f, 1f)] private float bodyBrightness = 0.15f;
+    [Tooltip("Glow strength of the neon outline (the material's emission map). Above 1 the bloom picks it up.")]
+    [SerializeField, Min(0f)] private float glowIntensity = 2.4f;
 
     [Header("Hit Juice")]
     [SerializeField, Min(0f)] private float colorFadeTime = 0.12f;
