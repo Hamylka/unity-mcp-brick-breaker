@@ -25,11 +25,13 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 
 ## 4. Systems & Features Blueprint
 - **Brick System:**
-  * Rectangular 2:1 bricks generated in a grid (7 columns, 4 starting rows, Cell Size 0.5). Bricks have HP (1 = white ... 5 = dark blue) and fade toward white as they lose HP.
+  * Rectangular 2:1 bricks generated in a grid (7 columns, 4 starting rows, Cell Size ~0.5 tuned in the Inspector, `Brick Height` 0.4). Bricks have HP (1 = white, 2 = cyan, 3 = azure, 4 = blue, 5 = violet) and shift toward white as they lose HP.
   * Stacking (several layers per cell) exists in code but is set to 1 layer max: tall stacks hid the ball.
-  * **Advancing wall (Space Invaders style):** the whole wall steps one row toward the paddle every few seconds, only while the ball is in play.
-  * **Endless rows:** every step adds a new row at the back; clearing the wall spawns a fresh wave. Later rows get fewer gaps and tougher bricks (difficulty ramp per row).
-  * **Lose line:** a red line near the paddle. If a brick reaches it, the run is lost (event exists, Game Over flow not implemented yet).
+  * **Advancing wall (Space Invaders style):** the whole wall steps one row toward the paddle every 5 seconds, only while the ball is in play.
+  * **Endless rows:** every step adds a new row at the back. Later rows get fewer gaps and tougher bricks (difficulty ramp per row).
+  * **Wall clear bonus:** destroying every brick grants 50% of the XP needed for the current level (as XP orbs), shows a "CLEAR!" banner, immediately spawns a 4-row wave and restarts the step timer.
+  * **Lose line:** a red line near the paddle. If a brick reaches it, the run ends.
+- **Game Over:** the run ends when the ball falls past the paddle (no lives) or the wall reaches the lose line. The game slows to a stop, then a pixel-style Game Over screen shows the reason, level, bricks destroyed, run time and best level (saved between runs, with a "NEW BEST!" effect), and a Restart button that reloads the scene. Owned by `GameManager`.
 - **Ball damage:** the ball has a Damage stat (starts at 1). A hit removes that many HP from the bottom brick of a stack.
 - **Progression / RPG Elements:**
   * Endless experience (XP) system starting at Level 1.
@@ -41,6 +43,16 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 - **Power-ups & Items:**
   * Bonus item drops on brick destruction (falling item caught by the paddle) are implemented but **disabled** (`BonusDropper` turned off). Decision pending on keeping this feature.
   * Catching the item with the paddle triggers a perk/ability (e.g., Laser, Multi-ball, or other bonuses to be defined later).
+- **Art Direction (neon, retro, pixelated):**
+  * The 3D scene renders at a fixed 640 px height and is upscaled with nearest-neighbour filtering (`RetroPixelation` on the camera). The UI stays at full resolution.
+  * Near-black background, glowing purple grid floor, dark walls with magenta neon tube trims, hot orange ball with a trail, glowing red lose line.
+  * Bricks and the paddle are rounded rectangles (generated mesh, visual only, physics stay boxes) with a dark glassy body and a glowing outline in their color.
+  * Post-processing: bloom, vignette, light chromatic aberration. Neon materials and the post-process profile live in `Assets/Art`.
+  * UI: flat dark navy panels, cyan accents, and a built-in pixel font (`PixelFont` / `PixelText`) for all text. TextMeshPro is imported but not used yet.
+- **Audio:**
+  * 20 retro sound effects synthesized in code (**Tools > Brick Breaker > Generate Sound Effects**) and played by `SoundManager` (per-sound volume, pitch variation, rate limiting).
+  * A 34-second synthwave loop (A minor, 112 BPM), generated with **Tools > Brick Breaker > Generate Music** and played by `MusicPlayer`. It fades in, is muffled while the game is slowed or paused, and fades out with a pitch drop on Game Over.
+  * Any generated `.wav` in `Assets/Audio` can be replaced by a hand-made file with the same name.
 
 ## 5. Project Changelog & Architecture Status
 ### [2026-10-21] - Project Initialization
@@ -65,3 +77,12 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   1. Game Over and restart menu (needs a decision: what does losing the ball cost?).
   2. Art direction: make the 3D scene match the UI style.
   3. Switch to Android and test rendering and controls on a real device.
+
+### [2026-10-24] - Game Over, clear bonus, art direction and audio (by Claude)
+- **Done:** Game Over and restart screen (losing the ball ends the run), wall clear bonus with "CLEAR!" banner, neon retro art direction with rounded neon bricks and paddle, 20 sound effects and a synthwave music loop. Wall step interval set to 5 seconds.
+- Each feature was built on its own `feature/...` branch, merged into `develop` and pushed.
+- **Known issue:** the Unity editor occasionally froze because its asset import workers crashed while reading `Library/`. Rebuilding `Library/` was the planned fix; watch for it coming back.
+- **Roadmap (in order):**
+  1. Switch the build target to Android and test rendering, controls and performance on a real device.
+  2. Decide whether to keep the bonus item drops (currently disabled).
+  3. More power-ups (e.g. Laser, Multi-ball) and enabling the Reroll button.
