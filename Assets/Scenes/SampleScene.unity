@@ -869,7 +869,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 60
-  field of view: 50.984257
+  field of view: 50.96009
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -968,6 +968,56 @@ MonoBehaviour:
   followStrength: 0.38
   smoothTime: 0.25
   maxSideOffset: 1.5
+--- !u!1 &358591251
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 358591253}
+  - component: {fileID: 358591252}
+  m_Layer: 0
+  m_Name: GameManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &358591252
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 358591251}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3a90a0a1c391ca4887686719e579c1e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameManager
+  ball: {fileID: 42821532}
+  grid: {fileID: 1367461215}
+  experience: {fileID: 1113459636}
+  powerUps: {fileID: 1463217166}
+  gameOverScreen: {fileID: 1033658656}
+  slowDownTime: 0.7
+--- !u!4 &358591253
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 358591251}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &365467677
 GameObject:
   m_ObjectHideFlags: 0
@@ -3108,6 +3158,58 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.92, y: 1, z: 0.42000002}
   m_Center: {x: 0, y: 0.5, z: 0}
+--- !u!1 &1033658655
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1033658657}
+  - component: {fileID: 1033658656}
+  m_Layer: 0
+  m_Name: GameOverScreen
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1033658656
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1033658655}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56dd935618cbf2645a530be7a41f9b0b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameOverScreen
+  dimColor: {r: 0.06, g: 0.01, b: 0.05, a: 0.88}
+  titleColor: {r: 1, g: 0.3, b: 0.4, a: 1}
+  titleOutlineColor: {r: 0.16, g: 0.02, b: 0.08, a: 1}
+  panelColor: {r: 0.07, g: 0.09, b: 0.2, a: 0.95}
+  labelColor: {r: 0.2, g: 0.85, b: 1, a: 1}
+  bestColor: {r: 1, g: 0.85, b: 0.2, a: 1}
+  buttonColor: {r: 1, g: 0.82, b: 0.2, a: 1}
+  particleAmount: 1
+--- !u!4 &1033658657
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1033658655}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1044801949
 GameObject:
   m_ObjectHideFlags: 0
@@ -4265,7 +4367,7 @@ MonoBehaviour:
   seed: 0
   advance: 1
   ball: {fileID: 42821532}
-  stepInterval: 8
+  stepInterval: 5
   stepInRows: 1
   stepDuration: 0.5
   endless: 1
@@ -6077,6 +6179,10 @@ MonoBehaviour:
   punchStrength: 0.18
   bannerHeight: 0.625
   bannerHoldTime: 0.9
+  orbTravelTime: 0.7
+  maxOrbsPerHit: 8
+  orbStagger: 0.05
+  particleAmount: 1
 --- !u!4 &1827069033
 Transform:
   m_ObjectHideFlags: 0
@@ -6890,3 +6996,5 @@ SceneRoots:
   - {fileID: 1960090557}
   - {fileID: 630538258}
   - {fileID: 1463217167}
+  - {fileID: 1033658657}
+  - {fileID: 358591253}

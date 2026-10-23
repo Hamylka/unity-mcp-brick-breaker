@@ -106,6 +106,7 @@ public class PowerUpScreen : MonoBehaviour
         phaseTime = 0f;
         SetDim(0f);
         title.color = new Color(1f, 1f, 1f, 0f);
+        Animate(0f); // apply the starting state now, so the first rendered frame does not flash the cards
     }
 
     // ---------------------------------------------------------------- interaction
@@ -135,9 +136,12 @@ public class PowerUpScreen : MonoBehaviour
 
     private void Update()
     {
-        if (phase == Phase.Hidden) return;
+        if (phase != Phase.Hidden) Animate(Time.unscaledDeltaTime);
+    }
 
-        float dt = Time.unscaledDeltaTime;
+    // Applies the whole animation at the current time. Also called from Show() with dt = 0.
+    private void Animate(float dt)
+    {
         float time = Time.unscaledTime;
         phaseTime += dt;
 
