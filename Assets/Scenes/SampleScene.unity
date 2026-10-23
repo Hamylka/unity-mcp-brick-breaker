@@ -666,6 +666,154 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 75570440}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &106477067
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 106477069}
+  - component: {fileID: 106477068}
+  m_Layer: 0
+  m_Name: SoundManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &106477068
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 106477067}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a362b3b964ce0344db12de3f00ae0a82, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SoundManager
+  masterVolume: 0.8
+  muted: 0
+  voices: 12
+  sounds:
+  - id: 0
+    clip: {fileID: 8300000, guid: 90c8e814d3526f74795a44ead05f1860, type: 3}
+    volume: 0.5
+    pitchJitter: 0.03
+    minInterval: 0
+  - id: 1
+    clip: {fileID: 8300000, guid: 13cac2d18c7cd0a4291291d23ee24bb4, type: 3}
+    volume: 0.55
+    pitchJitter: 0.03
+    minInterval: 0.03
+  - id: 2
+    clip: {fileID: 8300000, guid: 164b618f70ea4864abafc2c0c8554e72, type: 3}
+    volume: 0.45
+    pitchJitter: 0.06
+    minInterval: 0.03
+  - id: 3
+    clip: {fileID: 8300000, guid: 7b669d1538bba42468a805a2a498140b, type: 3}
+    volume: 0.6
+    pitchJitter: 0
+    minInterval: 0
+  - id: 4
+    clip: {fileID: 8300000, guid: 7a7fa8eac960104448a98892edecceaa, type: 3}
+    volume: 0.5
+    pitchJitter: 0.04
+    minInterval: 0.02
+  - id: 5
+    clip: {fileID: 8300000, guid: 61e94f5f7c3b60a4da4f20145047a242, type: 3}
+    volume: 0.55
+    pitchJitter: 0.08
+    minInterval: 0.02
+  - id: 6
+    clip: {fileID: 8300000, guid: 0ee0e0f1acb6a2d45b6acd0bcb8a25e0, type: 3}
+    volume: 0.6
+    pitchJitter: 0.02
+    minInterval: 0
+  - id: 7
+    clip: {fileID: 8300000, guid: b7979e82f77c77b43806c6f5bedf50b3, type: 3}
+    volume: 0.22
+    pitchJitter: 0.1
+    minInterval: 0.03
+  - id: 8
+    clip: {fileID: 8300000, guid: b902967c9656e9b44bfbc7eba2a3caf3, type: 3}
+    volume: 0.35
+    pitchJitter: 0.02
+    minInterval: 0.03
+  - id: 9
+    clip: {fileID: 8300000, guid: f897f18e4d7146a439e4c220498ac37b, type: 3}
+    volume: 0.6
+    pitchJitter: 0
+    minInterval: 0
+  - id: 10
+    clip: {fileID: 8300000, guid: 903b911ff25a5bc49a1e5414410daaf1, type: 3}
+    volume: 0.65
+    pitchJitter: 0
+    minInterval: 0
+  - id: 11
+    clip: {fileID: 8300000, guid: f6c1c45ac36cb344498250d02142eb9d, type: 3}
+    volume: 0.4
+    pitchJitter: 0
+    minInterval: 0
+  - id: 12
+    clip: {fileID: 8300000, guid: a4761287786f488419e8cb5c030f1211, type: 3}
+    volume: 0.5
+    pitchJitter: 0.03
+    minInterval: 0
+  - id: 13
+    clip: {fileID: 8300000, guid: 15fc2570b79f332468683ad911e79204, type: 3}
+    volume: 0.55
+    pitchJitter: 0
+    minInterval: 0
+  - id: 14
+    clip: {fileID: 8300000, guid: 0a9a1e56d63405442b418f29b25e54ef, type: 3}
+    volume: 0.5
+    pitchJitter: 0
+    minInterval: 0.15
+  - id: 15
+    clip: {fileID: 8300000, guid: ad2f6b4a120420849921952ca8903f80, type: 3}
+    volume: 0.6
+    pitchJitter: 0
+    minInterval: 0
+  - id: 16
+    clip: {fileID: 8300000, guid: d80f5b210edad5d4b9f6ec6fcde02b9a, type: 3}
+    volume: 0.55
+    pitchJitter: 0.04
+    minInterval: 0
+  - id: 17
+    clip: {fileID: 8300000, guid: e73336b3a1eb73042acdedc19a046f3c, type: 3}
+    volume: 0.3
+    pitchJitter: 0
+    minInterval: 0.04
+  - id: 18
+    clip: {fileID: 8300000, guid: f7daeea893194ef4f9b748b7570ba46e, type: 3}
+    volume: 0.6
+    pitchJitter: 0
+    minInterval: 0
+  - id: 19
+    clip: {fileID: 8300000, guid: 6047c05f30f411d4a84b817d13bc340e, type: 3}
+    volume: 0.5
+    pitchJitter: 0
+    minInterval: 0
+--- !u!4 &106477069
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 106477067}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &149156446
 GameObject:
   m_ObjectHideFlags: 0
@@ -6284,3 +6432,4 @@ SceneRoots:
   - {fileID: 1463217167}
   - {fileID: 1033658657}
   - {fileID: 358591253}
+  - {fileID: 106477069}

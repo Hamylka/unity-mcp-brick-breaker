@@ -177,6 +177,7 @@ public class BallController : MonoBehaviour
         state = State.Flying;
         body.isKinematic = false;
         body.linearVelocity = Direction * CurrentSpeed;
+        SoundManager.Play(Sfx.Launch);
     }
 
     /// <summary>Puts the ball back on the paddle, waiting for launch.</summary>

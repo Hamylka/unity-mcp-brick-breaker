@@ -106,6 +106,7 @@ public class PowerUpScreen : MonoBehaviour
         phaseTime = 0f;
         SetDim(0f);
         title.color = new Color(1f, 1f, 1f, 0f);
+        SoundManager.Play(Sfx.CardsAppear);
         Animate(0f); // apply the starting state now, so the first rendered frame does not flash the cards
     }
 
@@ -115,6 +116,7 @@ public class PowerUpScreen : MonoBehaviour
     {
         if (phase != Phase.Visible || index == selected) return;
         selected = index;
+        SoundManager.Play(Sfx.CardSelect);
         // Draw the chosen card last so its halo is not covered by the neighbouring cards.
         cards[index].transform.SetAsLastSibling();
         Burst(cards[index], 18, 1f);
@@ -127,6 +129,7 @@ public class PowerUpScreen : MonoBehaviour
         CardView card = cards[selected];
         Burst(card, 45, 1.6f);
         PowerUpDefinition chosen = choices[selected];
+        SoundManager.Play(Sfx.Confirm);
         phase = Phase.Hiding;
         phaseTime = 0f;
         onConfirm?.Invoke(chosen);
@@ -427,6 +430,8 @@ public class PowerUpScreen : MonoBehaviour
         BuildButton("RerollButton", "REROLL", new Vector2(-190f, buttonY), out rerollButton, out rerollImage, out rerollLabel);
         BuildButton("ConfirmButton", "CONFIRM", new Vector2(190f, buttonY), out confirmButton, out confirmImage, out confirmLabel);
         confirmButton.Clicked += ConfirmSelection;
+        confirmButton.DeniedClick += () => SoundManager.Play(Sfx.Denied); // no card chosen yet
+        rerollButton.DeniedClick += () => SoundManager.Play(Sfx.Denied);  // reroll not available yet
 
         root.gameObject.SetActive(false);
     }
