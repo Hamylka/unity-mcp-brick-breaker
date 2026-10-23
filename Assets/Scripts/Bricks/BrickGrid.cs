@@ -68,8 +68,10 @@ public class BrickGrid : MonoBehaviour
     [Header("Endless Mode")]
     [Tooltip("Add a new row at the back on every step, and a new wave when the wall is cleared.")]
     [SerializeField] private bool endless = true;
-    [Tooltip("Seconds between clearing the last brick and the next wave appearing.")]
-    [SerializeField, Min(0f)] private float waveDelay = 1.2f;
+    [Tooltip("Seconds between clearing the last brick and the next wave appearing. 0 = immediately.")]
+    [SerializeField, Min(0f)] private float waveDelay;
+    [Tooltip("Rows in the wave that appears when the whole wall has been cleared.")]
+    [SerializeField, Min(1)] private int clearWaveRows = 4;
     [Tooltip("Each row spawned after the starting wall makes tougher bricks more likely. 0 = no ramp.")]
     [SerializeField, Min(0f)] private float difficultyPerRow = 0.03f;
     [Tooltip("Pop-in delay between neighbouring bricks of a new row (ripple from the center).")]
@@ -87,7 +89,7 @@ public class BrickGrid : MonoBehaviour
     public event Action<Brick, int> BrickHit;
     /// <summary>Raised for every brick that gets destroyed (after it is removed from the count).</summary>
     public event Action<Brick> BrickDestroyed;
-    /// <summary>Raised when the last brick is destroyed (in endless mode a new wave follows).</summary>
+    /// <summary>Raised when the last brick is destroyed (in endless mode a new wave follows right after).</summary>
     public event Action BricksCleared;
     /// <summary>Raised when a whole new wave of rows appears after the wall was cleared.</summary>
     public event Action WaveSpawned;
@@ -166,12 +168,11 @@ public class BrickGrid : MonoBehaviour
         {
             if (!endless) return;
 
-            // Wall cleared: after a short breather, a fresh wave rises at the usual spot.
+            // Wall cleared with a delay set (or the immediate wave came out empty): spawn the wave now.
             waveTimer += dt;
             if (waveTimer >= waveDelay)
             {
                 waveTimer = 0f;
-                stepTimer = 0f;
                 SpawnWave();
             }
             return;
@@ -243,11 +244,17 @@ public class BrickGrid : MonoBehaviour
         if (body != null) body.position = Vector3.zero;
     }
 
-    // A whole new wall at the starting position, in the wall's current (advanced) frame of reference.
+    // A fresh wave at the starting position, in the wall's current (advanced) frame of reference.
+    // The step timer restarts, so the new wave gets a full interval before it moves.
     private void SpawnWave()
     {
-        for (int row = 0; row < rows; row++)
-            SpawnRow(firstRowZ + row * cellSize - offset, row * waveRowDelay, true);
+        // If the wall is mid-step, place the rows relative to where the step will end.
+        float reference = stepping ? stepTo : offset;
+        for (int row = 0; row < clearWaveRows; row++)
+            SpawnRow(firstRowZ + row * cellSize - reference, row * waveRowDelay, true);
+
+        stepTimer = 0f;
+        waveTimer = 0f;
         WaveSpawned?.Invoke();
     }
 
@@ -311,7 +318,12 @@ public class BrickGrid : MonoBehaviour
     {
         RemainingBricks--;
         BrickDestroyed?.Invoke(brick);
-        if (RemainingBricks <= 0) BricksCleared?.Invoke();
+        if (RemainingBricks > 0) return;
+
+        BricksCleared?.Invoke();
+
+        // Endless mode: the board refills right away so it never feels empty.
+        if (endless && !IsGameOver && waveDelay <= 0f) SpawnWave();
     }
 
     private void CheckLoseLine()

@@ -3668,6 +3668,7 @@ MonoBehaviour:
   grid: {fileID: 1367461215}
   baseXp: 10
   power: 1.2
+  clearBonus: 0.5
   logLevelUps: 1
   showDebugOverlay: 0
 --- !u!4 &1113459637
@@ -4371,7 +4372,8 @@ MonoBehaviour:
   stepInRows: 1
   stepDuration: 0.5
   endless: 1
-  waveDelay: 1.2
+  waveDelay: 0
+  clearWaveRows: 4
   difficultyPerRow: 0.05
   spawnRipple: 0.04
   waveRowDelay: 0.06
