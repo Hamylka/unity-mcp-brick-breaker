@@ -6181,6 +6181,9 @@ MonoBehaviour:
   punchStrength: 0.18
   bannerHeight: 0.625
   bannerHoldTime: 0.9
+  clearBannerHeight: 0.53
+  clearColor: {r: 0.35, g: 0.95, b: 1, a: 1}
+  clearOutlineColor: {r: 0.03, g: 0.08, b: 0.25, a: 1}
   orbTravelTime: 0.7
   maxOrbsPerHit: 8
   orbStagger: 0.05
