@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// Generates the brick wall (rectangular bricks, optionally stacked) and slowly pushes it toward the player,
@@ -30,8 +31,9 @@ public class BrickGrid : MonoBehaviour
     [SerializeField, Min(1)] private int lengthInCells = 2;
     [Tooltip("Gap between neighbouring bricks.")]
     [SerializeField, Min(0f)] private float spacing = 0.08f;
-    [Tooltip("Height of one layer.")]
-    [SerializeField, Min(0.1f)] private float layerHeight = 0.6f;
+    [Tooltip("Height of a brick (Y). With stacking, also the height of one layer.")]
+    [FormerlySerializedAs("layerHeight")]
+    [SerializeField, Min(0.05f)] private float brickHeight = 0.4f;
     [Tooltip("World Z of the first (closest) row of a fresh wall.")]
     [SerializeField] private float firstRowZ = 12f;
 
@@ -292,8 +294,8 @@ public class BrickGrid : MonoBehaviour
         stackObject.transform.localPosition = new Vector3(x, 0f, localZ);
 
         var stack = stackObject.AddComponent<BrickStack>();
-        Vector3 size = new(brickWidth - spacing, layerHeight, cellSize - spacing);
-        stack.Setup(size.x, size.z, layerHeight);
+        Vector3 size = new(brickWidth - spacing, brickHeight, cellSize - spacing);
+        stack.Setup(size.x, size.z, brickHeight);
 
         // Ripple outward from the center column.
         float delay = baseDelay + Mathf.Abs(col - (columns - 1) * 0.5f) * spawnRipple;
