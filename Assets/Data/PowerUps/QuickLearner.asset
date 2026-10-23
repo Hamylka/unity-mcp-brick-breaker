@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a1108c46fae6bc4797e89ad530ee9d0, type: 3}
+  m_Name: QuickLearner
+  m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
+  displayName: Quick Learner
+  description: XP gained +20%
+  rarity: 1
+  icon: '...#...
+
+    ...#...
+
+    #######
+
+    .#####.
+
+    ..###..
+
+    .##.##.
+
+    .#...#.'
+  maxStacks: 5
+  effect: {fileID: 11400000, guid: 03373b7161be9b64cbdf0160d5ffce07, type: 2}

@@ -1,0 +1,206 @@
+using System;
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+/// <summary>
+/// Arcade ball: constant speed, perfect reflections, no gravity, locked to the floor plane (XZ).
+/// The ball's own <see cref="Direction"/> is the source of truth; velocity is rewritten from it every
+/// physics step, so friction, damping or solver quirks can never slow it down.
+/// Starts stuck to the paddle and launches on tap/release or Space.
+/// </summary>
+[RequireComponent(typeof(Rigidbody), typeof(SphereCollider))]
+[DisallowMultipleComponent]
+public class BallController : MonoBehaviour
+{
+    private enum State { Waiting, Flying }
+
+    [Header("Speed")]
+    [SerializeField, Min(0.1f)] private float baseSpeed = 10f;
+    [Tooltip("Seconds for a 100% speed boost to fade back to the base speed.")]
+    [SerializeField, Min(0.05f)] private float boostDecayTime = 1f;
+    [Tooltip("Upper limit of the temporary boost (1 = +100% speed).")]
+    [SerializeField, Range(0f, 2f)] private float maxBoost = 1f;
+
+    [Header("Combat")]
+    [Tooltip("Hit points removed from a brick per hit. Upgrades can raise it.")]
+    [SerializeField, Min(1)] private int damage = 1;
+
+    [Header("Safety")]
+    [Tooltip("Minimum angle from the horizontal (X) axis. Prevents endless side-to-side bouncing.")]
+    [SerializeField, Range(5f, 45f)] private float minAngleFromHorizontal = 12f;
+
+    [Header("Launch")]
+    [Tooltip("Paddle the ball rides on before launch.")]
+    [SerializeField] private Transform paddle;
+    [Tooltip("Ball offset from the paddle center while waiting (Y is ignored; the ball keeps its height).")]
+    [SerializeField] private Vector3 restOffset = new(0f, 0f, 0.55f);
+    [Tooltip("Random launch spread around straight ahead, in degrees.")]
+    [SerializeField, Range(0f, 45f)] private float launchAngleRange = 15f;
+
+    [Header("Out of Bounds")]
+    [Tooltip("World Z below which the ball counts as lost.")]
+    [SerializeField] private float loseZ = -3f;
+
+    /// <summary>Raised when the ball falls past the paddle. By default it then returns to the paddle.</summary>
+    public event Action<BallController> BallLost;
+    /// <summary>Raised after every bounce, once the final direction is set.</summary>
+    public event Action<BallController, Collision> Bounced;
+
+    public Vector3 Position => body.position;
+    public Vector3 Direction { get; private set; } = Vector3.forward;
+    public float CurrentSpeed => baseSpeed * (1f + boost);
+    public bool IsFlying => state == State.Flying;
+
+    /// <summary>Hit points removed from a brick per hit.</summary>
+    public int Damage => Mathf.Max(1, damage);
+
+    /// <summary>Multiplies the base speed (upgrades). 1.1 = 10% faster.</summary>
+    public void MultiplyBaseSpeed(float factor) => baseSpeed *= Mathf.Max(0.1f, factor);
+
+    /// <summary>Permanently changes the damage per hit (upgrades, perks).</summary>
+    public void AddDamage(int amount) => damage = Mathf.Max(1, damage + amount);
+
+    private Rigidbody body;
+    private State state = State.Waiting;
+    private float boost;
+    private float planeY;
+    private float lastZSign = 1f;
+
+    private void Awake()
+    {
+        body = GetComponent<Rigidbody>();
+        body.useGravity = false;
+        body.linearDamping = 0f;
+        body.angularDamping = 0f;
+        body.interpolation = RigidbodyInterpolation.Interpolate;
+        body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        body.constraints = RigidbodyConstraints.FreezePositionY | RigidbodyConstraints.FreezeRotation;
+
+        planeY = transform.position.y;
+        ResetToPaddle();
+    }
+
+    private void Update()
+    {
+        if (Time.timeScale == 0f) return; // paused (menus): ignore taps
+        if (state == State.Waiting && LaunchRequested())
+            Launch();
+    }
+
+    private void FixedUpdate()
+    {
+        if (state == State.Waiting)
+        {
+            FollowPaddle();
+            return;
+        }
+
+        boost = Mathf.Max(0f, boost - Time.fixedDeltaTime / boostDecayTime);
+
+        // Re-apply every step so the speed can never drift.
+        Direction = ClampDirection(Direction);
+        body.linearVelocity = Direction * CurrentSpeed;
+
+        if (body.position.z < loseZ)
+        {
+            BallLost?.Invoke(this);
+            ResetToPaddle();
+        }
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (state != State.Flying) return;
+
+        // 1) Default arcade reflection on the XZ plane.
+        ContactPoint contact = collision.GetContact(0);
+        Vector3 normal = contact.normal;
+        normal.y = 0f;
+        if (normal.sqrMagnitude > 1e-4f)
+        {
+            normal.Normalize();
+            // Make the normal face the ball, then only reflect if we are actually moving into the surface
+            // (guards against double reflection when two contacts report in the same step).
+            if (Vector3.Dot(body.position - contact.point, normal) < 0f) normal = -normal;
+            if (Vector3.Dot(Direction, normal) < 0f)
+                Direction = Vector3.Reflect(Direction, normal);
+        }
+
+        // 2) Let the surface customise the result (paddle angles, wall zones, ...).
+        BallSurface surface = collision.collider.GetComponentInParent<BallSurface>();
+        if (surface != null) surface.OnBallHit(this, collision);
+
+        // 3) Apply, including the anti-horizontal-loop safeguard.
+        Direction = ClampDirection(Direction);
+        body.linearVelocity = Direction * CurrentSpeed;
+        Bounced?.Invoke(this, collision);
+    }
+
+    /// <summary>Overrides the travel direction (flattened to XZ). Intended for surfaces and effects.</summary>
+    public void SetDirection(Vector3 direction)
+    {
+        Direction = ClampDirection(direction);
+        if (state == State.Flying) body.linearVelocity = Direction * CurrentSpeed;
+    }
+
+    /// <summary>Adds a temporary speed boost (0.5 = +50%) that fades over Boost Decay Time.</summary>
+    public void AddSpeedBoost(float amount)
+    {
+        boost = Mathf.Clamp(Mathf.Max(boost, amount), 0f, maxBoost);
+    }
+
+    /// <summary>Launches the ball from the paddle with a small random spread.</summary>
+    public void Launch()
+    {
+        float angle = UnityEngine.Random.Range(-launchAngleRange, launchAngleRange) * Mathf.Deg2Rad;
+        Direction = new Vector3(Mathf.Sin(angle), 0f, Mathf.Cos(angle));
+        boost = 0f;
+        state = State.Flying;
+        body.isKinematic = false;
+        body.linearVelocity = Direction * CurrentSpeed;
+    }
+
+    /// <summary>Puts the ball back on the paddle, waiting for launch.</summary>
+    public void ResetToPaddle()
+    {
+        state = State.Waiting;
+        boost = 0f;
+        if (!body.isKinematic) body.linearVelocity = Vector3.zero;
+        body.isKinematic = true;
+        FollowPaddle();
+    }
+
+    private void FollowPaddle()
+    {
+        if (paddle == null) return;
+        Vector3 target = paddle.position + restOffset;
+        target.y = planeY;
+        body.position = target;
+    }
+
+    private static bool LaunchRequested()
+    {
+        Pointer pointer = Pointer.current;
+        if (pointer != null && pointer.press.wasReleasedThisFrame) return true;
+        Keyboard keyboard = Keyboard.current;
+        return keyboard != null && keyboard.spaceKey.wasPressedThisFrame;
+    }
+
+    // Keeps the direction planar and never too close to horizontal (X axis).
+    private Vector3 ClampDirection(Vector3 direction)
+    {
+        direction.y = 0f;
+        if (direction.sqrMagnitude < 1e-6f) direction = new Vector3(0f, 0f, lastZSign);
+        direction.Normalize();
+
+        if (Mathf.Abs(direction.z) > 0.01f) lastZSign = Mathf.Sign(direction.z);
+
+        float minZ = Mathf.Sin(minAngleFromHorizontal * Mathf.Deg2Rad);
+        if (Mathf.Abs(direction.z) < minZ)
+        {
+            float xSign = direction.x >= 0f ? 1f : -1f;
+            direction = new Vector3(xSign * Mathf.Sqrt(1f - minZ * minZ), 0f, lastZSign * minZ);
+        }
+        return direction;
+    }
+}

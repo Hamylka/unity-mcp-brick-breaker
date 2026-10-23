@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb4d00ee39ccf4c49932a6b7fe8783ad, type: 3}
+  m_Name: BrickPalette
+  m_EditorClassIdentifier: Assembly-CSharp::BrickPalette
+  hitPointColors:
+  - {r: 1, g: 1, b: 1, a: 1}
+  - {r: 0.72, g: 0.9, b: 1, a: 1}
+  - {r: 0.4, g: 0.7, b: 1, a: 1}
+  - {r: 0.2, g: 0.4, b: 0.9, a: 1}
+  - {r: 0.08, g: 0.12, b: 0.55, a: 1}

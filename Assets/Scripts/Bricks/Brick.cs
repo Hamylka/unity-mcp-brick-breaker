@@ -1,0 +1,229 @@
+using System;
+using UnityEngine;
+
+/// <summary>
+/// One brick (one layer of a <see cref="BrickStack"/>): hit points, color, and the animations
+/// (hit punch, destruction shrink, falling one layer with a soft landing).
+/// Raises <see cref="Damaged"/> and <see cref="Destroyed"/> so other systems (bonus drops, XP, score, FX)
+/// can react without the brick knowing about them. The ball never touches a brick directly:
+/// the stack's collider receives the hit and forwards it to the bottom brick.
+/// </summary>
+public class Brick : MonoBehaviour
+{
+    private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+
+    [SerializeField] private Renderer targetRenderer;
+    [SerializeField] private BrickPalette palette;
+
+    [Header("Hit Juice")]
+    [SerializeField, Min(0f)] private float colorFadeTime = 0.12f;
+    [SerializeField, Min(0f)] private float hitPunchScale = 0.15f;
+    [SerializeField, Min(0.01f)] private float punchTime = 0.12f;
+    [SerializeField, Min(0.01f)] private float destroyShrinkTime = 0.1f;
+
+    [Header("Landing Juice")]
+    [Tooltip("How much the brick squashes vertically when it lands after a fall.")]
+    [SerializeField, Range(0f, 0.4f)] private float landSquash = 0.12f;
+    [SerializeField, Min(0.01f)] private float landTime = 0.16f;
+
+    [Header("Spawn Juice")]
+    [Tooltip("Seconds for the pop-in animation of a freshly spawned brick.")]
+    [SerializeField, Min(0.01f)] private float spawnTime = 0.3f;
+
+    /// <summary>Brick, hit points actually removed (never more than it had left). Raised on every hit.</summary>
+    public event Action<Brick, int> Hit;
+    /// <summary>Brick, remaining hit points. Raised on every hit that does not destroy the brick.</summary>
+    public event Action<Brick, int> Damaged;
+    /// <summary>Raised once, the moment the brick's hit points reach zero.</summary>
+    public event Action<Brick> Destroyed;
+
+    public int MaxHitPoints { get; private set; } = 1;
+    public int HitPoints { get; private set; } = 1;
+    public bool IsAlive => HitPoints > 0;
+
+    private MaterialPropertyBlock block;
+    private Vector3 baseScale = Vector3.one;
+    private Color shownColor = Color.white;
+    private Color fromColor = Color.white;
+    private Color targetColor = Color.white;
+    private float colorT = 1f;
+    private float punchT = 1f;
+    private float landT = 1f;
+    private float shrinkT;
+    private bool shrinking;
+    private bool spawning;
+    private float spawnDelay;
+    private float spawnT;
+    private float spawnK = 1f;
+
+    private bool moving;
+    private float moveDelay;
+    private float moveT;
+    private float moveDuration = 0.2f;
+    private float fromY;
+    private float toY;
+
+    private void Awake()
+    {
+        baseScale = transform.localScale;
+        enabled = false; // Update only runs while an animation is playing.
+    }
+
+    /// <summary>Called by the grid right after spawning and scaling the brick.</summary>
+    public void Initialize(int hitPoints, BrickPalette brickPalette)
+    {
+        palette = brickPalette;
+        MaxHitPoints = HitPoints = Mathf.Max(1, hitPoints);
+        baseScale = transform.localScale;
+        shownColor = targetColor = palette != null ? palette.GetColor(HitPoints) : Color.white;
+        ApplyColor(shownColor);
+        enabled = false;
+    }
+
+    /// <summary>Starts hidden (scale 0) and pops in after a delay, with a small overshoot.</summary>
+    public void PlaySpawn(float delay = 0f)
+    {
+        spawning = true;
+        spawnDelay = delay;
+        spawnT = 0f;
+        spawnK = 0f;
+        transform.localScale = Vector3.zero;
+        enabled = true;
+    }
+
+    public void TakeHit(int damage = 1)
+    {
+        if (!IsAlive) return;
+
+        int dealt = Mathf.Min(damage, HitPoints);
+        HitPoints = Mathf.Max(0, HitPoints - damage);
+        Hit?.Invoke(this, dealt);
+
+        if (HitPoints > 0)
+        {
+            fromColor = shownColor;
+            targetColor = palette != null ? palette.GetColor(HitPoints) : Color.white;
+            colorT = 0f;
+            punchT = 0f;
+            enabled = true;
+            Damaged?.Invoke(this, HitPoints);
+            return;
+        }
+
+        Destroyed?.Invoke(this);
+        shrinking = true;
+        shrinkT = 0f;
+        enabled = true;
+    }
+
+    /// <summary>Smoothly moves the brick to a new local height (used when the layer below it is destroyed).</summary>
+    public void FallTo(float localY, float duration, float delay = 0f)
+    {
+        if (!IsAlive) return;
+        fromY = transform.localPosition.y;
+        toY = localY;
+        moveDuration = Mathf.Max(duration, 0.01f);
+        moveDelay = delay;
+        moveT = 0f;
+        moving = true;
+        enabled = true;
+    }
+
+    private void Update()
+    {
+        float dt = Time.deltaTime;
+
+        if (shrinking)
+        {
+            shrinkT += dt / destroyShrinkTime;
+            transform.localScale = Vector3.Lerp(baseScale, Vector3.zero, shrinkT);
+            if (shrinkT >= 1f) Destroy(gameObject);
+            return;
+        }
+
+        if (spawning)
+        {
+            if (spawnDelay > 0f)
+            {
+                spawnDelay -= dt;
+            }
+            else
+            {
+                spawnT = Mathf.Min(1f, spawnT + dt / spawnTime);
+                // ease-out-back: grows past full size, then settles
+                float c1 = 1.70158f;
+                float c3 = c1 + 1f;
+                float u = spawnT - 1f;
+                spawnK = 1f + c3 * u * u * u + c1 * u * u;
+                if (spawnT >= 1f)
+                {
+                    spawning = false;
+                    spawnK = 1f;
+                }
+            }
+        }
+
+        if (moving)
+        {
+            if (moveDelay > 0f)
+            {
+                moveDelay -= dt;
+            }
+            else
+            {
+                moveT = Mathf.Min(1f, moveT + dt / moveDuration);
+                float k = moveT * moveT * (3f - 2f * moveT); // smoothstep: soft start, soft landing
+                Vector3 p = transform.localPosition;
+                p.y = Mathf.Lerp(fromY, toY, k);
+                transform.localPosition = p;
+                if (moveT >= 1f)
+                {
+                    moving = false;
+                    landT = 0f;
+                }
+            }
+        }
+
+        if (colorT < 1f)
+        {
+            colorT = Mathf.Min(1f, colorT + dt / Mathf.Max(colorFadeTime, 0.0001f));
+            ApplyColor(Color.Lerp(fromColor, targetColor, colorT));
+        }
+
+        float punch = 0f;
+        if (punchT < 1f)
+        {
+            punchT = Mathf.Min(1f, punchT + dt / punchTime);
+            punch = hitPunchScale * Mathf.Sin(punchT * Mathf.PI);
+        }
+
+        float land = 0f;
+        if (landT < 1f)
+        {
+            landT = Mathf.Min(1f, landT + dt / landTime);
+            land = Mathf.Sin(landT * Mathf.PI);
+        }
+
+        Vector3 scale = baseScale * ((1f + punch) * spawnK);
+        scale.y *= 1f - landSquash * land;
+        scale.x *= 1f + landSquash * 0.5f * land;
+        scale.z *= 1f + landSquash * 0.5f * land;
+        transform.localScale = scale;
+
+        if (!moving && !spawning && colorT >= 1f && punchT >= 1f && landT >= 1f)
+        {
+            transform.localScale = baseScale;
+            enabled = false;
+        }
+    }
+
+    private void ApplyColor(Color color)
+    {
+        shownColor = color;
+        if (targetRenderer == null) return;
+        block ??= new MaterialPropertyBlock();
+        targetRenderer.GetPropertyBlock(block);
+        block.SetColor(BaseColorId, color);
+        targetRenderer.SetPropertyBlock(block);
+    }
+}

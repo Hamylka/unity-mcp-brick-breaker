@@ -1,0 +1,524 @@
+using UnityEngine;
+using UnityEngine.UI;
+
+/// <summary>
+/// On-screen experience display: a level badge, a flat rounded progress bar and the XP numbers,
+/// plus a big retro "LEVEL UP!" banner near the middle of the screen. Built in code, not interactive.
+/// The bar fills smoothly, wraps around when a level is gained, and pulses when XP comes in.
+/// </summary>
+[DisallowMultipleComponent]
+public class ExperienceHud : MonoBehaviour, IXpVisuals
+{
+    [SerializeField] private ExperienceSystem experience;
+
+    [Header("Colors")]
+    [SerializeField] private Color panelColor = new(0.07f, 0.09f, 0.2f, 0.85f);
+    [SerializeField] private Color trackColor = new(0.04f, 0.05f, 0.12f, 0.8f);
+    [SerializeField] private Color fillColor = new(0.2f, 0.85f, 1f, 1f);
+    [SerializeField] private Color levelLabelColor = new(0.2f, 0.85f, 1f, 1f);
+    [SerializeField] private Color levelUpColor = new(1f, 0.85f, 0.2f, 1f);
+    [SerializeField] private Color levelUpOutlineColor = new(0.16f, 0.06f, 0.3f, 1f);
+
+    [Header("Animation")]
+    [Tooltip("Seconds the bar takes to catch up with new XP. Lower = snappier.")]
+    [SerializeField, Min(0.01f)] private float fillSmoothTime = 0.2f;
+    [Tooltip("How much the bar and level badge pop. 0 = no pulse.")]
+    [SerializeField, Range(0f, 0.5f)] private float punchStrength = 0.18f;
+
+    [Header("Level Up Banner")]
+    [Tooltip("Vertical position of the banner: 0 = bottom of the screen, 1 = top.")]
+    [SerializeField, Range(0.3f, 0.9f)] private float bannerHeight = 0.625f;
+    [Tooltip("Seconds the banner stays fully visible.")]
+    [SerializeField, Min(0.1f)] private float bannerHoldTime = 0.9f;
+
+    [Header("XP Orbs")]
+    [Tooltip("Seconds an XP orb takes to fly from the brick to the bar.")]
+    [SerializeField, Min(0.1f)] private float orbTravelTime = 0.7f;
+    [Tooltip("One orb is sent per XP point, up to this many per hit. Bigger rewards share the XP between the orbs.")]
+    [SerializeField, Min(1)] private int maxOrbsPerHit = 8;
+    [Tooltip("Seconds between the orbs of one hit, so they pop out as a small burst.")]
+    [SerializeField, Min(0f)] private float orbStagger = 0.05f;
+    [Tooltip("Scales the number of pixel sparkles. 0 = none.")]
+    [SerializeField, Range(0f, 2f)] private float particleAmount = 1f;
+
+    private sealed class Orb
+    {
+        public GameObject root;
+        public RectTransform rect;
+        public Vector2 start;
+        public Vector2 control;
+        public float time;
+        public float duration;
+        public float trailTimer;
+        public int amount;
+        public System.Action<int> onArrive;
+        public bool active;
+        public bool shown;
+    }
+
+    private readonly System.Collections.Generic.List<Orb> orbs = new();
+    private RectTransform canvasRect;
+    private PixelParticleSystem particles;
+    private Color[] burstColors;
+
+    private const float BannerPopTime = 0.22f;
+    private const float BannerExitTime = 0.35f;
+
+    private RectTransform safeArea;
+    private RectTransform badge;
+    private RectTransform track;
+    private RectTransform fillRect;
+    private Image fillImage;
+    private PixelText levelNumber;
+    private PixelText xpText;
+    private RectTransform bannerRect;
+    private CanvasGroup bannerGroup;
+    private PixelText bannerText;
+    private Rect lastSafeArea;
+
+    private float shown;       // animated value:  (level - 1) + fraction of the current level
+    private float target;
+    private float velocity;
+    private int displayedLevel = 1;
+    private float barPunch = 1f;
+    private float badgePunch = 1f;
+    private float bannerTime = -1f;
+
+    private void Awake()
+    {
+        BuildUi();
+    }
+
+    private void OnEnable()
+    {
+        if (experience == null) return;
+        experience.XpChanged += HandleXpChanged;
+        experience.XpVisuals = this;
+        SnapTo(experience.Level, experience.CurrentXp, experience.XpToNextLevel);
+    }
+
+    private void OnDisable()
+    {
+        if (experience != null)
+        {
+            experience.XpChanged -= HandleXpChanged;
+            if (experience.XpVisuals == (IXpVisuals)this) experience.XpVisuals = null;
+        }
+    }
+
+    private void SnapTo(int level, int current, int required)
+    {
+        target = shown = (level - 1) + current / (float)Mathf.Max(1, required);
+        velocity = 0f;
+        displayedLevel = level;
+        levelNumber.Text = level.ToString();
+        xpText.Text = $"{current}/{required}";
+    }
+
+    private void HandleXpChanged(int current, int required, int level)
+    {
+        float newTarget = (level - 1) + current / (float)Mathf.Max(1, required);
+        xpText.Text = $"{current}/{required}";
+
+        if (newTarget < target - 0.0001f) SnapTo(level, current, required); // run was reset
+        else if (newTarget > target + 0.0001f) barPunch = 0f;
+
+        target = newTarget;
+    }
+
+    private void Update()
+    {
+        float dt = Time.unscaledDeltaTime;
+        ApplySafeArea();
+
+        // Bar: glide toward the target; crossing a whole number means a level was gained.
+        shown = Mathf.SmoothDamp(shown, target, ref velocity, fillSmoothTime, Mathf.Infinity, dt);
+        if (Mathf.Abs(target - shown) < 0.0005f)
+        {
+            shown = target;
+            velocity = 0f;
+        }
+
+        int shownLevel = Mathf.FloorToInt(shown + 0.0001f) + 1;
+        float fraction = Mathf.Clamp01(shown - (shownLevel - 1));
+        if (shownLevel != displayedLevel)
+        {
+            bool gained = shownLevel > displayedLevel;
+            displayedLevel = shownLevel;
+            levelNumber.Text = displayedLevel.ToString();
+            if (gained)
+            {
+                badgePunch = 0f;
+                bannerTime = 0f;
+            }
+        }
+
+        fillRect.anchorMin = Vector2.zero;
+        fillRect.anchorMax = new Vector2(fraction, 1f);
+        fillImage.enabled = fraction > 0.003f;
+
+        // Pulses: a quick swell that fades out, with a white flash on the bar.
+        barPunch = Mathf.Min(1f, barPunch + dt / 0.22f);
+        float barSwell = Mathf.Sin(barPunch * Mathf.PI) * punchStrength;
+        track.localScale = new Vector3(1f, 1f + barSwell, 1f);
+        fillImage.color = Color.Lerp(Color.white, fillColor, Mathf.SmoothStep(0f, 1f, barPunch));
+
+        badgePunch = Mathf.Min(1f, badgePunch + dt / 0.4f);
+        float badgeSwell = Mathf.Sin(badgePunch * Mathf.PI) * (1f - badgePunch) * punchStrength * 2.5f;
+        badge.localScale = Vector3.one * (1f + badgeSwell);
+
+        UpdateOrbs(Time.deltaTime); // orbs freeze with the game (level-up pause)
+        particles?.Tick(dt);
+        UpdateBanner(dt);
+    }
+
+    private void UpdateBanner(float dt)
+    {
+        if (bannerTime < 0f)
+        {
+            bannerGroup.alpha = 0f;
+            return;
+        }
+
+        bannerTime += dt;
+        float t = bannerTime;
+        float scale = 1f;
+        float alpha = 1f;
+        float lift = 0f;
+
+        if (t < BannerPopTime)
+        {
+            float k = t / BannerPopTime;
+            scale = EaseOutBack(k);
+            alpha = Mathf.Min(1f, k * 4f);
+        }
+        else if (t < BannerPopTime + bannerHoldTime)
+        {
+            scale = 1f + 0.02f * Mathf.Sin((t - BannerPopTime) * 9f); // gentle breathing
+        }
+        else if (t < BannerPopTime + bannerHoldTime + BannerExitTime)
+        {
+            float k = (t - BannerPopTime - bannerHoldTime) / BannerExitTime;
+            scale = 1f + 0.12f * k;
+            alpha = 1f - k;
+            lift = 50f * k;
+        }
+        else
+        {
+            bannerTime = -1f;
+            bannerGroup.alpha = 0f;
+            return;
+        }
+
+        bannerRect.localScale = Vector3.one * scale;
+        bannerRect.anchoredPosition = new Vector2(0f, lift);
+        bannerGroup.alpha = alpha;
+        bannerText.color = Color.Lerp(Color.white, levelUpColor, Mathf.Clamp01(t / 0.15f)); // white flash on arrival
+    }
+
+    private static float EaseOutBack(float t)
+    {
+        const float c1 = 1.70158f;
+        const float c3 = c1 + 1f;
+        float u = t - 1f;
+        return 1f + c3 * u * u * u + c1 * u * u;
+    }
+
+    private void ApplySafeArea()
+    {
+        Rect area = Screen.safeArea;
+        if (area == lastSafeArea) return;
+        lastSafeArea = area;
+        safeArea.anchorMin = new Vector2(area.xMin / Screen.width, area.yMin / Screen.height);
+        safeArea.anchorMax = new Vector2(area.xMax / Screen.width, area.yMax / Screen.height);
+        safeArea.offsetMin = safeArea.offsetMax = Vector2.zero;
+    }
+
+    // ---------------------------------------------------------------- UI construction
+
+    // ---------------------------------------------------------------- XP orbs and pixel bursts
+
+    /// <summary>
+    /// Launches one orb per XP point (up to Max Orbs Per Hit) from a world position to the XP bar, as a small burst.
+    /// Each orb calls onArrive with its share of the XP when it lands.
+    /// </summary>
+    public void Deliver(Vector3 worldPosition, int amount, System.Action<int> onArrive)
+    {
+        Camera cam = Camera.main;
+        if (cam == null || canvasRect == null)
+        {
+            onArrive?.Invoke(amount); // no visuals available: just add the XP
+            return;
+        }
+
+        Vector3 screen = cam.WorldToScreenPoint(worldPosition);
+        if (screen.z <= 0f)
+        {
+            onArrive?.Invoke(amount);
+            return;
+        }
+
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screen, null, out Vector2 start);
+        Vector2 target = GetBarTarget();
+
+        int orbCount = Mathf.Clamp(amount, 1, maxOrbsPerHit);
+        int share = amount / orbCount;
+        int extra = amount % orbCount;
+        for (int i = 0; i < orbCount; i++)
+        {
+            int portion = share + (i < extra ? 1 : 0);
+            Orb orb = FindFreeOrb();
+            if (orb == null)
+            {
+                onArrive?.Invoke(portion); // all orbs busy: add this share right away
+                continue;
+            }
+
+            orb.start = start + UnityEngine.Random.insideUnitCircle * 18f;
+            orb.control = (orb.start + target) * 0.5f + new Vector2(UnityEngine.Random.Range(-220f, 220f), UnityEngine.Random.Range(60f, 260f));
+            orb.duration = orbTravelTime * UnityEngine.Random.Range(0.9f, 1.15f);
+            orb.time = -i * orbStagger; // negative = waiting for its turn in the burst
+            orb.trailTimer = 0f;
+            orb.amount = portion;
+            orb.onArrive = onArrive;
+            orb.active = true;
+            orb.shown = false;
+        }
+    }
+
+    private Orb FindFreeOrb()
+    {
+        foreach (Orb orb in orbs)
+            if (!orb.active) return orb;
+        return null;
+    }
+
+    private void UpdateOrbs(float dt)
+    {
+        if (orbs.Count == 0) return;
+
+        Vector2 target = GetBarTarget();
+        foreach (Orb orb in orbs)
+        {
+            if (!orb.active) continue;
+
+            orb.time += dt;
+            if (orb.time < 0f) continue; // still waiting for its turn in the burst
+
+            if (!orb.shown)
+            {
+                orb.shown = true;
+                orb.rect.anchoredPosition = orb.start;
+                orb.rect.localScale = Vector3.zero;
+                orb.root.SetActive(true);
+
+                // Small pop each time an orb comes out of the brick.
+                int pop = Mathf.RoundToInt(UnityEngine.Random.Range(3, 6) * particleAmount);
+                particles.Burst(orb.start, pop, burstColors, 120f, 340f, 6f, 12f, 0.25f, 0.5f, 4f, 0f);
+            }
+
+            float u = Mathf.Clamp01(orb.time / orb.duration);
+            float e = Mathf.Lerp(u * u, u * u * (3f - 2f * u), 0.5f); // gentle start, accelerates toward the bar
+            float inv = 1f - e;
+            Vector2 p = inv * inv * orb.start + 2f * inv * e * orb.control + e * e * target;
+
+            orb.rect.anchoredPosition = p;
+            orb.rect.localScale = Vector3.one * (Mathf.Min(1f, u / 0.12f) * Mathf.Lerp(1f, 0.75f, u));
+
+            // Pixel trail.
+            orb.trailTimer -= dt;
+            if (orb.trailTimer <= 0f && dt > 0f)
+            {
+                orb.trailTimer = 0.03f;
+                Vector2 jitter = new(UnityEngine.Random.Range(-5f, 5f), UnityEngine.Random.Range(-5f, 5f));
+                Vector2 drift = new(UnityEngine.Random.Range(-20f, 20f), UnityEngine.Random.Range(-20f, 20f));
+                Color color = UnityEngine.Random.value < 0.35f ? Color.white : fillColor;
+                particles.Emit(p + jitter, drift, color, UnityEngine.Random.Range(8f, 13f), UnityEngine.Random.Range(0.25f, 0.45f), 3f, 0f);
+            }
+
+            if (u >= 1f) Arrive(orb, target);
+        }
+    }
+
+    private void Arrive(Orb orb, Vector2 target)
+    {
+        orb.active = false;
+        orb.shown = false;
+        orb.root.SetActive(false);
+
+        // Explosion on the bar: scattered squares plus a few big white flashes. Several orbs stack into a bigger blast.
+        int count = Mathf.RoundToInt(Mathf.Clamp(10 + orb.amount * 4, 10, 36) * particleAmount);
+        particles.Burst(target, count, burstColors, 200f, 640f, 8f, 18f, 0.35f, 0.8f, 3.5f, 260f);
+        particles.Burst(target, Mathf.RoundToInt(3 * particleAmount), new[] { Color.white }, 40f, 160f, 18f, 26f, 0.12f, 0.25f, 6f, 0f);
+
+        System.Action<int> callback = orb.onArrive;
+        int amount = orb.amount;
+        orb.onArrive = null;
+        callback?.Invoke(amount); // the XP is added now, which also pulses the bar
+    }
+
+    // The tip of the filled part of the bar, in canvas coordinates.
+    private Vector2 GetBarTarget()
+    {
+        Vector3 center = canvasRect.InverseTransformPoint(track.position);
+        float width = track.rect.width - 12f;
+        float fraction = Mathf.Clamp(shown - Mathf.Floor(shown + 0.0001f), 0.03f, 1f);
+        return new Vector2(center.x - width * 0.5f + width * fraction, center.y);
+    }
+
+    private void BuildXpEffects(Transform canvasParent)
+    {
+        canvasRect = (RectTransform)canvasParent;
+        burstColors = new[] { fillColor, Color.white, new Color(0.7f, 0.95f, 1f) };
+
+        RectTransform particleLayer = NewRect("XpParticles", canvasParent);
+        Stretch(particleLayer);
+        particleLayer.gameObject.AddComponent<Canvas>(); // own canvas: moving sparkles do not rebuild the rest of the HUD
+        particles = new PixelParticleSystem(particleLayer, 240);
+
+        RectTransform orbLayer = NewRect("XpOrbs", canvasParent);
+        Stretch(orbLayer);
+        orbLayer.gameObject.AddComponent<Canvas>();
+        Vector2 middle = new(0.5f, 0.5f);
+        for (int i = 0; i < 120; i++)
+        {
+            RectTransform root = NewRect("Orb", orbLayer);
+            Place(root, middle, middle, Vector2.zero, new Vector2(26f, 26f));
+
+            Image glow = NewImage("Glow", root, new Color(fillColor.r, fillColor.g, fillColor.b, 0.3f));
+            Place(glow.rectTransform, middle, middle, Vector2.zero, new Vector2(46f, 46f));
+            Image core = NewImage("Core", root, fillColor);
+            Place(core.rectTransform, middle, middle, Vector2.zero, new Vector2(26f, 26f));
+            Image shine = NewImage("Shine", root, new Color(1f, 1f, 1f, 0.95f));
+            Place(shine.rectTransform, middle, middle, new Vector2(-3f, 3f), new Vector2(10f, 10f));
+
+            root.gameObject.SetActive(false);
+            orbs.Add(new Orb { root = root.gameObject, rect = root });
+        }
+    }
+
+    /// <summary>Creates the whole HUD. Called automatically on Awake.</summary>
+    public Canvas BuildUi()
+    {
+        var canvasObject = new GameObject("ExperienceCanvas", typeof(RectTransform));
+        canvasObject.transform.SetParent(transform, false);
+
+        var canvas = canvasObject.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 10;
+
+        // Reference layout is 1080x1920 portrait. No GraphicRaycaster: nothing here is interactive.
+        var scaler = canvasObject.AddComponent<CanvasScaler>();
+        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+        scaler.referenceResolution = new Vector2(1080f, 1920f);
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+        scaler.matchWidthOrHeight = 0.5f;
+
+        safeArea = NewRect("SafeArea", canvasObject.transform);
+        Stretch(safeArea);
+
+        // Level badge (top left): small "LV" label above a big number.
+        badge = NewRect("LevelBadge", safeArea);
+        Place(badge, new Vector2(0f, 1f), new Vector2(0.5f, 0.5f), new Vector2(135f, -115f), new Vector2(190f, 150f));
+        NewImage("Panel", badge, panelColor).rectTransform.SetAsFirstSibling();
+        Stretch((RectTransform)badge.Find("Panel"));
+
+        PixelText label = NewText("LvLabel", badge, "LV", 5f, levelLabelColor, PixelText.Align.Center);
+        Place(label.rectTransform, new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0f, -30f), new Vector2(190f, 40f));
+
+        levelNumber = NewText("LvNumber", badge, "1", 9f, Color.white, PixelText.Align.Center);
+        Place(levelNumber.rectTransform, new Vector2(0.5f, 0f), new Vector2(0.5f, 0.5f), new Vector2(0f, 48f), new Vector2(190f, 70f));
+
+        // Progress bar (rounded track + rounded fill).
+        track = NewRect("XpTrack", safeArea);
+        Place(track, new Vector2(0f, 1f), new Vector2(0.5f, 0.5f), new Vector2(540f, -100f), new Vector2(560f, 48f));
+        Image trackImage = track.gameObject.AddComponent<Image>();
+        ConfigureImage(trackImage, trackColor);
+
+        RectTransform fillArea = NewRect("FillArea", track);
+        Stretch(fillArea);
+        fillArea.offsetMin = new Vector2(6f, 6f);
+        fillArea.offsetMax = new Vector2(-6f, -6f);
+
+        fillImage = NewImage("Fill", fillArea, fillColor);
+        fillRect = fillImage.rectTransform;
+        fillRect.anchorMin = Vector2.zero;
+        fillRect.anchorMax = new Vector2(0f, 1f);
+        fillRect.pivot = new Vector2(0f, 0.5f);
+        fillRect.offsetMin = fillRect.offsetMax = Vector2.zero;
+
+        // XP numbers under the bar.
+        xpText = NewText("XpNumbers", safeArea, "0/10", 4f, new Color(1f, 1f, 1f, 0.8f), PixelText.Align.Right);
+        Place(xpText.rectTransform, new Vector2(0f, 1f), new Vector2(0.5f, 0.5f), new Vector2(540f, -146f), new Vector2(560f, 32f));
+
+        // Level up banner, centered horizontally at the chosen height (not limited to the safe area).
+        bannerRect = NewRect("LevelUpBanner", canvasObject.transform);
+        Place(bannerRect, new Vector2(0.5f, bannerHeight), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(900f, 140f));
+        bannerGroup = bannerRect.gameObject.AddComponent<CanvasGroup>();
+        bannerGroup.interactable = false;
+        bannerGroup.blocksRaycasts = false;
+        bannerGroup.alpha = 0f;
+
+        bannerText = NewText("LevelUpText", bannerRect, "LEVEL UP!", 14f, levelUpColor, PixelText.Align.Center);
+        Stretch(bannerText.rectTransform);
+        var outline = bannerText.gameObject.AddComponent<Outline>();
+        outline.effectColor = levelUpOutlineColor;
+        outline.effectDistance = new Vector2(6f, 6f);
+        var shadow = bannerText.gameObject.AddComponent<Shadow>();
+        shadow.effectColor = levelUpOutlineColor;
+        shadow.effectDistance = new Vector2(0f, -12f);
+
+        BuildXpEffects(canvasObject.transform);
+        return canvas;
+    }
+
+    private static RectTransform NewRect(string name, Transform parent)
+    {
+        var go = new GameObject(name, typeof(RectTransform));
+        var rect = (RectTransform)go.transform;
+        rect.SetParent(parent, false);
+        return rect;
+    }
+
+    private static void ConfigureImage(Image image, Color color)
+    {
+        image.sprite = UiSprites.RoundedRect;
+        image.type = Image.Type.Sliced;
+        image.color = color;
+        image.raycastTarget = false;
+    }
+
+    private static Image NewImage(string name, Transform parent, Color color)
+    {
+        RectTransform rect = NewRect(name, parent);
+        Image image = rect.gameObject.AddComponent<Image>();
+        ConfigureImage(image, color);
+        return image;
+    }
+
+    private static PixelText NewText(string name, Transform parent, string text, float pixelSize, Color color, PixelText.Align align)
+    {
+        RectTransform rect = NewRect(name, parent);
+        PixelText pixelText = rect.gameObject.AddComponent<PixelText>();
+        pixelText.Text = text;
+        pixelText.PixelSize = pixelSize;
+        pixelText.color = color;
+        pixelText.Alignment = align;
+        return pixelText;
+    }
+
+    private static void Stretch(RectTransform rect)
+    {
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = rect.offsetMax = Vector2.zero;
+    }
+
+    private static void Place(RectTransform rect, Vector2 anchor, Vector2 pivot, Vector2 position, Vector2 size)
+    {
+        rect.anchorMin = rect.anchorMax = anchor;
+        rect.pivot = pivot;
+        rect.anchoredPosition = position;
+        rect.sizeDelta = size;
+    }
+}
