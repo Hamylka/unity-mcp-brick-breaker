@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: BrickPalette
   m_EditorClassIdentifier: Assembly-CSharp::BrickPalette
   hitPointColors:
-  - {r: 1, g: 1, b: 1, a: 1}
-  - {r: 0.72, g: 0.9, b: 1, a: 1}
-  - {r: 0.4, g: 0.7, b: 1, a: 1}
-  - {r: 0.2, g: 0.4, b: 0.9, a: 1}
-  - {r: 0.08, g: 0.12, b: 0.55, a: 1}
+  - {r: 0.9, g: 0.95, b: 1, a: 1}
+  - {r: 0.3, g: 0.95, b: 1, a: 1}
+  - {r: 0.2, g: 0.6, b: 1, a: 1}
+  - {r: 0.35, g: 0.35, b: 1, a: 1}
+  - {r: 0.6, g: 0.2, b: 1, a: 1}
