@@ -124,6 +124,7 @@ public class GameOverScreen : MonoBehaviour
 
         root.gameObject.SetActive(true);
         open = true;
+        Animate(0f); // apply the starting state now, so the first rendered frame does not flash the final layout
     }
 
     private void HandleRestartClicked()
@@ -139,9 +140,12 @@ public class GameOverScreen : MonoBehaviour
 
     private void Update()
     {
-        if (!open) return;
+        if (open) Animate(Time.unscaledDeltaTime);
+    }
 
-        float dt = Time.unscaledDeltaTime;
+    // Applies the whole timeline at the current time. Also called from Show() with dt = 0.
+    private void Animate(float dt)
+    {
         time += dt;
 
         // Background tint.
