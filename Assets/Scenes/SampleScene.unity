@@ -869,7 +869,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 60
-  field of view: 22.72583
+  field of view: 50.96009
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -4367,7 +4367,7 @@ MonoBehaviour:
   seed: 0
   advance: 1
   ball: {fileID: 42821532}
-  stepInterval: 8
+  stepInterval: 5
   stepInRows: 1
   stepDuration: 0.5
   endless: 1
