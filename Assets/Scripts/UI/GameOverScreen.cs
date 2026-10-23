@@ -132,6 +132,7 @@ public class GameOverScreen : MonoBehaviour
         if (restarting) return;
         restarting = true;
         wipe.raycastTarget = true;
+        SoundManager.Play(Sfx.Restart);
         particles.Burst(buttonRect.anchoredPosition, Mathf.RoundToInt(40 * particleAmount),
             new[] { buttonColor, Color.white, titleColor }, 250f, 700f, 10f, 22f, 0.4f, 0.9f, 3f, 300f);
     }
@@ -204,6 +205,7 @@ public class GameOverScreen : MonoBehaviour
             {
                 letter.landed = true;
                 shake += 12f;
+                SoundManager.Play(Sfx.LetterThud, 0.9f + i * 0.03f);
                 Vector2 feet = titleBase + letter.home - new Vector2(0f, PixelFont.GlyphHeight * LetterPixel * 0.5f);
                 particles.Burst(feet, Mathf.RoundToInt(8 * particleAmount), new[] { titleColor, Color.white },
                     120f, 360f, 6f, 12f, 0.25f, 0.5f, 4f, 500f);
@@ -228,6 +230,7 @@ public class GameOverScreen : MonoBehaviour
                 stat.shown = value;
                 stat.value.Text = stat.isTime ? $"{value / 60}:{value % 60:00}" : value.ToString();
                 stat.pop = 0f; // a small tick on every change
+                if (value > 0) SoundManager.Play(Sfx.CountTick, 1f + eased * 0.5f);
             }
 
             stat.pop = Mathf.Min(1f, stat.pop + dt / 0.12f);
@@ -247,6 +250,7 @@ public class GameOverScreen : MonoBehaviour
             if (!bestBurstDone)
             {
                 bestBurstDone = true;
+                SoundManager.Play(Sfx.NewBest);
                 Vector2 at = panel.anchoredPosition + bestText.rectTransform.anchoredPosition;
                 particles.Burst(at, Mathf.RoundToInt(30 * particleAmount), new[] { bestColor, Color.white },
                     200f, 560f, 8f, 16f, 0.4f, 0.9f, 3f, 300f);

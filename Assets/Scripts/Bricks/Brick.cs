@@ -138,10 +138,12 @@ public class Brick : MonoBehaviour
             colorT = 0f;
             punchT = 0f;
             enabled = true;
+            SoundManager.Play(Sfx.BrickHit, 1f + (MaxHitPoints - HitPoints) * 0.08f); // rises as the brick weakens
             Damaged?.Invoke(this, HitPoints);
             return;
         }
 
+        SoundManager.Play(Sfx.BrickBreak);
         Destroyed?.Invoke(this);
         shrinking = true;
         shrinkT = 0f;

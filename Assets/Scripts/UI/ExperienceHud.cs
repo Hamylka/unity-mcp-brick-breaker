@@ -66,6 +66,8 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
     private RectTransform canvasRect;
     private PixelParticleSystem particles;
     private Color[] burstColors;
+    private int orbChain;          // orbs landing in quick succession climb in pitch
+    private float lastOrbArrival;
 
     private const float BannerPopTime = 0.22f;
     private const float BannerExitTime = 0.35f;
@@ -145,6 +147,7 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
     private void HandleClearBonus(int amount)
     {
         clearBanner.subtitle.Text = $"+{amount} XP";
+        SoundManager.Play(Sfx.ClearFanfare);
         clearBanner.time = 0f;
 
         // A big pixel blast behind the banner.
@@ -177,6 +180,7 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
             {
                 badgePunch = 0f;
                 levelUpBanner.time = 0f;
+                SoundManager.Play(Sfx.LevelUp);
             }
         }
 
@@ -340,6 +344,7 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
                 orb.rect.anchoredPosition = orb.start;
                 orb.rect.localScale = Vector3.zero;
                 orb.root.SetActive(true);
+                SoundManager.Play(Sfx.OrbLaunch);
 
                 // Small pop each time an orb comes out of the brick.
                 int pop = Mathf.RoundToInt(UnityEngine.Random.Range(3, 6) * particleAmount);
@@ -384,6 +389,11 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
         int amount = orb.amount;
         orb.onArrive = null;
         callback?.Invoke(amount); // the XP is added now, which also pulses the bar
+
+        // Quick successions climb in pitch, like a combo.
+        orbChain = Time.unscaledTime - lastOrbArrival < 0.35f ? orbChain + 1 : 0;
+        lastOrbArrival = Time.unscaledTime;
+        SoundManager.Play(Sfx.OrbCollect, 1f + Mathf.Min(orbChain, 12) * 0.05f);
     }
 
     // The tip of the filled part of the bar, in canvas coordinates.

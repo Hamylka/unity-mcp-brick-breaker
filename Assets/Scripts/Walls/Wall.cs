@@ -28,6 +28,7 @@ public class Wall : BallSurface
 
     public override void OnBallHit(BallController ball, Collision collision)
     {
+        SoundManager.Play(Sfx.WallBounce);
         if (zones.Count == 0) return;
 
         float t = GetNormalizedPosition(collision.GetContact(0).point);

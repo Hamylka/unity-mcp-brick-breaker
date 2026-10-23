@@ -81,6 +81,9 @@ public class GameManager : MonoBehaviour
         if (powerUps != null) powerUps.enabled = false;
         if (grid != null) grid.AdvanceEnabled = false;
 
+        if (reason == LoseReason.BallLost) SoundManager.Play(Sfx.BallLost);
+        SoundManager.Play(Sfx.GameOver);
+
         GameOver?.Invoke(reason);
         StartCoroutine(GameOverSequence(reason));
     }

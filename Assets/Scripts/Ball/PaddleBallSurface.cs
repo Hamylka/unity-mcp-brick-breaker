@@ -30,6 +30,7 @@ public class PaddleBallSurface : BallSurface
         float offset = Mathf.Clamp((ball.Position.x - bounds.center.x) / bounds.extents.x, -1f, 1f);
         float angle = offset * maxBounceAngle * Mathf.Deg2Rad;
         ball.SetDirection(new Vector3(Mathf.Sin(angle), 0f, Mathf.Cos(angle)));
+        SoundManager.Play(Sfx.PaddleHit, 1f + Mathf.Abs(offset) * 0.25f); // higher pitch toward the edges
 
         if (paddle != null && slingshotSpeedBonus > 0f)
             ball.AddSpeedBoost(paddle.SlingshotPower * slingshotSpeedBonus);

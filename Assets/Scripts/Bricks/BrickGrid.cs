@@ -198,6 +198,7 @@ public class BrickGrid : MonoBehaviour
                 SpawnRow(finalWorldZ - stepTo, 0f, true);
             }
 
+            SoundManager.Play(Sfx.WallStep);
             StepStarted?.Invoke();
         }
     }
