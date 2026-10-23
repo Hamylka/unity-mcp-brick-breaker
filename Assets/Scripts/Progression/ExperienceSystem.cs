@@ -30,6 +30,8 @@ public class ExperienceSystem : MonoBehaviour
     public event Action<int, int, int> XpChanged;
     /// <summary>Raised once per level gained, with the new level.</summary>
     public event Action<int> LevelUp;
+    /// <summary>Raised when the whole wall is cleared, with the bonus XP that is on its way.</summary>
+    public event Action<int> ClearBonusGranted;
 
     private float xpMultiplier = 1f;
     private float xpRemainder;
@@ -77,6 +79,8 @@ public class ExperienceSystem : MonoBehaviour
     {
         int amount = Mathf.CeilToInt(XpToNextLevel * clearBonus);
         if (amount <= 0) return;
+
+        ClearBonusGranted?.Invoke(amount);
 
         if (XpVisuals != null) XpVisuals.Deliver(lastHitPosition, amount, AddXp);
         else AddXp(amount);
