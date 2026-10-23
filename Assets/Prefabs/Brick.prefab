@@ -50,7 +50,7 @@ MeshRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5643700077595040246}
   m_Enabled: 1
-  m_CastShadows: 1
+  m_CastShadows: 0
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
@@ -67,7 +67,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 31321ba15b8f8eb4c954353edc038b1d, type: 2}
+  - {fileID: 2100000, guid: 995439d47de4b1b48ad669dd73b2140f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -105,9 +105,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Brick
   targetRenderer: {fileID: 7656850491374869054}
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
+  bodyBrightness: 0.45
+  glowIntensity: 0.9
   colorFadeTime: 0.12
   hitPunchScale: 0.15
   punchTime: 0.12
   destroyShrinkTime: 0.1
   landSquash: 0.12
   landTime: 0.16
+  spawnTime: 0.3

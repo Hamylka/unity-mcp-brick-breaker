@@ -11,9 +11,16 @@ using UnityEngine;
 public class Brick : MonoBehaviour
 {
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+    private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
 
     [SerializeField] private Renderer targetRenderer;
     [SerializeField] private BrickPalette palette;
+
+    [Header("Neon")]
+    [Tooltip("Brightness of the brick body compared to its HP color (the glow does the rest).")]
+    [SerializeField, Range(0f, 1f)] private float bodyBrightness = 0.45f;
+    [Tooltip("Glow strength. Above 1 the bloom picks it up. The material needs emission enabled.")]
+    [SerializeField, Min(0f)] private float glowIntensity = 0.9f;
 
     [Header("Hit Juice")]
     [SerializeField, Min(0f)] private float colorFadeTime = 0.12f;
@@ -223,7 +230,10 @@ public class Brick : MonoBehaviour
         if (targetRenderer == null) return;
         block ??= new MaterialPropertyBlock();
         targetRenderer.GetPropertyBlock(block);
-        block.SetColor(BaseColorId, color);
+        Color body = color * bodyBrightness;
+        body.a = 1f;
+        block.SetColor(BaseColorId, body);
+        block.SetColor(EmissionColorId, color * glowIntensity); // HDR glow in the HP color
         targetRenderer.SetPropertyBlock(block);
     }
 }
