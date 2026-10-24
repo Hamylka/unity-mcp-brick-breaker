@@ -799,6 +799,56 @@ MonoBehaviour:
     volume: 0.5
     pitchJitter: 0
     minInterval: 0
+  - id: 20
+    clip: {fileID: 8300000, guid: a0c2afe1a797993448fcac3c3206bd30, type: 3}
+    volume: 0.6
+    pitchJitter: 0.02
+    minInterval: 0.05
+  - id: 21
+    clip: {fileID: 8300000, guid: 732f8212e6a89384a9f6214c127c2e3e, type: 3}
+    volume: 0.45
+    pitchJitter: 0
+    minInterval: 0.2
+  - id: 22
+    clip: {fileID: 8300000, guid: 2638917cd37748f40bf44097ec498ce7, type: 3}
+    volume: 0.45
+    pitchJitter: 0
+    minInterval: 0.2
+  - id: 23
+    clip: {fileID: 8300000, guid: 614d5c815b867f44bb545f5af0c7867f, type: 3}
+    volume: 0.35
+    pitchJitter: 0.06
+    minInterval: 0.05
+  - id: 24
+    clip: {fileID: 8300000, guid: 2beeb024d8c534d4e87fc0cc2453dbd8, type: 3}
+    volume: 0.55
+    pitchJitter: 0
+    minInterval: 0.2
+  - id: 25
+    clip: {fileID: 8300000, guid: dfc06cc93bfb1a0429e8d39aff11b65c, type: 3}
+    volume: 0.7
+    pitchJitter: 0.03
+    minInterval: 0.1
+  - id: 26
+    clip: {fileID: 8300000, guid: 31b5d6a63c54da94a828d7b9813daeef, type: 3}
+    volume: 0.55
+    pitchJitter: 0.03
+    minInterval: 0.1
+  - id: 27
+    clip: {fileID: 8300000, guid: 8e2a20fdc0fdeda418da9d587c05402b, type: 3}
+    volume: 0.3
+    pitchJitter: 0.05
+    minInterval: 0.15
+  - id: 28
+    clip: {fileID: 8300000, guid: aa5549cff72e55b40a7bf1936265545c, type: 3}
+    volume: 0.6
+    pitchJitter: 0
+    minInterval: 0.2
+  - id: 29
+    clip: {fileID: 8300000, guid: 6588cfcde5f6e6042a19ed2d1e6b4a05, type: 3}
+    volume: 0.45
+    pitchJitter: 0
+    minInterval: 0.5
 --- !u!4 &106477069
 Transform:
   m_ObjectHideFlags: 0

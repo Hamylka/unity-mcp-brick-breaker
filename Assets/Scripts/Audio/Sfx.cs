@@ -1,4 +1,7 @@
-/// <summary>Every sound effect in the game. The generator saves one file per value, named after it.</summary>
+/// <summary>
+/// Every sound effect in the game. The generator saves one file per value, named after it.
+/// Values are stored as numbers in the scene's SoundManager list: add new ones at the end, never in between.
+/// </summary>
 public enum Sfx
 {
     // Ball
@@ -29,5 +32,19 @@ public enum Sfx
     LetterThud,
     CountTick,
     NewBest,
-    Restart
+    Restart,
+
+    // Bonus items
+    BonusPickup,
+    BonusExpire,
+    LaserCharge,
+    LaserShot,
+    ShieldUp,
+    ShieldBreak,
+    MultiBallSplit,
+    BallFade,
+    BallPromote,
+
+    // Difficulty
+    HpScaleUp
 }

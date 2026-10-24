@@ -87,6 +87,7 @@ public class HpScaleNotice : MonoBehaviour
     {
         if (grid != null && grid.IsGameOver) return;
         time = 0f;
+        SoundManager.Play(Sfx.HpScaleUp);
     }
 
     private void Update()

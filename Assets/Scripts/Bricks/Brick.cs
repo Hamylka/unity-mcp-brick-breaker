@@ -136,7 +136,8 @@ public class Brick : MonoBehaviour
 
     private Color CurrentColor() => palette != null ? palette.GetColor(HitPoints, ColorScaleMaxHp) : Color.white;
 
-    // The scale moved (the wall got tougher): fade to the new color and pulse so the change is noticeable.
+    // The scale moved (the wall got tougher): fade to the new color and pulse so the change is noticeable,
+    // with a couple of embers rising off the brick in its new color.
     private void OnColorScaleChanged()
     {
         if (!IsAlive || shrinking) return;
@@ -145,6 +146,7 @@ public class Brick : MonoBehaviour
         colorT = 0f;
         punchT = 0f;
         enabled = true;
+        NeonFx.Embers(transform.position, targetColor, 2, 0.06f, 0.6f);
     }
 
     /// <summary>Starts hidden (scale 0) and pops in after a delay, with a small overshoot.</summary>

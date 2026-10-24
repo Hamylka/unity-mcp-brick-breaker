@@ -90,7 +90,13 @@ public class GameManager : MonoBehaviour
         successor.BallLost += HandleBallLost;
         ball = successor;
         if (grid != null) grid.SetBall(successor);
-        SoundManager.Play(Sfx.Confirm);
+
+        // Promotion cue: the new main ball flashes gold and sends out a ring, so the player sees which one it is.
+        SoundManager.Play(Sfx.BallPromote);
+        Color gold = new(1f, 0.85f, 0.3f, 1f);
+        NeonFx.Flash(successor.Position, Color.white, 0.9f, 0.15f);
+        NeonFx.Ring(successor.Position, gold, 28, 5f, 0.09f, 0.4f);
+        NeonFx.Burst(successor.Position, gold, 14, 2.5f, 0.07f, 0.45f);
     }
 
     private static BallController FindSuccessor(BallController lostBall)

@@ -49,10 +49,11 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   * The 3D scene renders at a fixed 640 px height and is upscaled with nearest-neighbour filtering (`RetroPixelation` on the camera). The UI stays at full resolution.
   * Near-black background, glowing purple grid floor, dark walls with magenta neon tube trims, hot orange ball with a trail, glowing red lose line.
   * Bricks and the paddle are rounded rectangles (generated mesh, visual only, physics stay boxes) with a dark glassy body and a glowing outline in their color.
+  * One-shot 3D particle effects (bursts, rings, sparks, embers) go through the static `NeonFx` helper: one shared particle system of additive squares (`Resources/FX/M_NeonFx`), no scene setup.
   * Post-processing: bloom, vignette, light chromatic aberration. Neon materials and the post-process profile live in `Assets/Art`.
   * UI: flat dark navy panels, cyan accents, and a built-in pixel font (`PixelFont` / `PixelText`) for all text. TextMeshPro is imported but not used yet.
 - **Audio:**
-  * 20 retro sound effects synthesized in code (**Tools > Brick Breaker > Generate Sound Effects**) and played by `SoundManager` (per-sound volume, pitch variation, rate limiting).
+  * 30 retro sound effects synthesized in code (**Tools > Brick Breaker > Generate Sound Effects**) and played by `SoundManager` (per-sound volume, pitch variation, rate limiting).
   * A 34-second synthwave loop (A minor, 112 BPM), generated with **Tools > Brick Breaker > Generate Music** and played by `MusicPlayer`. It fades in, is muffled while the game is slowed or paused, and fades out with a pitch drop on Game Over.
   * Any generated `.wav` in `Assets/Audio` can be replaced by a hand-made file with the same name.
 
@@ -135,4 +136,18 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 - **Roadmap (in order):**
   1. Playtest and tune the scaling (rows per proc, multiplier) and the notice.
   2. Dedicated sounds and visual effects for the bonus items (with Opus), plus a subtle cue sound for the HP scale-up.
+  3. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
+
+### [2026-10-24] - Bonus and HP scale-up sounds and effects (by Claude)
+- **Done:** 10 new synthesized sounds (`Sfx` values appended at the end: BonusPickup, BonusExpire, LaserCharge, LaserShot, ShieldUp, ShieldBreak, MultiBallSplit, BallFade, BallPromote, HpScaleUp). The generator now adds any missing `Sfx` to the scene's `SoundManager` with default mixing values (existing entries untouched; save the scene after running it). New `NeonFx` static particle helper (`Burst`, `Ring`, `Sparks`, `Flash`, `Embers`, `Line`). Wired in:
+  * **Pickup** (all bonuses): chime + flash, ring and burst in the bonus color at the paddle.
+  * **Laser:** charge-up sweep and sparks on a fresh cannon, "pew" per shot, the bolt now starts fat and thins out, muzzle flash and impact sparks, power-down sound and fizzle when it runs out.
+  * **Shield:** hum-up sound, the barrier unrolls from the middle with a flare, idle glow pulse and drifting sparks, glass-shatter sound and a spray of shards on break. The barrier is now tinted cyan (bonus/HUD color) instead of the magenta tube material.
+  * **Multi-Ball:** split blips, flash and ring on the main ball, streaks along each new path; an expiring extra pops with a soft blip.
+  * **Ball promotion:** two-note call and gold flash + ring on the promoted ball (replaces the reused Confirm sound).
+  * **HP scale-up:** low "dun-dun" cue with the notice, and every living brick throws a couple of embers in its new color.
+- **Open issues:** compiled and generated, not yet heard or seen in play. Mix volumes and particle sizes (vs the 640 px pixelation) are first guesses: tune volumes on the `SoundManager` and sizes in the calls. The shield's collider also grows during the 0.35 s raise, so a ball arriving in that window could slip past the edges.
+- **Roadmap (in order):**
+  1. Playtest the new sounds and effects, tune volumes and sizes.
+  2. Playtest and tune the HP scaling (rows per proc, multiplier) and the notice.
   3. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
