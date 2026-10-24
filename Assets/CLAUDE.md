@@ -86,6 +86,7 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   1. Switch the build target to Android and test rendering, controls and performance on a real device.
   2. Decide whether to keep the bonus item drops (currently disabled).
   3. More power-ups (e.g. Laser, Multi-ball) and enabling the Reroll button.
+
 ### [2026-10-24] - Android build confirmed, Reroll enabled (by Claude)
 - **Done:** the Android build target was tested successfully by another Claude worker (roadmap item 1 is done). Reroll button enabled: it re-rolls the cards with the same rarity weights, shows the remaining count ("REROLL x1"), keeps the dim and slides the new cards in. `PowerUpManager.Base Rerolls` (default 1 per level-up) and `BonusRerolls` for future stats.
 - **Open issues:** reroll not yet playtested in the editor (use the `Debug: Trigger Level Up Choice` context menu on `PowerUpManager`). A reroll can show the same card again, since each roll is independent.
