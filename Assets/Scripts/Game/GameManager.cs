@@ -38,6 +38,11 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
+        // Phones run at 30 FPS by default; the ball and the animations are tuned for 60.
+        Application.targetFrameRate = 60;
+        // The player only touches the screen while dragging, so stop it from dimming mid-run.
+        Screen.sleepTimeout = SleepTimeout.NeverSleep;
+
         // A lost ball ends the run instead of going back to the paddle.
         if (ball != null) ball.AutoReset = false;
     }
