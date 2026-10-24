@@ -3,47 +3,53 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Top-right stack of chips, one per active bonus: name, time left and a draining bar in the bonus color.
-/// Untimed bonuses (the Shield) show a full bar. The bar blinks during the last seconds, and a chip fades out when
-/// its bonus ends. Creates itself when the game starts, so no scene setup is needed.
+/// Top-right stack of rows, one per active bonus: its name, then one circular timer per running instance
+/// (so every multi-ball extra shows its own countdown). The ring drains clockwise with the seconds left in
+/// the middle, blinks during the last seconds, and fades out when its timer ends. Untimed bonuses (the Shield)
+/// show a full ring. Creates itself when the game starts, so no scene setup is needed.
 /// </summary>
 public class ActiveBonusHud : MonoBehaviour
 {
-    private const float ChipWidth = 340f;
-    private const float ChipHeight = 72f;
-    private const float ChipGap = 12f;
+    private const float RingSize = 64f;
+    private const float RingGap = 10f;
+    private const float RowGap = 14f;
     private const float Margin = 30f;
     private const float TopOffset = 60f;
+    private const float LabelGap = 14f;
+    private const float LabelHeight = 21f; // 7 font pixels at size 3
     private const float WarnTime = 2f;
     private const float FadeTime = 0.25f;
 
-    private static readonly Color PanelColor = new(0.07f, 0.09f, 0.2f, 0.95f);
-    private static readonly Color TrackColor = new(1f, 1f, 1f, 0.12f);
+    private static readonly Color TrackColor = new(1f, 1f, 1f, 0.16f);
 
-    private sealed class Chip
+    private sealed class Ring
     {
         public string Id;
         public RectTransform Rect;
         public CanvasGroup Group;
-        public PixelText Label;
-        public PixelText Time;
         public Image Fill;
-        public RectTransform FillRect;
+        public PixelText Time;
         public float FadeLeft = FadeTime;
         public bool Alive;
     }
 
-    private readonly Dictionary<string, Chip> chips = new();
-    private readonly List<Chip> order = new();
+    private sealed class Row
+    {
+        public string Group;
+        public PixelText Label;
+        public readonly List<Ring> Rings = new();
+    }
+
+    private readonly Dictionary<string, Ring> rings = new();
+    private readonly List<Row> rows = new();
     private readonly List<ActiveBonusTracker.Entry> active = new();
-    private readonly List<string> finished = new();
     private RectTransform root;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Bootstrap()
     {
-        if (FindAnyObjectByType<ActiveBonusHud>() != null) return;
-        new GameObject("ActiveBonusHud").AddComponent<ActiveBonusHud>();
+        if (FindAnyObjectByType<ActiveBonusHud>() == null)
+            new GameObject("ActiveBonusHud").AddComponent<ActiveBonusHud>();
         UnityEngine.SceneManagement.SceneManager.sceneLoaded += (_, _) =>
         {
             // The scene is reloaded by the Restart button: bring the HUD back with it.
@@ -76,47 +82,84 @@ public class ActiveBonusHud : MonoBehaviour
     {
         ActiveBonusTracker.GetActive(active);
 
-        foreach (Chip chip in order) chip.Alive = false;
+        foreach (Row row in rows)
+            foreach (Ring ring in row.Rings) ring.Alive = false;
+
         foreach (ActiveBonusTracker.Entry entry in active)
         {
-            if (!chips.TryGetValue(entry.Id, out Chip chip))
+            if (!rings.TryGetValue(entry.Id, out Ring ring))
             {
-                chip = CreateChip(entry.Id);
-                chips[entry.Id] = chip;
-                order.Add(chip);
+                Row row = RowFor(entry.Group);
+                ring = CreateRing(entry.Id);
+                rings[entry.Id] = ring;
+                row.Rings.Add(ring);
             }
-            chip.Alive = true;
-            chip.FadeLeft = FadeTime;
-            Refresh(chip, entry);
+            ring.Alive = true;
+            ring.FadeLeft = FadeTime;
+            Refresh(ring, entry);
+            RowFor(entry.Group).Label.Text = entry.Label;
+            RowFor(entry.Group).Label.color = entry.Color;
         }
 
-        // Chips of ended bonuses fade out, then go.
-        finished.Clear();
-        foreach (Chip chip in order)
+        // Rings of ended timers fade out, then go; rows without rings go with them.
+        for (int r = rows.Count - 1; r >= 0; r--)
         {
-            if (chip.Alive) continue;
-            chip.FadeLeft -= Time.unscaledDeltaTime;
-            chip.Group.alpha = Mathf.Clamp01(chip.FadeLeft / FadeTime);
-            if (chip.FadeLeft <= 0f) finished.Add(chip.Id);
-        }
-        foreach (string id in finished)
-        {
-            Chip chip = chips[id];
-            Destroy(chip.Rect.gameObject);
-            chips.Remove(id);
-            order.Remove(chip);
+            Row row = rows[r];
+            for (int i = row.Rings.Count - 1; i >= 0; i--)
+            {
+                Ring ring = row.Rings[i];
+                if (ring.Alive) continue;
+                ring.FadeLeft -= Time.unscaledDeltaTime;
+                ring.Group.alpha = Mathf.Clamp01(ring.FadeLeft / FadeTime);
+                if (ring.FadeLeft > 0f) continue;
+
+                Destroy(ring.Rect.gameObject);
+                rings.Remove(ring.Id);
+                row.Rings.RemoveAt(i);
+            }
+            if (row.Rings.Count == 0)
+            {
+                Destroy(row.Label.gameObject);
+                rows.RemoveAt(r);
+            }
         }
 
-        // Stack from the top, new bonuses at the bottom.
-        for (int i = 0; i < order.Count; i++)
-            order[i].Rect.anchoredPosition = new Vector2(-Margin, -TopOffset - i * (ChipHeight + ChipGap));
+        Layout();
     }
 
-    private static void Refresh(Chip chip, ActiveBonusTracker.Entry entry)
+    // Rows stack from the top; each row's rings run right to left from the screen edge, the name sits left of them.
+    private void Layout()
     {
-        chip.Label.Text = entry.Label;
-        chip.Label.color = entry.Color;
-        chip.Group.alpha = 1f;
+        float y = -TopOffset;
+        foreach (Row row in rows)
+        {
+            for (int i = 0; i < row.Rings.Count; i++)
+                row.Rings[i].Rect.anchoredPosition = new Vector2(-Margin - i * (RingSize + RingGap), y);
+
+            float labelRight = -Margin - row.Rings.Count * (RingSize + RingGap) + RingGap - LabelGap;
+            row.Label.rectTransform.anchoredPosition = new Vector2(labelRight, y - (RingSize - LabelHeight) * 0.5f);
+            y -= RingSize + RowGap;
+        }
+    }
+
+    private Row RowFor(string group)
+    {
+        foreach (Row row in rows)
+            if (row.Group == group) return row;
+
+        var created = new Row { Group = group };
+        PixelText label = NewText("Label_" + group, root, PixelText.Align.Right, 3f);
+        RectTransform rect = label.rectTransform;
+        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(1f, 1f);
+        rect.sizeDelta = new Vector2(300f, LabelHeight);
+        created.Label = label;
+        rows.Add(created);
+        return created;
+    }
+
+    private static void Refresh(Ring ring, ActiveBonusTracker.Entry entry)
+    {
+        ring.Group.alpha = 1f;
 
         float fill = 1f;
         bool warning = false;
@@ -124,52 +167,49 @@ public class ActiveBonusHud : MonoBehaviour
         {
             fill = Mathf.Clamp01(entry.Remaining / entry.Total);
             warning = entry.Remaining <= WarnTime;
-            chip.Time.Text = entry.Remaining < 3f
-                ? entry.Remaining.ToString("0.0") + "S"
-                : Mathf.CeilToInt(entry.Remaining) + "S";
+            ring.Time.Text = entry.Remaining < 3f
+                ? entry.Remaining.ToString("0.0")
+                : Mathf.CeilToInt(entry.Remaining).ToString();
         }
         else
         {
-            chip.Time.Text = "";
+            ring.Time.Text = "";
         }
 
-        chip.FillRect.anchorMax = new Vector2(fill, 1f);
+        ring.Fill.fillAmount = fill;
         Color color = entry.Color;
         if (warning) color.a = Mathf.Sin(Time.unscaledTime * 18f) > 0f ? 1f : 0.35f; // blink in the last seconds
-        chip.Fill.color = color;
+        ring.Fill.color = color;
+        ring.Time.color = warning ? color : Color.white;
     }
 
-    private Chip CreateChip(string id)
+    private Ring CreateRing(string id)
     {
-        var chip = new Chip { Id = id };
+        var ring = new Ring { Id = id };
 
-        Image panel = NewImage("Chip_" + id, root, PanelColor);
-        chip.Rect = panel.rectTransform;
-        chip.Rect.anchorMin = chip.Rect.anchorMax = chip.Rect.pivot = new Vector2(1f, 1f);
-        chip.Rect.sizeDelta = new Vector2(ChipWidth, ChipHeight);
-        chip.Group = panel.gameObject.AddComponent<CanvasGroup>();
+        Image track = NewImage("Ring_" + id, root, TrackColor);
+        ring.Rect = track.rectTransform;
+        ring.Rect.anchorMin = ring.Rect.anchorMax = ring.Rect.pivot = new Vector2(1f, 1f);
+        ring.Rect.sizeDelta = new Vector2(RingSize, RingSize);
+        ring.Group = track.gameObject.AddComponent<CanvasGroup>();
 
-        chip.Label = NewText("Label", chip.Rect, PixelText.Align.Left);
-        SetRect(chip.Label.rectTransform, new Vector2(0f, 1f), new Vector2(0.65f, 1f), new Vector2(18f, -33f), new Vector2(0f, -12f));
-        chip.Time = NewText("Time", chip.Rect, PixelText.Align.Right);
-        SetRect(chip.Time.rectTransform, new Vector2(0.55f, 1f), new Vector2(1f, 1f), new Vector2(0f, -33f), new Vector2(-18f, -12f));
+        ring.Fill = NewImage("Fill", ring.Rect, Color.white);
+        ring.Fill.type = Image.Type.Filled;
+        ring.Fill.fillMethod = Image.FillMethod.Radial360;
+        ring.Fill.fillOrigin = (int)Image.Origin360.Top;
+        ring.Fill.fillClockwise = false; // drains clockwise: the empty part grows from the top
+        ring.Fill.fillAmount = 1f;
+        RectTransform fillRect = ring.Fill.rectTransform;
+        fillRect.anchorMin = Vector2.zero;
+        fillRect.anchorMax = Vector2.one;
+        fillRect.offsetMin = fillRect.offsetMax = Vector2.zero;
 
-        Image track = NewImage("Track", chip.Rect, TrackColor);
-        SetRect(track.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(18f, 12f), new Vector2(-18f, 24f));
-
-        chip.Fill = NewImage("Fill", track.rectTransform, Color.white);
-        chip.FillRect = chip.Fill.rectTransform;
-        SetRect(chip.FillRect, Vector2.zero, Vector2.one, Vector2.zero, Vector2.zero);
-        return chip;
-    }
-
-    // Offsets are (left, bottom) and (right, top) of the rect relative to its anchors.
-    private static void SetRect(RectTransform rect, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
-    {
-        rect.anchorMin = anchorMin;
-        rect.anchorMax = anchorMax;
-        rect.offsetMin = offsetMin;
-        rect.offsetMax = offsetMax;
+        ring.Time = NewText("Time", ring.Rect, PixelText.Align.Center, 2f);
+        RectTransform timeRect = ring.Time.rectTransform;
+        timeRect.anchorMin = Vector2.zero;
+        timeRect.anchorMax = Vector2.one;
+        timeRect.offsetMin = timeRect.offsetMax = Vector2.zero;
+        return ring;
     }
 
     private static Image NewImage(string name, Transform parent, Color color)
@@ -177,19 +217,18 @@ public class ActiveBonusHud : MonoBehaviour
         var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
         go.transform.SetParent(parent, false);
         var image = go.GetComponent<Image>();
-        image.sprite = UiSprites.RoundedRect;
-        image.type = Image.Type.Sliced;
+        image.sprite = UiSprites.Ring;
         image.color = color;
         image.raycastTarget = false;
         return image;
     }
 
-    private static PixelText NewText(string name, Transform parent, PixelText.Align align)
+    private static PixelText NewText(string name, Transform parent, PixelText.Align align, float pixelSize)
     {
         var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(PixelText));
         go.transform.SetParent(parent, false);
         var text = go.GetComponent<PixelText>();
-        text.PixelSize = 3f;
+        text.PixelSize = pixelSize;
         text.Alignment = align;
         text.color = Color.white;
         text.Text = "";

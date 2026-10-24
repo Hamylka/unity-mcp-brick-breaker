@@ -53,7 +53,7 @@ public class LaserCannon : MonoBehaviour
             return;
         }
 
-        ActiveBonusTracker.Report("laser", "LASER", color, remaining, totalTime);
+        ActiveBonusTracker.Report("laser", "laser", "LASER", color, remaining, totalTime);
         UpdateBoltFlash(dt);
 
         cooldown -= dt;

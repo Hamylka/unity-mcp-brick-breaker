@@ -43,7 +43,7 @@ public class ShieldBarrier : BallSurface
     {
         if (breakT < 0f)
         {
-            ActiveBonusTracker.Report("shield", "SHIELD", new Color(0.3f, 0.9f, 1f, 1f), -1f, 0f);
+            ActiveBonusTracker.Report("shield", "shield", "SHIELD", new Color(0.3f, 0.9f, 1f, 1f), -1f, 0f);
             return;
         }
         breakT += Time.deltaTime;

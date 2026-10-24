@@ -57,7 +57,7 @@ public class TemporaryBall : MonoBehaviour
             Destroy(gameObject);
             return;
         }
-        ActiveBonusTracker.Report("multiball", "MULTI-BALL", HudColor, remaining, totalTime);
+        ActiveBonusTracker.Report("multiball#" + GetInstanceID(), "multiball", "MULTI-BALL", HudColor, remaining, totalTime);
         if (remaining > fadeTime) return;
 
         float k = remaining / fadeTime;
