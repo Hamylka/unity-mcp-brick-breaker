@@ -124,7 +124,15 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 - **Done:** brick HP now spawns inside a `[min, max]` window (`BrickGrid > HP Scaling`: `Base Min Hp` 1, `Base Max Hp` 5, `Rows Per Scaling` 10, `Hp Multiplier` 1.25). Every `Rows Per Scaling` rows after the starting wall, both bounds are multiplied (compounding, rounded) and the old 45/25/15/10/5 weights curve is stretched across the new window (the `Difficulty Per Row` ramp still applies). Brick color is now a ratio: `BrickPalette` is a gradient, a brick's color is `Evaluate((hp-1)/(currentMax-1))`, white = 1 HP, dark blue = the toughest brick spawning now. When the window scales up, `Brick.SetColorScale` recolors every living brick with a small pulse. `BrickGrid` exposes `HpScaled(min, max)`, `CurrentMinHp`, `CurrentMaxHp`, `HpScaleTier`.
 - **Open issues:** not playtested; 1.25 every 10 rows is a first guess (min stays 1 for the first two procs because of rounding). `BrickPalette.asset` falls back to the default gradient (the old color array was dropped). The soft "it got harder" warning is not built yet.
 - **Roadmap (in order):**
-  1. **Soft warning on HP scale-up (not coded yet):** subtle cue when `HpScaled` fires (bricks already pulse and recolor), no big text banner.
+  1. ~~Soft warning on HP scale-up~~ done, see the next entry.
   2. Playtest and tune the scaling (rows per proc, multiplier).
   3. Dedicated sounds and visual effects for the bonus items (with Opus).
   4. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
+
+### [2026-10-24] - HP scale-up soft warning (by Claude)
+- **Done:** new `HpScaleNotice` (`Assets/Scripts/UI`): when `BrickGrid.HpScaled` fires, a small "TOUGHER BRICKS" line (pixel font, soft blue, 80% alpha) fades in at ~76% of the screen height, holds 1.4 s, fades out while drifting up. It runs on unscaled time (plays during the level-up slow-down), is skipped on game over, and builds itself at startup (no scene setup). Together with the brick recolor pulse it explains why the wall just got harder.
+- **Open issues:** not judged visually on screen (position, size and wording to check on a phone). No sound cue yet.
+- **Roadmap (in order):**
+  1. Playtest and tune the scaling (rows per proc, multiplier) and the notice.
+  2. Dedicated sounds and visual effects for the bonus items (with Opus), plus a subtle cue sound for the HP scale-up.
+  3. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
