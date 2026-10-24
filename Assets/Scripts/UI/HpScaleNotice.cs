@@ -2,15 +2,15 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Subtle one-line notice ("TOUGHER BRICKS") that fades in and out when <see cref="BrickGrid"/> scales up the
+/// Subtle one-line notice ("DIFFICULTY INCREASING!") that fades in and out when <see cref="BrickGrid"/> scales up the
 /// brick HP window. Small on purpose: the bricks already recolor with a pulse, this just says why.
 /// Creates itself when the game starts, so no scene setup is needed.
 /// </summary>
 public class HpScaleNotice : MonoBehaviour
 {
-    private const string Message = "TOUGHER BRICKS";
+    private const string Message = "DIFFICULTY INCREASING!";
     private const float PixelSize = 5f;
-    private const float AnchorY = 0.76f;     // fraction of the screen height (LEVEL UP! sits at ~0.62)
+    private const float AnchorY = 0.88f;     // fraction of the screen height: just under the XP bar, above the bricks
     private const float FadeIn = 0.25f;
     private const float Hold = 1.8f;
     private const float FadeOut = 0.7f;

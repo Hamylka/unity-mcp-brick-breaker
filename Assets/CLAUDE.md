@@ -130,7 +130,7 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   4. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
 
 ### [2026-10-24] - HP scale-up soft warning (by Claude)
-- **Done:** new `HpScaleNotice` (`Assets/Scripts/UI`): when `BrickGrid.HpScaled` fires, a small "TOUGHER BRICKS" line (pixel font, soft blue, 80% alpha) fades in at ~76% of the screen height, holds 1.4 s, fades out while drifting up. It runs on unscaled time (plays during the level-up slow-down), is skipped on game over, and builds itself at startup (no scene setup). Together with the brick recolor pulse it explains why the wall just got harder.
+- **Done:** new `HpScaleNotice` (`Assets/Scripts/UI`): when `BrickGrid.HpScaled` fires, a "DIFFICULTY INCREASING!" line (pixel size 5, hot amber) pops in at ~88% of the screen height (just under the XP bar), holds 1.8 s, fades out while drifting up. It runs on unscaled time (plays during the level-up slow-down), is skipped on game over, and builds itself at startup (no scene setup). Together with the brick recolor pulse it explains why the wall just got harder.
 - **Open issues:** not judged visually on screen (position, size and wording to check on a phone). No sound cue yet.
 - **Roadmap (in order):**
   1. Playtest and tune the scaling (rows per proc, multiplier) and the notice.
