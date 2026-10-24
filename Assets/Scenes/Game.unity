@@ -1835,7 +1835,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 10395ffe854e1a141b80d90a4543b7ae, type: 2}
   - {fileID: 11400000, guid: 184f69b94f3cd344e81e46f58051ec72, type: 2}
   - {fileID: 11400000, guid: 3d1bf5ca0acce5243b3f79aa0be4917a, type: 2}
-  dropChance: 0.04
+  dropChance: 0.06
   extraChancePerHitPoint: 0
 --- !u!1 &450154526
 GameObject:
