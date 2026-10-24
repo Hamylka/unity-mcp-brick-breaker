@@ -272,6 +272,7 @@ GameObject:
   - component: {fileID: 42821533}
   - component: {fileID: 42821532}
   - component: {fileID: 42821537}
+  - component: {fileID: 42821538}
   m_Layer: 0
   m_Name: Ball
   m_TagString: Untagged
@@ -539,6 +540,36 @@ TrailRenderer:
   m_Autodestruct: 0
   m_Emitting: 1
   m_ApplyActiveColorSpace: 1
+--- !u!114 &42821538
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 42821530}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b44cb4fa107be8b4d96dfb16b4b2343c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BallVisual
+  bodyMaterial: {fileID: 2100000, guid: d0fb35c7691636d4a923dcbd81a1f37f, type: 2}
+  glowColor: {r: 1, g: 0.5, b: 0.12, a: 1}
+  haloSize: 1.15
+  haloIntensity: 1.1
+  floorGlowSize: 1.5
+  floorGlowIntensity: 0.9
+  floorY: 0.02
+  readyPulse: 0.35
+  stretchPerSpeed: 0.012
+  maxStretch: 0.35
+  bounceSquash: 0.3
+  squashTime: 0.1
+  trailTime: 0.24
+  trailBrightness: 2.6
+  coreTrailWidth: 0.38
+  coreTrailTime: 0.1
+  sparkCount: 7
+  sparkSpeed: 4
 --- !u!1 &75570440
 GameObject:
   m_ObjectHideFlags: 0

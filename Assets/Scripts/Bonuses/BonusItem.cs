@@ -41,6 +41,14 @@ public class BonusItem : MonoBehaviour
     public void Initialize(BonusDefinition definition)
     {
         Definition = definition;
+
+        // The neon crystal look replaces the placeholder sphere when the prefab has it.
+        if (TryGetComponent(out BonusItemVisual visual))
+        {
+            visual.Build(definition.Color, targetRenderer);
+            return;
+        }
+
         if (targetRenderer == null) return;
         var block = new MaterialPropertyBlock();
         targetRenderer.GetPropertyBlock(block);

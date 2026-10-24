@@ -47,7 +47,9 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
     * **Shield:** rare, one at a time. A barrier behind the paddle bounces the ball back once, then breaks.
 - **Art Direction (neon, retro, pixelated):**
   * The 3D scene renders at a fixed 640 px height and is upscaled with nearest-neighbour filtering (`RetroPixelation` on the camera). The UI stays at full resolution.
-  * Near-black background, glowing purple grid floor, dark walls with magenta neon tube trims, hot orange ball with a trail, glowing red lose line.
+  * Near-black background, glowing purple grid floor, dark walls with magenta neon tube trims, glowing red lose line.
+  * Ball (`BallVisual`): white-hot core in an orange shell (`BrickBreaker/Neon Fresnel` shader, `M_BallNeon`), halo, light pool on the floor, two-layer trail (thin white core in a wide orange-to-magenta tail), squash and stretch, sparks on every bounce.
+  * Bonus items (`BonusItemVisual` on the prefab): a faceted neon crystal in the bonus color (`M_BonusCrystal`), orbit ring, halo, floor light pool and a short trail.
   * Bricks and the paddle are rounded rectangles (generated mesh, visual only, physics stay boxes) with a dark glassy body and a glowing outline in their color.
   * One-shot 3D particle effects (bursts, rings, sparks, embers) go through the static `NeonFx` helper: one shared particle system of additive squares (`Resources/FX/M_NeonFx`), no scene setup.
   * Post-processing: bloom, vignette, light chromatic aberration. Neon materials and the post-process profile live in `Assets/Art`.
@@ -147,7 +149,15 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   * **Ball promotion:** two-note call and gold flash + ring on the promoted ball (replaces the reused Confirm sound).
   * **HP scale-up:** low "dun-dun" cue with the notice, and every living brick throws a couple of embers in its new color.
 - **Open issues:** compiled and generated, not yet heard or seen in play. Mix volumes and particle sizes (vs the 640 px pixelation) are first guesses: tune volumes on the `SoundManager` and sizes in the calls. The shield's collider also grows during the 0.35 s raise, so a ball arriving in that window could slip past the edges.
+- **Roadmap:** see the next entry.
+
+### [2026-10-24] - Neon bonus crystals and ball redesign (by Claude)
+- **Done:** new unlit shader `BrickBreaker/Neon Fresnel` (`Assets/Art/Shaders`): color goes from Core (facing the camera) to Rim (edges), with an optional center hotspot, all HDR for the bloom. Falling bonus items are now faceted crystals (`CrystalMesh`, flat-shaded hexagonal bipyramid) in the bonus color with a tilted orbit ring, halo, floor light pool, bob and trail (`BonusItemVisual`, built in `BonusItem.Initialize`, tunable on the prefab). The ball got `BallVisual` (see section 4); the mesh is drawn by a child so it can squash and stretch without touching the collider, and extra balls reuse the cloned children. `NeonGlow` is the shared helper for additive halo/floor quads (generated radial texture).
+- Checked in play mode with a screenshot: the three crystals read clearly in their colors at the 640 px pixelation, the ball reads as a hot orange core with a magenta-tipped tail.
+- **Open issues:** the crystals are big on purpose (very visible); shrink `Crystal Radius/Height` and `Ring Radius` on the prefab if they feel too large on a phone. The halo and floor light under the ball are subtle; bounce sparks and squash were not judged in motion yet.
+- **Bug to fix later (on its own `fix/...` branch, reported by the user):** level-up card rolls look far too repetitive. Several level-ups in a row offered the same three cards in a different order ("Power Ball", "Quick Ball", "Wide Paddle"). Likely cause, to confirm in `PowerUpManager`: the pool is tiny, 6 power-ups with one or two per rarity (Common: Quick Ball; Uncommon: Wide Paddle, Quick Learner; Rare: Power Ball; Epic: Time Warp; Legendary: Meteor Ball). Drawing 3 distinct cards with 60/25/10/4/1 weights then lands on nearly the same trio every time. Also check the fallback when a rolled rarity has no card left, and the max-stack filtering. Possible fixes: more power-ups per rarity, avoid repeating the previous offer, check the pick logic.
 - **Roadmap (in order):**
-  1. Playtest the new sounds and effects, tune volumes and sizes.
-  2. Playtest and tune the HP scaling (rows per proc, multiplier) and the notice.
-  3. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
+  1. Playtest the new sounds, effects, crystals and ball; tune volumes and sizes.
+  2. Fix the repetitive card rolls (above).
+  3. Playtest and tune the HP scaling (rows per proc, multiplier) and the notice.
+  4. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
