@@ -33,6 +33,9 @@ public class PowerUpScreen : MonoBehaviour
     [SerializeField, Range(0f, 2f)] private float particleAmount = 1f;
 
     private const int ParticleCapacity = 180;
+    private const float ReferenceWidth = 1080f;
+    // Halo (38) plus the selected card's 6% zoom and breathing, so the side cards' glow is never cut by the screen edge.
+    private const float SideMargin = 60f;
     private const float DimFadeTime = 0.35f;
     private const float CardStagger = 0.09f;
     private const float CardAppearTime = 0.4f;
@@ -93,8 +96,11 @@ public class PowerUpScreen : MonoBehaviour
         onClosed = closed;
         selected = -1;
 
+        // The canvas is always ReferenceWidth wide (it scales with the screen width), so the row of cards is sized to
+        // fit inside it, leaving room on both sides for the halo and the selected card's zoom.
         int count = choices.Count;
-        float width = Mathf.Min(cardWidth, (1000f - cardGap * (count - 1)) / count);
+        float available = ReferenceWidth - 2f * SideMargin - cardGap * (count - 1);
+        float width = Mathf.Min(cardWidth, available / count);
         for (int i = 0; i < count; i++)
         {
             float x = (i - (count - 1) * 0.5f) * (width + cardGap);
@@ -391,7 +397,7 @@ public class PowerUpScreen : MonoBehaviour
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1080f, 1920f);
         scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 0.5f;
+        scaler.matchWidthOrHeight = 0f; // portrait: width is the limiting side, taller phones just get more height
         canvasObject.AddComponent<GraphicRaycaster>();
 
         root = (RectTransform)canvasObject.transform;
