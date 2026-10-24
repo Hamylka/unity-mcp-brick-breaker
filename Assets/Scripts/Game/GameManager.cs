@@ -72,7 +72,33 @@ public class GameManager : MonoBehaviour
         if (!IsGameOver) RunTime += Time.deltaTime; // deltaTime is 0 while paused
     }
 
-    private void HandleBallLost(BallController lostBall) => EndRun(LoseReason.BallLost);
+    private void HandleBallLost(BallController lostBall)
+    {
+        // Only losing the last ball ends the run: an extra still in play takes over as the main ball.
+        BallController successor = FindSuccessor(lostBall);
+        if (successor == null)
+        {
+            EndRun(LoseReason.BallLost);
+            return;
+        }
+
+        ball.BallLost -= HandleBallLost;
+        lostBall.gameObject.SetActive(false); // the lost ball stays parked below the paddle otherwise
+
+        successor.PromoteToMain();
+        successor.AutoReset = false;
+        successor.BallLost += HandleBallLost;
+        ball = successor;
+        if (grid != null) grid.SetBall(successor);
+        SoundManager.Play(Sfx.Confirm);
+    }
+
+    private static BallController FindSuccessor(BallController lostBall)
+    {
+        foreach (BallController candidate in BallController.Active)
+            if (candidate != lostBall && candidate.IsFlying) return candidate;
+        return null;
+    }
     private void HandleWallReached() => EndRun(LoseReason.WallReached);
     private void HandleBrickDestroyed(Brick brick) => BricksDestroyed++;
 

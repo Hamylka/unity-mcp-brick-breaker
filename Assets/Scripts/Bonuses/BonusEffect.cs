@@ -21,4 +21,9 @@ public readonly struct BonusContext
 public abstract class BonusEffect : ScriptableObject
 {
     public abstract void Apply(BonusContext context);
+
+    /// <summary>
+    /// Whether this bonus may drop right now. Override to limit a bonus (e.g. one shield at a time).
+    /// </summary>
+    public virtual bool CanDrop => true;
 }
