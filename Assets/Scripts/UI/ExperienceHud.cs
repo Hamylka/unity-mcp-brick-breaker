@@ -487,7 +487,7 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
         fillRect.offsetMin = fillRect.offsetMax = Vector2.zero;
 
         // XP numbers under the bar.
-        xpText = NewText("XpNumbers", safeArea, "0/10", 4f, new Color(1f, 1f, 1f, 0.8f), PixelText.Align.Right);
+        xpText = NewText("XpNumbers", safeArea, "0/10", 4f, new Color(1f, 1f, 1f, 0.8f), PixelText.Align.Left);
         Place(xpText.rectTransform, new Vector2(0f, 1f), new Vector2(0.5f, 0.5f), new Vector2(540f, -146f), new Vector2(560f, 32f));
 
         // Banners, centered horizontally at their heights (not limited to the safe area).
