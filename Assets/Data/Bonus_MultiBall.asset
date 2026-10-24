@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BonusDefinition
   displayName: Multi-Ball
   color: {r: 1, g: 0.55, b: 0.1, a: 1}
-  dropWeight: 3
+  dropWeight: 2
   effect: {fileID: 11400000, guid: 8194c2b4ac42be545a5e3047f8700539, type: 2}

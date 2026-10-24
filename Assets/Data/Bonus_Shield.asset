@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BonusDefinition
   displayName: Shield
   color: {r: 0.2, g: 0.9, b: 1, a: 1}
-  dropWeight: 2
+  dropWeight: 3
   effect: {fileID: 11400000, guid: 8fe0c276790bcc143b1b49a98a4dfde6, type: 2}
