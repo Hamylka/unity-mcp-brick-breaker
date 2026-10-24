@@ -14,7 +14,7 @@ public class ActiveBonusHud : MonoBehaviour
     private const float RingGap = 10f;
     private const float RowGap = 14f;
     private const float Margin = 30f;
-    private const float TopOffset = 60f;
+    private const float TopOffset = 230f; // below the level badge and XP bar (with its "6/37" counter)
     private const float LabelGap = 14f;
     private const float LabelHeight = 21f; // 7 font pixels at size 3
     private const float WarnTime = 2f;

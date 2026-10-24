@@ -31,6 +31,7 @@ public class MultiBallEffect : BonusEffect
         if (source == null) return;
 
         int count = Mathf.Min(extraBalls, maxExtraBalls - alive);
+        string procId = TemporaryBall.NewProcId(); // the extras of one pickup share one HUD line
         for (int i = 0; i < count; i++)
         {
             // Alternate right / left of the main ball's direction: +1, -1, +2, -2...
@@ -39,7 +40,7 @@ public class MultiBallEffect : BonusEffect
             Vector3 direction = Quaternion.AngleAxis(angle, Vector3.up) * source.Direction;
 
             BallController extra = source.SpawnExtra(direction);
-            extra.gameObject.AddComponent<TemporaryBall>().Begin(duration, fadeTime);
+            extra.gameObject.AddComponent<TemporaryBall>().Begin(duration, fadeTime, procId);
         }
         if (count > 0) SoundManager.Play(Sfx.OrbCollect);
     }

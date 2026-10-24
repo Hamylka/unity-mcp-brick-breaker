@@ -13,7 +13,10 @@ public class TemporaryBall : MonoBehaviour
     private static int nextHudId;
 
     private BallController ball;
-    private string hudId; // unique per extra ball, so each gets its own HUD ring
+    private string hudId; // shared by the extras of one pickup, so each pickup gets its own HUD line
+
+    /// <summary>A new id for one multi-ball pickup, to pass to <see cref="Begin"/> for each of its extras.</summary>
+    public static string NewProcId() => "multiball#" + nextHudId++;
     private float totalTime;
     private TrailRenderer[] trails;
     private float[] trailWidths;
@@ -22,11 +25,11 @@ public class TemporaryBall : MonoBehaviour
     private float fadeTime;
 
     /// <summary>Starts the countdown. The ball fades out during the last <paramref name="fadeSeconds"/>.</summary>
-    public void Begin(float lifetime, float fadeSeconds)
+    public void Begin(float lifetime, float fadeSeconds, string procId)
     {
         remaining = lifetime;
         totalTime = lifetime;
-        hudId = "multiball#" + nextHudId++;
+        hudId = procId;
         fadeTime = Mathf.Max(0.01f, fadeSeconds);
         startScale = transform.localScale;
 
@@ -61,7 +64,7 @@ public class TemporaryBall : MonoBehaviour
             Destroy(gameObject);
             return;
         }
-        ActiveBonusTracker.Report(hudId, "multiball", "MULTI-BALL", HudColor, remaining, totalTime);
+        ActiveBonusTracker.Report(hudId, hudId, "MULTI-BALL", HudColor, remaining, totalTime);
         if (remaining > fadeTime) return;
 
         float k = remaining / fadeTime;
