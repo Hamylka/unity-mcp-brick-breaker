@@ -168,3 +168,11 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 - **Drop rate (tuned by the user):** bonus drop chance raised from 4% to 6% per brick, still no extra chance per brick HP (`BonusDropper.Drop Chance` 0.06, `Extra Chance Per Hit Point` 0).
 - **HP scaling (tuned by the user):** `BrickGrid > HP Scaling` is now `Rows Per Scaling` 5 and `Hp Multiplier` 1.75 (was 10 and 1.25), so the wall toughens faster. Also committed: the Android scripting define symbols in ProjectSettings.
 - **Roadmap:** unchanged from the previous entry.
+
+### [2026-10-24] - Release v0.1 (by Claude)
+- **Done:** first tagged version, cut from `develop` via `release/0.1`, merged into `main` with `--no-ff` and tagged `v0.1` (`PlayerSettings.bundleVersion` was already 0.1.0, Android version code 1). Contents: advancing endless wall with HP scaling, XP/level-up roguelite cards with reroll, Game Over and restart, three bonus items (Multi-Ball, Laser, Shield) with active-bonus HUD, neon retro art direction, synthesized sound effects and music loop, Android build target.
+- **Open issues (carried over):** repetitive level-up card rolls (small power-up pool, fix on a `fix/...` branch); HP scaling, bonus visuals/sounds and HUD still to be playtested and tuned on a phone.
+- **Roadmap (in order):**
+  1. Fix the repetitive card rolls.
+  2. Playtest and tune HP scaling, notice, bonus effects on a real device.
+  3. More bonus item effects and power-ups.
