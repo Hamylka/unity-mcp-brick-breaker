@@ -4,8 +4,8 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Top-right stack of rows, one per active bonus: its name, then one circular timer per running instance
-/// (so every multi-ball extra shows its own countdown). The ring drains clockwise with the seconds left in
-/// the middle, blinks during the last seconds, and fades out when its timer ends. Untimed bonuses (the Shield)
+/// (so every multi-ball extra shows its own countdown). The ring drains clockwise (seconds in the middle only
+/// if <see cref="ShowSeconds"/> is on), blinks during the last seconds, and fades out when its timer ends. Untimed bonuses (the Shield)
 /// show a full ring. Creates itself when the game starts, so no scene setup is needed.
 /// </summary>
 public class ActiveBonusHud : MonoBehaviour
@@ -19,6 +19,8 @@ public class ActiveBonusHud : MonoBehaviour
     private const float LabelHeight = 21f; // 7 font pixels at size 3
     private const float WarnTime = 2f;
     private const float FadeTime = 0.25f;
+    // Seconds inside the rings: off, the digits were too tiny to read on a phone and the draining ring says enough.
+    private static readonly bool ShowSeconds = false; // readonly, not const: avoids an "unreachable code" warning
 
     private static readonly Color TrackColor = new(1f, 1f, 1f, 0.16f);
 
@@ -167,19 +169,17 @@ public class ActiveBonusHud : MonoBehaviour
         {
             fill = Mathf.Clamp01(entry.Remaining / entry.Total);
             warning = entry.Remaining <= WarnTime;
-            ring.Time.Text = entry.Remaining < 3f
-                ? entry.Remaining.ToString("0.0")
-                : Mathf.CeilToInt(entry.Remaining).ToString();
-        }
-        else
-        {
-            ring.Time.Text = "";
         }
 
         ring.Fill.fillAmount = fill;
         Color color = entry.Color;
         if (warning) color.a = Mathf.Sin(Time.unscaledTime * 18f) > 0f ? 1f : 0.35f; // blink in the last seconds
         ring.Fill.color = color;
+
+        if (ring.Time == null) return;
+        ring.Time.Text = !entry.Timed ? ""
+            : entry.Remaining < 3f ? entry.Remaining.ToString("0.0")
+            : Mathf.CeilToInt(entry.Remaining).ToString();
         ring.Time.color = warning ? color : Color.white;
     }
 
@@ -204,6 +204,7 @@ public class ActiveBonusHud : MonoBehaviour
         fillRect.anchorMax = Vector2.one;
         fillRect.offsetMin = fillRect.offsetMax = Vector2.zero;
 
+        if (!ShowSeconds) return ring;
         ring.Time = NewText("Time", ring.Rect, PixelText.Align.Center, 2f);
         RectTransform timeRect = ring.Time.rectTransform;
         timeRect.anchorMin = Vector2.zero;

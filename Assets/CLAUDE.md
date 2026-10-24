@@ -161,3 +161,8 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   2. Fix the repetitive card rolls (above).
   3. Playtest and tune the HP scaling (rows per proc, multiplier) and the notice.
   4. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
+
+### [2026-10-24] - HUD cleanup and crystal brightness (by Claude)
+- **Done:** the active bonus rings no longer show the seconds left (too tiny to read on a phone, the draining ring is enough); `ActiveBonusHud.ShowSeconds` brings them back. The XP numbers ("12/34") now sit centered inside the XP bar with a dark outline, instead of under it. The user toned the bonus crystals down by hand by 25% on the `BonusItem` prefab: `Core Brightness` 0.45, `Ring Intensity` 2.25, `Halo Intensity` 1.5, `Floor Glow Intensity` 1.2 (`Rim Intensity` unchanged at 5). The code defaults in `BonusItemVisual` still hold the older, brighter values; the prefab is the reference.
+- Checked with a play-mode screenshot (HUD with all three bonuses active).
+- **Roadmap:** unchanged from the previous entry.

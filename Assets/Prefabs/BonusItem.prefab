@@ -173,7 +173,7 @@ MonoBehaviour:
   crystalMaterial: {fileID: 2100000, guid: 22dbd074eaf8d594fa4ceff2c59d6766, type: 2}
   crystalRadius: 0.27
   crystalHeight: 0.8
-  coreBrightness: 0.6
+  coreBrightness: 0.45
   rimIntensity: 5
   bobHeight: 0.06
   bobSpeed: 5
@@ -181,11 +181,11 @@ MonoBehaviour:
   ringWidth: 0.045
   ringTilt: 16
   ringSpin: -140
-  ringIntensity: 3
+  ringIntensity: 2.25
   haloSize: 1.7
-  haloIntensity: 2
+  haloIntensity: 1.5
   floorGlowSize: 2.3
-  floorGlowIntensity: 1.6
+  floorGlowIntensity: 1.2
   floorY: 0.02
   pulseDepth: 0.25
   pulseSpeed: 6
