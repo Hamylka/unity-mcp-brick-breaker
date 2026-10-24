@@ -122,7 +122,7 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 
 ### [2026-10-24] - Brick HP scaling and color grading (by Claude)
 - **Done:** brick HP now spawns inside a `[min, max]` window (`BrickGrid > HP Scaling`: `Base Min Hp` 1, `Base Max Hp` 5, `Rows Per Scaling` 10, `Hp Multiplier` 1.25). Every `Rows Per Scaling` rows after the starting wall, both bounds are multiplied (compounding, rounded) and the old 45/25/15/10/5 weights curve is stretched across the new window (the `Difficulty Per Row` ramp still applies). Brick color is now a ratio: `BrickPalette` is a gradient, a brick's color is `Evaluate((hp-1)/(currentMax-1))`, white = 1 HP, dark blue = the toughest brick spawning now. When the window scales up, `Brick.SetColorScale` recolors every living brick with a small pulse. `BrickGrid` exposes `HpScaled(min, max)`, `CurrentMinHp`, `CurrentMaxHp`, `HpScaleTier`.
-- **Open issues:** not playtested; 1.25 every 10 rows is a first guess (min stays 1 for the first two procs because of rounding). `BrickPalette.asset` falls back to the default gradient (the old color array was dropped). The soft "it got harder" warning is not built yet.
+- **Open issues:** not playtested; 1.25 every 10 rows is a first guess (min stays 1 for the first two procs because of rounding). `BrickPalette.asset` falls back to the default gradient (the old color array was dropped). The soft "it got harder" warning came right after (next entry).
 - **Roadmap (in order):**
   1. ~~Soft warning on HP scale-up~~ done, see the next entry.
   2. Playtest and tune the scaling (rows per proc, multiplier).
