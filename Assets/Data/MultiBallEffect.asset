@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b2bbd8aef4911144be7182fdfbd1e27, type: 3}
+  m_Name: MultiBallEffect
+  m_EditorClassIdentifier: Assembly-CSharp::MultiBallEffect
+  extraBalls: 2
+  duration: 10
+  fadeTime: 2
+  spreadAngle: 25
+  maxExtraBalls: 6

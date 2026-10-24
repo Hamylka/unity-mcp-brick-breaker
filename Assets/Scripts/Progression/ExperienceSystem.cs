@@ -18,6 +18,10 @@ public class ExperienceSystem : MonoBehaviour
     [Tooltip("Exponent of the curve. 1 = linear, higher = steeper.")]
     [SerializeField, Min(0.1f)] private float power = 1.2f;
 
+    [Header("Wall Clear Bonus")]
+    [Tooltip("Clearing every brick grants this share of the XP needed for the current level (0.5 = 50%).")]
+    [SerializeField, Range(0f, 2f)] private float clearBonus = 0.5f;
+
     [Header("Debug")]
     [SerializeField] private bool logLevelUps = true;
     [SerializeField] private bool showDebugOverlay = true;
@@ -26,9 +30,12 @@ public class ExperienceSystem : MonoBehaviour
     public event Action<int, int, int> XpChanged;
     /// <summary>Raised once per level gained, with the new level.</summary>
     public event Action<int> LevelUp;
+    /// <summary>Raised when the whole wall is cleared, with the bonus XP that is on its way.</summary>
+    public event Action<int> ClearBonusGranted;
 
     private float xpMultiplier = 1f;
     private float xpRemainder;
+    private Vector3 lastHitPosition;
 
     /// <summary>Optional: carries XP visually from the brick to the bar before it is added.</summary>
     public IXpVisuals XpVisuals { get; set; }
@@ -50,12 +57,16 @@ public class ExperienceSystem : MonoBehaviour
 
     private void OnEnable()
     {
-        if (grid != null) grid.BrickHit += HandleBrickHit;
+        if (grid == null) return;
+        grid.BrickHit += HandleBrickHit;
+        grid.BricksCleared += HandleWallCleared;
     }
 
     private void OnDisable()
     {
-        if (grid != null) grid.BrickHit -= HandleBrickHit;
+        if (grid == null) return;
+        grid.BrickHit -= HandleBrickHit;
+        grid.BricksCleared -= HandleWallCleared;
     }
 
     private void Start()
@@ -63,8 +74,22 @@ public class ExperienceSystem : MonoBehaviour
         XpChanged?.Invoke(CurrentXp, XpToNextLevel, Level);
     }
 
+    // Every brick cleared: a bonus worth part of the current level, flying out of the last brick that was hit.
+    private void HandleWallCleared()
+    {
+        int amount = Mathf.CeilToInt(XpToNextLevel * clearBonus);
+        if (amount <= 0) return;
+
+        ClearBonusGranted?.Invoke(amount);
+
+        if (XpVisuals != null) XpVisuals.Deliver(lastHitPosition, amount, AddXp);
+        else AddXp(amount);
+    }
+
     private void HandleBrickHit(Brick brick, int damageDealt)
     {
+        lastHitPosition = brick.transform.position;
+
         // 1 XP per hit point removed. Fractions of the multiplier carry over, so small bonuses still add up.
         xpRemainder += damageDealt * xpMultiplier;
         int amount = Mathf.FloorToInt(xpRemainder);

@@ -52,10 +52,14 @@ ExportedObj/
 sysinfo.txt
 
 # Builds
+/[Bb]uilds/
 *.apk
 *.aab
 *.unitypackage
 *.app
+
+# Unity build tooling temp files
+/.utmp/
 
 # Crashlytics generated file
 crashlytics-build.properties

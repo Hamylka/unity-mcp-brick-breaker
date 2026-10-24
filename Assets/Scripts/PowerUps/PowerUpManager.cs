@@ -21,6 +21,8 @@ public class PowerUpManager : MonoBehaviour
     [Header("Choices")]
     [Tooltip("How many cards are offered on a level-up.")]
     [SerializeField, Min(1)] private int baseChoiceCount = 3;
+    [Tooltip("How many times the cards can be rerolled on each level-up.")]
+    [SerializeField, Min(0)] private int baseRerolls = 1;
     [Tooltip("Relative chance of each rarity: Common, Uncommon, Rare, Epic, Legendary.")]
     [SerializeField] private float[] rarityWeights = { 60f, 25f, 10f, 4f, 1f };
     [Tooltip("Seconds the game takes to slow down to a full stop when a level is gained.")]
@@ -31,6 +33,9 @@ public class PowerUpManager : MonoBehaviour
     /// <summary>Extra cards on top of the base count (meta-progression, perks...).</summary>
     public int BonusChoices { get; set; }
     public int ChoiceCount => Mathf.Max(1, baseChoiceCount + BonusChoices);
+    /// <summary>Extra rerolls per level-up on top of the base count (meta-progression, perks...).</summary>
+    public int BonusRerolls { get; set; }
+    public int RerollCount => Mathf.Max(0, baseRerolls + BonusRerolls);
     public bool IsChoosing { get; private set; }
 
     /// <summary>Raised after a power-up was applied: the power-up and how many times it has now been taken.</summary>
@@ -94,7 +99,7 @@ public class PowerUpManager : MonoBehaviour
             if (choices.Count == 0) continue;
 
             bool closed = false;
-            screen.Show(choices, GetStacks, Apply, () => closed = true);
+            screen.Show(choices, GetStacks, Apply, () => closed = true, RerollCount, () => Roll(ChoiceCount));
             while (!closed) yield return null;
         }
 

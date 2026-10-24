@@ -21,6 +21,20 @@ public static class UiSprites
         }
     }
 
+    private static Sprite ring;
+
+    /// <summary>
+    /// A thin anti-aliased ring. Use it as a track, or with Image.Type.Filled + Radial360 as a circular progress bar.
+    /// </summary>
+    public static Sprite Ring
+    {
+        get
+        {
+            if (ring == null) ring = BuildRing();
+            return ring;
+        }
+    }
+
     private static readonly System.Collections.Generic.Dictionary<string, Sprite> pixelArt = new();
 
     /// <summary>Builds a crisp sprite from rows of '#' (pixel) and '.' (empty). Tint it with Image.color.</summary>
@@ -58,6 +72,41 @@ public static class UiSprites
         var sprite = Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f), 100f);
         sprite.hideFlags = HideFlags.HideAndDontSave;
         pixelArt[rows] = sprite;
+        return sprite;
+    }
+
+    private static Sprite BuildRing()
+    {
+        const int size = 64;
+        const float outer = 31f;
+        const float inner = 22f;
+
+        var texture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+        {
+            filterMode = FilterMode.Bilinear,
+            wrapMode = TextureWrapMode.Clamp,
+            hideFlags = HideFlags.HideAndDontSave,
+            name = "Ring"
+        };
+
+        var pixels = new Color32[size * size];
+        float center = size * 0.5f;
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float d = new Vector2(x + 0.5f - center, y + 0.5f - center).magnitude;
+                // Coverage of the band between the inner and outer radius, soft over one pixel on each edge.
+                float alpha = Mathf.Clamp01(outer - d + 0.5f) * Mathf.Clamp01(d - inner + 0.5f);
+                pixels[y * size + x] = new Color32(255, 255, 255, (byte)(alpha * 255f));
+            }
+        }
+
+        texture.SetPixels32(pixels);
+        texture.Apply(false, true);
+
+        var sprite = Sprite.Create(texture, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+        sprite.hideFlags = HideFlags.HideAndDontSave;
         return sprite;
     }
 

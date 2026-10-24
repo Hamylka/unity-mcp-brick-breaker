@@ -3,7 +3,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// On-screen experience display: a level badge, a flat rounded progress bar and the XP numbers,
-/// plus a big retro "LEVEL UP!" banner near the middle of the screen. Built in code, not interactive.
+/// plus big retro "LEVEL UP!" and "CLEAR!" banners near the middle of the screen. Built in code, not interactive.
 /// The bar fills smoothly, wraps around when a level is gained, and pulses when XP comes in.
 /// </summary>
 [DisallowMultipleComponent]
@@ -30,6 +30,12 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
     [SerializeField, Range(0.3f, 0.9f)] private float bannerHeight = 0.625f;
     [Tooltip("Seconds the banner stays fully visible.")]
     [SerializeField, Min(0.1f)] private float bannerHoldTime = 0.9f;
+
+    [Header("Clear Banner")]
+    [Tooltip("Vertical position of the CLEAR! banner (below LEVEL UP!, since a clear often causes a level-up).")]
+    [SerializeField, Range(0.3f, 0.9f)] private float clearBannerHeight = 0.53f;
+    [SerializeField] private Color clearColor = new(0.35f, 0.95f, 1f, 1f);
+    [SerializeField] private Color clearOutlineColor = new(0.03f, 0.08f, 0.25f, 1f);
 
     [Header("XP Orbs")]
     [Tooltip("Seconds an XP orb takes to fly from the brick to the bar.")]
@@ -60,6 +66,8 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
     private RectTransform canvasRect;
     private PixelParticleSystem particles;
     private Color[] burstColors;
+    private int orbChain;          // orbs landing in quick succession climb in pitch
+    private float lastOrbArrival;
 
     private const float BannerPopTime = 0.22f;
     private const float BannerExitTime = 0.35f;
@@ -71,9 +79,18 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
     private Image fillImage;
     private PixelText levelNumber;
     private PixelText xpText;
-    private RectTransform bannerRect;
-    private CanvasGroup bannerGroup;
-    private PixelText bannerText;
+    private sealed class Banner
+    {
+        public RectTransform rect;
+        public CanvasGroup group;
+        public PixelText text;
+        public PixelText subtitle; // optional second line
+        public Color color;
+        public float time = -1f;   // < 0 = hidden
+    }
+
+    private Banner levelUpBanner;
+    private Banner clearBanner;
     private Rect lastSafeArea;
 
     private float shown;       // animated value:  (level - 1) + fraction of the current level
@@ -82,7 +99,6 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
     private int displayedLevel = 1;
     private float barPunch = 1f;
     private float badgePunch = 1f;
-    private float bannerTime = -1f;
 
     private void Awake()
     {
@@ -93,6 +109,7 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
     {
         if (experience == null) return;
         experience.XpChanged += HandleXpChanged;
+        experience.ClearBonusGranted += HandleClearBonus;
         experience.XpVisuals = this;
         SnapTo(experience.Level, experience.CurrentXp, experience.XpToNextLevel);
     }
@@ -102,6 +119,7 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
         if (experience != null)
         {
             experience.XpChanged -= HandleXpChanged;
+            experience.ClearBonusGranted -= HandleClearBonus;
             if (experience.XpVisuals == (IXpVisuals)this) experience.XpVisuals = null;
         }
     }
@@ -124,6 +142,18 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
         else if (newTarget > target + 0.0001f) barPunch = 0f;
 
         target = newTarget;
+    }
+
+    private void HandleClearBonus(int amount)
+    {
+        clearBanner.subtitle.Text = $"+{amount} XP";
+        SoundManager.Play(Sfx.ClearFanfare);
+        clearBanner.time = 0f;
+
+        // A big pixel blast behind the banner.
+        Vector2 center = canvasRect.InverseTransformPoint(clearBanner.rect.position);
+        int count = Mathf.RoundToInt(45 * particleAmount);
+        particles.Burst(center, count, new[] { clearColor, Color.white, fillColor }, 260f, 820f, 8f, 20f, 0.4f, 0.9f, 3f, 200f);
     }
 
     private void Update()
@@ -149,7 +179,8 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
             if (gained)
             {
                 badgePunch = 0f;
-                bannerTime = 0f;
+                levelUpBanner.time = 0f;
+                SoundManager.Play(Sfx.LevelUp);
             }
         }
 
@@ -169,19 +200,21 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
 
         UpdateOrbs(Time.deltaTime); // orbs freeze with the game (level-up pause)
         particles?.Tick(dt);
-        UpdateBanner(dt);
+        UpdateBanner(levelUpBanner, dt);
+        UpdateBanner(clearBanner, dt);
     }
 
-    private void UpdateBanner(float dt)
+    // Pop in with an overshoot and a white flash, breathe, then rise and fade out.
+    private void UpdateBanner(Banner banner, float dt)
     {
-        if (bannerTime < 0f)
+        if (banner.time < 0f)
         {
-            bannerGroup.alpha = 0f;
+            banner.group.alpha = 0f;
             return;
         }
 
-        bannerTime += dt;
-        float t = bannerTime;
+        banner.time += dt;
+        float t = banner.time;
         float scale = 1f;
         float alpha = 1f;
         float lift = 0f;
@@ -205,15 +238,15 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
         }
         else
         {
-            bannerTime = -1f;
-            bannerGroup.alpha = 0f;
+            banner.time = -1f;
+            banner.group.alpha = 0f;
             return;
         }
 
-        bannerRect.localScale = Vector3.one * scale;
-        bannerRect.anchoredPosition = new Vector2(0f, lift);
-        bannerGroup.alpha = alpha;
-        bannerText.color = Color.Lerp(Color.white, levelUpColor, Mathf.Clamp01(t / 0.15f)); // white flash on arrival
+        banner.rect.localScale = Vector3.one * scale;
+        banner.rect.anchoredPosition = new Vector2(0f, lift);
+        banner.group.alpha = alpha;
+        banner.text.color = Color.Lerp(Color.white, banner.color, Mathf.Clamp01(t / 0.15f)); // white flash on arrival
     }
 
     private static float EaseOutBack(float t)
@@ -311,6 +344,7 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
                 orb.rect.anchoredPosition = orb.start;
                 orb.rect.localScale = Vector3.zero;
                 orb.root.SetActive(true);
+                SoundManager.Play(Sfx.OrbLaunch);
 
                 // Small pop each time an orb comes out of the brick.
                 int pop = Mathf.RoundToInt(UnityEngine.Random.Range(3, 6) * particleAmount);
@@ -355,6 +389,11 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
         int amount = orb.amount;
         orb.onArrive = null;
         callback?.Invoke(amount); // the XP is added now, which also pulses the bar
+
+        // Quick successions climb in pitch, like a combo.
+        orbChain = Time.unscaledTime - lastOrbArrival < 0.35f ? orbChain + 1 : 0;
+        lastOrbArrival = Time.unscaledTime;
+        SoundManager.Play(Sfx.OrbCollect, 1f + Mathf.Min(orbChain, 12) * 0.05f);
     }
 
     // The tip of the filled part of the bar, in canvas coordinates.
@@ -412,7 +451,7 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1080f, 1920f);
         scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 0.5f;
+        scaler.matchWidthOrHeight = 0f; // portrait: width is the limiting side, taller phones just get more height
 
         safeArea = NewRect("SafeArea", canvasObject.transform);
         Stretch(safeArea);
@@ -447,29 +486,51 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
         fillRect.pivot = new Vector2(0f, 0.5f);
         fillRect.offsetMin = fillRect.offsetMax = Vector2.zero;
 
-        // XP numbers under the bar.
-        xpText = NewText("XpNumbers", safeArea, "0/10", 4f, new Color(1f, 1f, 1f, 0.8f), PixelText.Align.Right);
-        Place(xpText.rectTransform, new Vector2(0f, 1f), new Vector2(0.5f, 0.5f), new Vector2(540f, -146f), new Vector2(560f, 32f));
+        // XP numbers centered inside the bar, drawn over the fill. A dark outline keeps them readable on the bright fill.
+        xpText = NewText("XpNumbers", track, "0/10", 4f, Color.white, PixelText.Align.Center);
+        Stretch(xpText.rectTransform);
+        AddRetroShadow(xpText, new Color(0.02f, 0.03f, 0.1f, 0.9f), 3f, 3f);
 
-        // Level up banner, centered horizontally at the chosen height (not limited to the safe area).
-        bannerRect = NewRect("LevelUpBanner", canvasObject.transform);
-        Place(bannerRect, new Vector2(0.5f, bannerHeight), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(900f, 140f));
-        bannerGroup = bannerRect.gameObject.AddComponent<CanvasGroup>();
-        bannerGroup.interactable = false;
-        bannerGroup.blocksRaycasts = false;
-        bannerGroup.alpha = 0f;
-
-        bannerText = NewText("LevelUpText", bannerRect, "LEVEL UP!", 14f, levelUpColor, PixelText.Align.Center);
-        Stretch(bannerText.rectTransform);
-        var outline = bannerText.gameObject.AddComponent<Outline>();
-        outline.effectColor = levelUpOutlineColor;
-        outline.effectDistance = new Vector2(6f, 6f);
-        var shadow = bannerText.gameObject.AddComponent<Shadow>();
-        shadow.effectColor = levelUpOutlineColor;
-        shadow.effectDistance = new Vector2(0f, -12f);
+        // Banners, centered horizontally at their heights (not limited to the safe area).
+        levelUpBanner = BuildBanner("LevelUpBanner", canvasObject.transform, "LEVEL UP!", bannerHeight, levelUpColor, levelUpOutlineColor, false);
+        clearBanner = BuildBanner("ClearBanner", canvasObject.transform, "CLEAR!", clearBannerHeight, clearColor, clearOutlineColor, true);
 
         BuildXpEffects(canvasObject.transform);
         return canvas;
+    }
+
+    // Big pixel word with a dark outline and a hard drop shadow, plus an optional small line under it.
+    private static Banner BuildBanner(string name, Transform parent, string word, float height, Color color, Color outlineColor, bool withSubtitle)
+    {
+        var banner = new Banner { color = color };
+        banner.rect = NewRect(name, parent);
+        Place(banner.rect, new Vector2(0.5f, height), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(900f, 140f));
+        banner.group = banner.rect.gameObject.AddComponent<CanvasGroup>();
+        banner.group.interactable = false;
+        banner.group.blocksRaycasts = false;
+        banner.group.alpha = 0f;
+
+        banner.text = NewText(name + "Text", banner.rect, word, 14f, color, PixelText.Align.Center);
+        Stretch(banner.text.rectTransform);
+        AddRetroShadow(banner.text, outlineColor, 6f, 12f);
+
+        if (withSubtitle)
+        {
+            banner.subtitle = NewText(name + "Subtitle", banner.rect, "", 6f, Color.white, PixelText.Align.Center);
+            Place(banner.subtitle.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -100f), new Vector2(900f, 50f));
+            AddRetroShadow(banner.subtitle, outlineColor, 3f, 6f);
+        }
+        return banner;
+    }
+
+    private static void AddRetroShadow(PixelText text, Color color, float outline, float drop)
+    {
+        var outlineEffect = text.gameObject.AddComponent<Outline>();
+        outlineEffect.effectColor = color;
+        outlineEffect.effectDistance = new Vector2(outline, outline);
+        var shadow = text.gameObject.AddComponent<Shadow>();
+        shadow.effectColor = color;
+        shadow.effectDistance = new Vector2(0f, -drop);
     }
 
     private static RectTransform NewRect(string name, Transform parent)

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -12,7 +13,7 @@ using UnityEngine.InputSystem;
 [DisallowMultipleComponent]
 public class BallController : MonoBehaviour
 {
-    private enum State { Waiting, Flying }
+    private enum State { Waiting, Flying, Lost }
 
     [Header("Speed")]
     [SerializeField, Min(0.1f)] private float baseSpeed = 10f;
@@ -41,7 +42,7 @@ public class BallController : MonoBehaviour
     [Tooltip("World Z below which the ball counts as lost.")]
     [SerializeField] private float loseZ = -3f;
 
-    /// <summary>Raised when the ball falls past the paddle. By default it then returns to the paddle.</summary>
+    /// <summary>Raised when the ball falls past the paddle. It then returns to the paddle, unless <see cref="AutoReset"/> is off.</summary>
     public event Action<BallController> BallLost;
     /// <summary>Raised after every bounce, once the final direction is set.</summary>
     public event Action<BallController, Collision> Bounced;
@@ -51,8 +52,40 @@ public class BallController : MonoBehaviour
     public float CurrentSpeed => baseSpeed * (1f + boost);
     public bool IsFlying => state == State.Flying;
 
+    /// <summary>
+    /// When true (default) a lost ball goes back to the paddle. When false it stops where it is and stays lost,
+    /// so a game manager can end the run.
+    /// </summary>
+    public bool AutoReset { get; set; } = true;
+
     /// <summary>Hit points removed from a brick per hit.</summary>
     public int Damage => Mathf.Max(1, damage);
+
+    private static readonly List<BallController> active = new();
+
+    /// <summary>Every enabled ball: the main one and any temporary extras (multi-ball).</summary>
+    public static IReadOnlyList<BallController> Active => active;
+
+    /// <summary>True for temporary copies made by <see cref="SpawnExtra"/>. Losing one never ends the run.</summary>
+    public bool IsExtra { get; private set; }
+
+    /// <summary>
+    /// Spawns a copy of this ball (same speed and damage, upgrades included) flying in <paramref name="direction"/>.
+    /// The copy ignores collisions with the other balls and is destroyed if it falls past the paddle.
+    /// </summary>
+    public BallController SpawnExtra(Vector3 direction)
+    {
+        BallController extra = Instantiate(this, transform.position, Quaternion.identity);
+        extra.name = $"{name} (Extra)";
+        extra.IsExtra = true;
+        extra.AutoReset = false;
+        extra.StartFlying(body.position, direction);
+
+        SphereCollider ownCollider = extra.GetComponent<SphereCollider>();
+        foreach (BallController other in active)
+            if (other != extra) Physics.IgnoreCollision(ownCollider, other.GetComponent<SphereCollider>());
+        return extra;
+    }
 
     /// <summary>Multiplies the base speed (upgrades). 1.1 = 10% faster.</summary>
     public void MultiplyBaseSpeed(float factor) => baseSpeed *= Mathf.Max(0.1f, factor);
@@ -80,6 +113,9 @@ public class BallController : MonoBehaviour
         ResetToPaddle();
     }
 
+    private void OnEnable() => active.Add(this);
+    private void OnDisable() => active.Remove(this);
+
     private void Update()
     {
         if (Time.timeScale == 0f) return; // paused (menus): ignore taps
@@ -89,6 +125,8 @@ public class BallController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        if (state == State.Lost) return;
+
         if (state == State.Waiting)
         {
             FollowPaddle();
@@ -103,8 +141,19 @@ public class BallController : MonoBehaviour
 
         if (body.position.z < loseZ)
         {
-            BallLost?.Invoke(this);
-            ResetToPaddle();
+            if (AutoReset)
+            {
+                BallLost?.Invoke(this);
+                ResetToPaddle();
+            }
+            else
+            {
+                // Stop for good (set the state first so the event is raised only once).
+                state = State.Lost;
+                body.linearVelocity = Vector3.zero;
+                body.isKinematic = true;
+                BallLost?.Invoke(this);
+            }
         }
     }
 
@@ -158,6 +207,35 @@ public class BallController : MonoBehaviour
         state = State.Flying;
         body.isKinematic = false;
         body.linearVelocity = Direction * CurrentSpeed;
+        SoundManager.Play(Sfx.Launch);
+    }
+
+    /// <summary>
+    /// Turns a temporary extra into a normal ball: it stops fading, regains its size and no longer expires.
+    /// Used when the main ball is lost while an extra is still flying.
+    /// </summary>
+    public void PromoteToMain()
+    {
+        if (!IsExtra) return;
+        IsExtra = false;
+        name = name.Replace(" (Extra)", "");
+        if (TryGetComponent(out TemporaryBall temporary)) temporary.Cancel();
+    }
+
+    // Starts flying right away from a given spot (extras skip the paddle and the launch sound).
+    private void StartFlying(Vector3 position, Vector3 direction)
+    {
+        position.y = planeY;
+        transform.position = position;
+        body.isKinematic = false;
+        body.position = position;
+        boost = 0f;
+        Direction = ClampDirection(direction);
+        state = State.Flying;
+        body.linearVelocity = Direction * CurrentSpeed;
+
+        // The copied trail would draw a line from the original ball's position.
+        foreach (TrailRenderer trail in GetComponentsInChildren<TrailRenderer>()) trail.Clear();
     }
 
     /// <summary>Puts the ball back on the paddle, waiting for launch.</summary>

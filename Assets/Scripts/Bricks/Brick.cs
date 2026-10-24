@@ -11,9 +11,23 @@ using UnityEngine;
 public class Brick : MonoBehaviour
 {
     private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+    private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
 
     [SerializeField] private Renderer targetRenderer;
     [SerializeField] private BrickPalette palette;
+
+    [Header("Neon")]
+    [Tooltip("Brightness of the brick body compared to its HP color (the glow does the rest).")]
+    [SerializeField, Range(0f, 1f)] private float bodyBrightness = 0.15f;
+    [Tooltip("Glow strength of the neon outline (the material's emission map). Above 1 the bloom picks it up.")]
+    [SerializeField, Min(0f)] private float glowIntensity = 2.4f;
+
+    [Header("Shape")]
+    [Tooltip("Rounded corners with a built-in neon outline (visual only, the stack's box collider is unchanged).")]
+    [SerializeField] private bool roundedShape = true;
+    [SerializeField, Min(0f)] private float cornerRadius = 0.12f;
+    [Tooltip("Width of the glowing outline band, in world units.")]
+    [SerializeField, Min(0.005f)] private float outlineWidth = 0.05f;
 
     [Header("Hit Juice")]
     [SerializeField, Min(0f)] private float colorFadeTime = 0.12f;
@@ -36,6 +50,23 @@ public class Brick : MonoBehaviour
     public event Action<Brick, int> Damaged;
     /// <summary>Raised once, the moment the brick's hit points reach zero.</summary>
     public event Action<Brick> Destroyed;
+
+    /// <summary>The toughest brick currently spawning: the end of the palette gradient. Set by the grid.</summary>
+    public static int ColorScaleMaxHp { get; private set; } = 5;
+
+    private static event Action ColorScaleChanged;
+
+    /// <summary>Changes the gradient scale. Every living brick recolors with a small pulse.</summary>
+    public static void SetColorScale(int maxHitPoints)
+    {
+        int clamped = Mathf.Max(1, maxHitPoints);
+        if (clamped == ColorScaleMaxHp) return;
+        ColorScaleMaxHp = clamped;
+        ColorScaleChanged?.Invoke();
+    }
+
+    /// <summary>Sets the scale without recoloring anyone (new run).</summary>
+    public static void ResetColorScale(int maxHitPoints) => ColorScaleMaxHp = Mathf.Max(1, maxHitPoints);
 
     public int MaxHitPoints { get; private set; } = 1;
     public int HitPoints { get; private set; } = 1;
@@ -69,15 +100,53 @@ public class Brick : MonoBehaviour
         enabled = false; // Update only runs while an animation is playing.
     }
 
-    /// <summary>Called by the grid right after spawning and scaling the brick.</summary>
+    /// <summary>
+    /// Sets the brick's size. With the rounded shape the mesh is built at that size and the scale stays 1,
+    /// so the corners stay round instead of being stretched. Call before <see cref="Initialize"/>.
+    /// </summary>
+    public void ApplySize(Vector3 size)
+    {
+        var filter = GetComponent<MeshFilter>();
+        if (roundedShape && filter != null)
+        {
+            filter.sharedMesh = RoundedBoxMesh.GetShared(size, cornerRadius, outlineWidth);
+            transform.localScale = Vector3.one;
+        }
+        else
+        {
+            transform.localScale = size;
+        }
+    }
+
+    /// <summary>Called by the grid right after spawning and sizing the brick.</summary>
     public void Initialize(int hitPoints, BrickPalette brickPalette)
     {
         palette = brickPalette;
         MaxHitPoints = HitPoints = Mathf.Max(1, hitPoints);
         baseScale = transform.localScale;
-        shownColor = targetColor = palette != null ? palette.GetColor(HitPoints) : Color.white;
+        shownColor = targetColor = CurrentColor();
         ApplyColor(shownColor);
         enabled = false;
+
+        ColorScaleChanged -= OnColorScaleChanged;
+        ColorScaleChanged += OnColorScaleChanged;
+    }
+
+    private void OnDestroy() => ColorScaleChanged -= OnColorScaleChanged;
+
+    private Color CurrentColor() => palette != null ? palette.GetColor(HitPoints, ColorScaleMaxHp) : Color.white;
+
+    // The scale moved (the wall got tougher): fade to the new color and pulse so the change is noticeable,
+    // with a couple of embers rising off the brick in its new color.
+    private void OnColorScaleChanged()
+    {
+        if (!IsAlive || shrinking) return;
+        fromColor = shownColor;
+        targetColor = CurrentColor();
+        colorT = 0f;
+        punchT = 0f;
+        enabled = true;
+        NeonFx.Embers(transform.position, targetColor, 2, 0.06f, 0.6f);
     }
 
     /// <summary>Starts hidden (scale 0) and pops in after a delay, with a small overshoot.</summary>
@@ -102,14 +171,16 @@ public class Brick : MonoBehaviour
         if (HitPoints > 0)
         {
             fromColor = shownColor;
-            targetColor = palette != null ? palette.GetColor(HitPoints) : Color.white;
+            targetColor = CurrentColor();
             colorT = 0f;
             punchT = 0f;
             enabled = true;
+            SoundManager.Play(Sfx.BrickHit, 1f + (MaxHitPoints - HitPoints) * 0.08f); // rises as the brick weakens
             Damaged?.Invoke(this, HitPoints);
             return;
         }
 
+        SoundManager.Play(Sfx.BrickBreak);
         Destroyed?.Invoke(this);
         shrinking = true;
         shrinkT = 0f;
@@ -223,7 +294,10 @@ public class Brick : MonoBehaviour
         if (targetRenderer == null) return;
         block ??= new MaterialPropertyBlock();
         targetRenderer.GetPropertyBlock(block);
-        block.SetColor(BaseColorId, color);
+        Color body = color * bodyBrightness;
+        body.a = 1f;
+        block.SetColor(BaseColorId, body);
+        block.SetColor(EmissionColorId, color * glowIntensity); // HDR glow in the HP color
         targetRenderer.SetPropertyBlock(block);
     }
 }

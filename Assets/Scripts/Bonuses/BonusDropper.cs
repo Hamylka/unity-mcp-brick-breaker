@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -45,13 +46,36 @@ public class BonusDropper : MonoBehaviour
         item.Collected += HandleItemCollected;
     }
 
+    /// <summary>Spawns one item of every bonus in a row near the back of the field, to test them without waiting for drops.</summary>
+    [ContextMenu("Debug: Drop Every Bonus")]
+    private void DebugDropEveryBonus()
+    {
+        if (itemPrefab == null || bonuses == null) return;
+        for (int i = 0; i < bonuses.Length; i++)
+        {
+            if (bonuses[i] == null) continue;
+            var position = new Vector3((i - (bonuses.Length - 1) * 0.5f) * 1.5f, itemPrefab.transform.position.y, 5f);
+            BonusItem item = Instantiate(itemPrefab, position, Quaternion.identity);
+            item.Initialize(bonuses[i]);
+            item.Collected += HandleItemCollected;
+        }
+    }
+
     private void HandleItemCollected(BonusItem item, PaddleController paddle)
     {
         BonusDefinition definition = item.Definition;
+
+        // Shared pickup cue; each effect then adds its own sound on top (shield hum, laser charge...).
+        Vector3 at = item.transform.position;
+        SoundManager.Play(Sfx.BonusPickup);
+        NeonFx.Flash(at, definition.Color, 0.8f, 0.14f);
+        NeonFx.Ring(at, definition.Color, 32, 6f);
+        NeonFx.Burst(at, Color.Lerp(definition.Color, Color.white, 0.4f), 16, 3f, 0.08f, 0.4f);
+
         if (definition.Effect != null)
         {
-            BallController[] balls = FindObjectsByType<BallController>();
-            definition.Effect.Apply(new BonusContext(paddle, balls));
+            // Copy the list: effects such as multi-ball add balls while they run.
+            definition.Effect.Apply(new BonusContext(paddle, new List<BallController>(BallController.Active)));
         }
         BonusCollected?.Invoke(definition, paddle);
     }
@@ -62,16 +86,22 @@ public class BonusDropper : MonoBehaviour
 
         float total = 0f;
         foreach (BonusDefinition bonus in bonuses)
-            if (bonus != null) total += bonus.DropWeight;
+            if (IsDroppable(bonus)) total += bonus.DropWeight;
         if (total <= 0f) return null;
 
         float roll = UnityEngine.Random.value * total;
+        BonusDefinition last = null;
         foreach (BonusDefinition bonus in bonuses)
         {
-            if (bonus == null) continue;
+            if (!IsDroppable(bonus)) continue;
+            last = bonus;
             roll -= bonus.DropWeight;
             if (roll <= 0f) return bonus;
         }
-        return bonuses[bonuses.Length - 1];
+        return last;
     }
+
+    // A bonus whose effect says it cannot drop right now (e.g. a shield is already up) is left out of the roll.
+    private static bool IsDroppable(BonusDefinition bonus) =>
+        bonus != null && (bonus.Effect == null || bonus.Effect.CanDrop);
 }

@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// The level-up choice screen: the game fades to black, a row of power-up cards slides in, the player taps one
-/// (it gets a pulsing halo and pixel sparkles) and presses Confirm. A Reroll button is shown but disabled for now.
+/// (it gets a pulsing halo and pixel sparkles) and presses Confirm. The Reroll button swaps the cards for a new roll while rerolls remain.
 /// Built in code, animated with unscaled time so it works while the game is paused.
 /// </summary>
 public class PowerUpScreen : MonoBehaviour
@@ -19,6 +19,7 @@ public class PowerUpScreen : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float dimAmount = 0.8f;
     [SerializeField] private Color cardColor = new(0.08f, 0.1f, 0.22f, 1f);
     [SerializeField] private Color confirmColor = new(0.25f, 0.85f, 0.45f, 1f);
+    [SerializeField] private Color rerollColor = new(0.3f, 0.8f, 0.95f, 1f);
     [SerializeField] private Color disabledColor = new(0.17f, 0.2f, 0.29f, 1f);
 
     [Header("Layout (reference resolution 1080x1920)")]
@@ -33,6 +34,9 @@ public class PowerUpScreen : MonoBehaviour
     [SerializeField, Range(0f, 2f)] private float particleAmount = 1f;
 
     private const int ParticleCapacity = 180;
+    private const float ReferenceWidth = 1080f;
+    // Halo (38) plus the selected card's 6% zoom and breathing, so the side cards' glow is never cut by the screen edge.
+    private const float SideMargin = 60f;
     private const float DimFadeTime = 0.35f;
     private const float CardStagger = 0.09f;
     private const float CardAppearTime = 0.4f;
@@ -68,6 +72,10 @@ public class PowerUpScreen : MonoBehaviour
     private List<PowerUpDefinition> choices = new();
     private Action<PowerUpDefinition> onConfirm;
     private Action onClosed;
+    private Func<PowerUpDefinition, int> stackLookup;
+    private Func<IReadOnlyList<PowerUpDefinition>> rerollSource;
+    private int rerollsLeft;
+    private bool keepDim; // true while new cards slide in after a reroll, so the dim does not fade in again
     private Phase phase = Phase.Hidden;
     private float phaseTime;
     private int selected = -1;
@@ -84,36 +92,75 @@ public class PowerUpScreen : MonoBehaviour
     // ---------------------------------------------------------------- public API
 
     /// <summary>Opens the screen with these choices. onConfirm runs when the player confirms; onClosed after the fade-out.</summary>
+    /// <param name="rerolls">How many times the player may reroll the cards on this screen.</param>
+    /// <param name="reroll">Returns a fresh set of choices; called each time Reroll is pressed.</param>
     public void Show(IReadOnlyList<PowerUpDefinition> options, Func<PowerUpDefinition, int> stackCount,
-        Action<PowerUpDefinition> confirmed, Action closed)
+        Action<PowerUpDefinition> confirmed, Action closed, int rerolls = 0,
+        Func<IReadOnlyList<PowerUpDefinition>> reroll = null)
     {
-        ClearCards();
-        choices = new List<PowerUpDefinition>(options);
+        stackLookup = stackCount;
         onConfirm = confirmed;
         onClosed = closed;
-        selected = -1;
-
-        int count = choices.Count;
-        float width = Mathf.Min(cardWidth, (1000f - cardGap * (count - 1)) / count);
-        for (int i = 0; i < count; i++)
-        {
-            float x = (i - (count - 1) * 0.5f) * (width + cardGap);
-            cards.Add(BuildCard(i, choices[i], stackCount != null ? stackCount(choices[i]) : 0, width, x));
-        }
+        rerollsLeft = reroll != null ? Mathf.Max(0, rerolls) : 0;
+        rerollSource = reroll;
+        keepDim = false;
+        BuildChoices(options);
 
         root.gameObject.SetActive(true);
         phase = Phase.Showing;
         phaseTime = 0f;
         SetDim(0f);
         title.color = new Color(1f, 1f, 1f, 0f);
+        SoundManager.Play(Sfx.CardsAppear);
+        Animate(0f); // apply the starting state now, so the first rendered frame does not flash the cards
+    }
+
+    private void BuildChoices(IReadOnlyList<PowerUpDefinition> options)
+    {
+        ClearCards();
+        choices = new List<PowerUpDefinition>(options);
+        selected = -1;
+
+        // The canvas is always ReferenceWidth wide (it scales with the screen width), so the row of cards is sized to
+        // fit inside it, leaving room on both sides for the halo and the selected card's zoom.
+        int count = choices.Count;
+        float available = ReferenceWidth - 2f * SideMargin - cardGap * (count - 1);
+        float width = Mathf.Min(cardWidth, available / count);
+        for (int i = 0; i < count; i++)
+        {
+            float x = (i - (count - 1) * 0.5f) * (width + cardGap);
+            cards.Add(BuildCard(i, choices[i], stackLookup != null ? stackLookup(choices[i]) : 0, width, x));
+        }
     }
 
     // ---------------------------------------------------------------- interaction
+
+    // Swaps the cards for a new roll: the dim stays, the new cards slide in again.
+    private void RerollCards()
+    {
+        if (phase != Phase.Visible || rerollsLeft <= 0 || rerollSource == null) return;
+        IReadOnlyList<PowerUpDefinition> fresh = rerollSource();
+        if (fresh == null || fresh.Count == 0)
+        {
+            SoundManager.Play(Sfx.Denied);
+            return;
+        }
+
+        rerollsLeft--;
+        foreach (CardView card in cards) Burst(card, 10, 1f);
+        BuildChoices(fresh);
+        keepDim = true;
+        phase = Phase.Showing;
+        phaseTime = 0f;
+        SoundManager.Play(Sfx.CardsAppear);
+        Animate(0f);
+    }
 
     private void SelectCard(int index)
     {
         if (phase != Phase.Visible || index == selected) return;
         selected = index;
+        SoundManager.Play(Sfx.CardSelect);
         // Draw the chosen card last so its halo is not covered by the neighbouring cards.
         cards[index].transform.SetAsLastSibling();
         Burst(cards[index], 18, 1f);
@@ -126,6 +173,7 @@ public class PowerUpScreen : MonoBehaviour
         CardView card = cards[selected];
         Burst(card, 45, 1.6f);
         PowerUpDefinition chosen = choices[selected];
+        SoundManager.Play(Sfx.Confirm);
         phase = Phase.Hiding;
         phaseTime = 0f;
         onConfirm?.Invoke(chosen);
@@ -135,9 +183,12 @@ public class PowerUpScreen : MonoBehaviour
 
     private void Update()
     {
-        if (phase == Phase.Hidden) return;
+        if (phase != Phase.Hidden) Animate(Time.unscaledDeltaTime);
+    }
 
-        float dt = Time.unscaledDeltaTime;
+    // Applies the whole animation at the current time. Also called from Show() with dt = 0.
+    private void Animate(float dt)
+    {
         float time = Time.unscaledTime;
         phaseTime += dt;
 
@@ -147,7 +198,7 @@ public class PowerUpScreen : MonoBehaviour
         {
             case Phase.Showing:
             {
-                float k = Mathf.Clamp01(phaseTime / DimFadeTime);
+                float k = keepDim ? 1f : Mathf.Clamp01(phaseTime / DimFadeTime);
                 dimAlpha = k * dimAmount;
                 titleAlpha = k;
                 float lastCardDone = 0.2f + CardStagger * (cards.Count - 1) + CardAppearTime;
@@ -234,10 +285,12 @@ public class PowerUpScreen : MonoBehaviour
         confirmImage.color = canConfirm ? confirmColor : disabledColor;
         confirmLabel.color = canConfirm ? new Color(0.03f, 0.13f, 0.07f) : new Color(0.45f, 0.5f, 0.62f);
 
-        // Reroll is intentionally dead for now.
-        rerollButton.Interactable = false;
-        rerollImage.color = disabledColor;
-        rerollLabel.color = new Color(0.45f, 0.5f, 0.62f);
+        bool canReroll = phase == Phase.Visible && rerollsLeft > 0;
+        rerollButton.Interactable = canReroll;
+        rerollButton.transform.localScale = Vector3.one * (rerollButton.IsPressed ? 0.94f : 1f);
+        rerollImage.color = canReroll ? rerollColor : disabledColor;
+        rerollLabel.color = canReroll ? new Color(0.02f, 0.1f, 0.14f) : new Color(0.45f, 0.5f, 0.62f);
+        rerollLabel.Text = rerollsLeft > 0 ? $"REROLL x{rerollsLeft}" : "REROLL";
     }
 
     private void FinishHiding()
@@ -384,7 +437,7 @@ public class PowerUpScreen : MonoBehaviour
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1080f, 1920f);
         scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 0.5f;
+        scaler.matchWidthOrHeight = 0f; // portrait: width is the limiting side, taller phones just get more height
         canvasObject.AddComponent<GraphicRaycaster>();
 
         root = (RectTransform)canvasObject.transform;
@@ -420,9 +473,12 @@ public class PowerUpScreen : MonoBehaviour
         particlesRoot.SetSiblingIndex(cardsRoot.GetSiblingIndex());
 
         float buttonY = cardCenterY - cardHeight * 0.5f - 110f;
-        BuildButton("RerollButton", "REROLL", new Vector2(-190f, buttonY), out rerollButton, out rerollImage, out rerollLabel);
-        BuildButton("ConfirmButton", "CONFIRM", new Vector2(190f, buttonY), out confirmButton, out confirmImage, out confirmLabel);
+        BuildButton("RerollButton", "REROLL", new Vector2(-195f, buttonY), out rerollButton, out rerollImage, out rerollLabel);
+        BuildButton("ConfirmButton", "CONFIRM", new Vector2(195f, buttonY), out confirmButton, out confirmImage, out confirmLabel);
         confirmButton.Clicked += ConfirmSelection;
+        confirmButton.DeniedClick += () => SoundManager.Play(Sfx.Denied); // no card chosen yet
+        rerollButton.Clicked += RerollCards;
+        rerollButton.DeniedClick += () => SoundManager.Play(Sfx.Denied);  // no rerolls left
 
         root.gameObject.SetActive(false);
     }
@@ -430,9 +486,10 @@ public class PowerUpScreen : MonoBehaviour
     private void BuildButton(string name, string label, Vector2 position, out UiButton button, out Image image, out PixelText text)
     {
         image = NewImage(name, root, disabledColor, true);
-        Place(image.rectTransform, Vector2.zero, position, new Vector2(320f, 120f));
+        Place(image.rectTransform, Vector2.zero, position, new Vector2(340f, 120f));
         button = image.gameObject.AddComponent<UiButton>();
-        text = NewText("Label", image.rectTransform, label, 6f, Color.white, PixelText.Align.Center);
+        // Size 5 leaves room for "REROLL x1" with padding on both sides.
+        text = NewText("Label", image.rectTransform, label, 5f, Color.white, PixelText.Align.Center);
         Stretch(text.rectTransform);
     }
 
