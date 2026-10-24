@@ -9,15 +9,17 @@ using UnityEngine.UI;
 public class HpScaleNotice : MonoBehaviour
 {
     private const string Message = "TOUGHER BRICKS";
-    private const float PixelSize = 3f;
+    private const float PixelSize = 5f;
     private const float AnchorY = 0.76f;     // fraction of the screen height (LEVEL UP! sits at ~0.62)
     private const float FadeIn = 0.25f;
-    private const float Hold = 1.4f;
+    private const float Hold = 1.8f;
     private const float FadeOut = 0.7f;
     private const float Drift = 24f;         // pixels it floats upward over its life
-    private const float PeakAlpha = 0.8f;
+    private const float PeakAlpha = 1f;
+    private const float PopScale = 0.35f;    // extra scale at the start, settles to 1 during the fade in
 
-    private static readonly Color NoticeColor = new(0.55f, 0.68f, 1f);
+    // Hot amber: a warning color that stands out on the dark scene and the cyan/magenta UI.
+    private static readonly Color NoticeColor = new(1f, 0.62f, 0.12f);
 
     private BrickGrid grid;
     private RectTransform textRect;
@@ -77,7 +79,7 @@ public class HpScaleNotice : MonoBehaviour
 
         textRect = (RectTransform)go.transform;
         textRect.anchorMin = textRect.anchorMax = new Vector2(0.5f, AnchorY);
-        textRect.sizeDelta = new Vector2(800f, 40f);
+        textRect.sizeDelta = new Vector2(900f, 60f);
         textRect.anchoredPosition = Vector2.zero;
     }
 
@@ -104,5 +106,6 @@ public class HpScaleNotice : MonoBehaviour
         c.a = alpha;
         text.color = c;
         textRect.anchoredPosition = new Vector2(0f, Drift * Mathf.Clamp01(time / life));
+        textRect.localScale = Vector3.one * (1f + PopScale * (1f - Mathf.Clamp01(time / FadeIn)));
     }
 }
