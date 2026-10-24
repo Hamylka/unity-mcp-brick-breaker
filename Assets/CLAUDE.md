@@ -41,8 +41,10 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   * **Upgrades (Roguelite style):** on level-up the game slows down to a full stop, then a card screen offers 3 random power-ups (count can be raised later by external stats). The player picks one and confirms. A Reroll button swaps the cards for a new roll (1 per level-up by default, `Base Rerolls` on `PowerUpManager`, extendable through `BonusRerolls`).
   * **Rarities:** Common (grey), Uncommon (green), Rare (blue), Epic (purple), Legendary (gold), picked by weight (60 / 25 / 10 / 4 / 1). Each power-up is a data asset (definition + effect), some with a max stack count.
 - **Power-ups & Items:**
-  * Bonus item drops on brick destruction (falling item caught by the paddle) are implemented but **disabled** (`BonusDropper` turned off). Decision pending on keeping this feature.
-  * Catching the item with the paddle triggers a perk/ability (e.g., Laser, Multi-ball, or other bonuses to be defined later).
+  * Bonus items drop on brick destruction (~8% per brick, `BonusDropper` enabled) and fall toward the paddle. Three bonuses so far, each a `BonusDefinition` + `BonusEffect` asset in `Assets/Data` (drop weights 10 / 6 / 2):
+    * **Multi-Ball:** 2 extra balls fan out from the ball in play for 10 s, shrinking away in the last 2 s. Losing an extra never ends the run.
+    * **Laser:** 15 s, the paddle fires an instant bolt straight ahead every second, dealing the ball's current Damage to the first brick hit.
+    * **Shield:** rare, one at a time. A barrier behind the paddle bounces the ball back once, then breaks.
 - **Art Direction (neon, retro, pixelated):**
   * The 3D scene renders at a fixed 640 px height and is upscaled with nearest-neighbour filtering (`RetroPixelation` on the camera). The UI stays at full resolution.
   * Near-black background, glowing purple grid floor, dark walls with magenta neon tube trims, hot orange ball with a trail, glowing red lose line.
@@ -93,3 +95,10 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 - **Roadmap (in order):**
   1. Decide whether to keep the bonus item drops (currently disabled).
   2. More power-ups (e.g. Laser, Multi-ball).
+
+### [2026-10-24] - Bonus drops: Multi-Ball, Laser, Shield (by Claude)
+- **Done:** `BonusDropper` re-enabled (`dropChance` 0.08, +0.01 per extra HP) with three bonuses (see section 4). `BallController` now has a static `Active` list, `IsExtra` and `SpawnExtra`; `BrickStack.TakeDamage` is the shared way to damage a stack. `BonusEffect.CanDrop` lets a bonus opt out of the roll (Shield, while one is up). Context menu on `BonusDropper`: "Debug: Drop Every Bonus".
+- **Open issues:** not playtested yet. Placeholder sounds (reuses existing Sfx), no HUD timer for the Laser, extra balls fade by shrinking (no alpha). The Shield barrier sits at world Z -2.6 (`ShieldEffect`), check it against the paddle pull-back range.
+- **Roadmap (in order):**
+  1. Playtest the three bonuses and decide whether to keep the feature.
+  2. If kept: dedicated sounds and visual effects (Opus), drop-rate balancing.

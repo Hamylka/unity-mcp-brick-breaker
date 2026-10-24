@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -60,6 +61,32 @@ public class BallController : MonoBehaviour
     /// <summary>Hit points removed from a brick per hit.</summary>
     public int Damage => Mathf.Max(1, damage);
 
+    private static readonly List<BallController> active = new();
+
+    /// <summary>Every enabled ball: the main one and any temporary extras (multi-ball).</summary>
+    public static IReadOnlyList<BallController> Active => active;
+
+    /// <summary>True for temporary copies made by <see cref="SpawnExtra"/>. Losing one never ends the run.</summary>
+    public bool IsExtra { get; private set; }
+
+    /// <summary>
+    /// Spawns a copy of this ball (same speed and damage, upgrades included) flying in <paramref name="direction"/>.
+    /// The copy ignores collisions with the other balls and is destroyed if it falls past the paddle.
+    /// </summary>
+    public BallController SpawnExtra(Vector3 direction)
+    {
+        BallController extra = Instantiate(this, transform.position, Quaternion.identity);
+        extra.name = $"{name} (Extra)";
+        extra.IsExtra = true;
+        extra.AutoReset = false;
+        extra.StartFlying(body.position, direction);
+
+        SphereCollider ownCollider = extra.GetComponent<SphereCollider>();
+        foreach (BallController other in active)
+            if (other != extra) Physics.IgnoreCollision(ownCollider, other.GetComponent<SphereCollider>());
+        return extra;
+    }
+
     /// <summary>Multiplies the base speed (upgrades). 1.1 = 10% faster.</summary>
     public void MultiplyBaseSpeed(float factor) => baseSpeed *= Mathf.Max(0.1f, factor);
 
@@ -85,6 +112,9 @@ public class BallController : MonoBehaviour
         planeY = transform.position.y;
         ResetToPaddle();
     }
+
+    private void OnEnable() => active.Add(this);
+    private void OnDisable() => active.Remove(this);
 
     private void Update()
     {
@@ -178,6 +208,22 @@ public class BallController : MonoBehaviour
         body.isKinematic = false;
         body.linearVelocity = Direction * CurrentSpeed;
         SoundManager.Play(Sfx.Launch);
+    }
+
+    // Starts flying right away from a given spot (extras skip the paddle and the launch sound).
+    private void StartFlying(Vector3 position, Vector3 direction)
+    {
+        position.y = planeY;
+        transform.position = position;
+        body.isKinematic = false;
+        body.position = position;
+        boost = 0f;
+        Direction = ClampDirection(direction);
+        state = State.Flying;
+        body.linearVelocity = Direction * CurrentSpeed;
+
+        // The copied trail would draw a line from the original ball's position.
+        foreach (TrailRenderer trail in GetComponentsInChildren<TrailRenderer>()) trail.Clear();
     }
 
     /// <summary>Puts the ball back on the paddle, waiting for launch.</summary>

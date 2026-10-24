@@ -1743,7 +1743,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 418145484}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e8265b477653b9049bc14cc7c8e78e2c, type: 3}
   m_Name: 
@@ -1751,9 +1751,11 @@ MonoBehaviour:
   grid: {fileID: 1367461215}
   itemPrefab: {fileID: 7994864573363146700, guid: 5338790ee0aeac84a93c857d172d8315, type: 3}
   bonuses:
-  - {fileID: 11400000, guid: 85e87dc5f78297a409a595c8b817e42a, type: 2}
-  dropChance: 0.15
-  extraChancePerHitPoint: 0.04
+  - {fileID: 11400000, guid: 10395ffe854e1a141b80d90a4543b7ae, type: 2}
+  - {fileID: 11400000, guid: 184f69b94f3cd344e81e46f58051ec72, type: 2}
+  - {fileID: 11400000, guid: 3d1bf5ca0acce5243b3f79aa0be4917a, type: 2}
+  dropChance: 0.08
+  extraChancePerHitPoint: 0.01
 --- !u!1 &450154526
 GameObject:
   m_ObjectHideFlags: 0
@@ -2402,6 +2404,7 @@ MonoBehaviour:
   dimAmount: 0.8
   cardColor: {r: 0.08, g: 0.1, b: 0.22, a: 1}
   confirmColor: {r: 0.25, g: 0.85, b: 0.45, a: 1}
+  rerollColor: {r: 0.3, g: 0.8, b: 0.95, a: 1}
   disabledColor: {r: 0.17, g: 0.2, b: 0.29, a: 1}
   cardWidth: 300
   cardHeight: 560
@@ -5138,6 +5141,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 2d6315afb6f474945bcd21e27d2d11bb, type: 2}
   - {fileID: 11400000, guid: 0020b002d16bdfc418532b5df9a015da, type: 2}
   baseChoiceCount: 3
+  baseRerolls: 1
   rarityWeights:
   - 60
   - 25
