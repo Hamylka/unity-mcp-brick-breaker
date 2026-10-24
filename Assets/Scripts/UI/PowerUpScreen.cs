@@ -473,8 +473,8 @@ public class PowerUpScreen : MonoBehaviour
         particlesRoot.SetSiblingIndex(cardsRoot.GetSiblingIndex());
 
         float buttonY = cardCenterY - cardHeight * 0.5f - 110f;
-        BuildButton("RerollButton", "REROLL", new Vector2(-190f, buttonY), out rerollButton, out rerollImage, out rerollLabel);
-        BuildButton("ConfirmButton", "CONFIRM", new Vector2(190f, buttonY), out confirmButton, out confirmImage, out confirmLabel);
+        BuildButton("RerollButton", "REROLL", new Vector2(-195f, buttonY), out rerollButton, out rerollImage, out rerollLabel);
+        BuildButton("ConfirmButton", "CONFIRM", new Vector2(195f, buttonY), out confirmButton, out confirmImage, out confirmLabel);
         confirmButton.Clicked += ConfirmSelection;
         confirmButton.DeniedClick += () => SoundManager.Play(Sfx.Denied); // no card chosen yet
         rerollButton.Clicked += RerollCards;
@@ -486,9 +486,10 @@ public class PowerUpScreen : MonoBehaviour
     private void BuildButton(string name, string label, Vector2 position, out UiButton button, out Image image, out PixelText text)
     {
         image = NewImage(name, root, disabledColor, true);
-        Place(image.rectTransform, Vector2.zero, position, new Vector2(320f, 120f));
+        Place(image.rectTransform, Vector2.zero, position, new Vector2(340f, 120f));
         button = image.gameObject.AddComponent<UiButton>();
-        text = NewText("Label", image.rectTransform, label, 6f, Color.white, PixelText.Align.Center);
+        // Size 5 leaves room for "REROLL x1" with padding on both sides.
+        text = NewText("Label", image.rectTransform, label, 5f, Color.white, PixelText.Align.Center);
         Stretch(text.rectTransform);
     }
 
