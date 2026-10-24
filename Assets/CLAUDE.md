@@ -38,7 +38,7 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   * **XP source:** every ball hit grants 1 XP per HP actually removed from the brick (not on destruction). XP travels as small orbs (one per XP point, max 8 per hit) from the brick to the XP bar, and is only added when the orb lands, with retro pixel particle bursts.
   * **Level curve:** `Required XP = Base XP x (Level ^ Power)`, rounded. Defaults: Base XP = 10 (integer), Power = 1.2. Both editable in the Inspector at runtime for balancing.
   * **HUD:** level badge + rounded XP progress bar (top left), "LEVEL UP!" pixel banner at ~62% of the screen height.
-  * **Upgrades (Roguelite style):** on level-up the game slows down to a full stop, then a card screen offers 3 random power-ups (count can be raised later by external stats). The player picks one and confirms. A Reroll button exists but is disabled for now.
+  * **Upgrades (Roguelite style):** on level-up the game slows down to a full stop, then a card screen offers 3 random power-ups (count can be raised later by external stats). The player picks one and confirms. A Reroll button swaps the cards for a new roll (1 per level-up by default, `Base Rerolls` on `PowerUpManager`, extendable through `BonusRerolls`).
   * **Rarities:** Common (grey), Uncommon (green), Rare (blue), Epic (purple), Legendary (gold), picked by weight (60 / 25 / 10 / 4 / 1). Each power-up is a data asset (definition + effect), some with a max stack count.
 - **Power-ups & Items:**
   * Bonus item drops on brick destruction (falling item caught by the paddle) are implemented but **disabled** (`BonusDropper` turned off). Decision pending on keeping this feature.
@@ -86,3 +86,10 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   1. Switch the build target to Android and test rendering, controls and performance on a real device.
   2. Decide whether to keep the bonus item drops (currently disabled).
   3. More power-ups (e.g. Laser, Multi-ball) and enabling the Reroll button.
+
+### [2026-10-24] - Android build confirmed, Reroll enabled (by Claude)
+- **Done:** the Android build target was tested successfully by another Claude worker (roadmap item 1 is done). Reroll button enabled: it re-rolls the cards with the same rarity weights, shows the remaining count ("REROLL x1"), keeps the dim and slides the new cards in. `PowerUpManager.Base Rerolls` (default 1 per level-up) and `BonusRerolls` for future stats.
+- **Open issues:** reroll not yet playtested in the editor (use the `Debug: Trigger Level Up Choice` context menu on `PowerUpManager`). A reroll can show the same card again, since each roll is independent.
+- **Roadmap (in order):**
+  1. Decide whether to keep the bonus item drops (currently disabled).
+  2. More power-ups (e.g. Laser, Multi-ball).
