@@ -11,6 +11,7 @@ public class LaserCannon : MonoBehaviour
     private const float MaxRange = 40f;
 
     private float remaining;
+    private float totalTime;
     private float interval;
     private float cooldown;
     private Color color;
@@ -21,6 +22,7 @@ public class LaserCannon : MonoBehaviour
     public void Activate(float duration, float fireInterval, Material material, Color boltColor, float width)
     {
         remaining = duration;
+        totalTime = duration;
         interval = fireInterval;
         color = boltColor;
         if (cooldown <= 0f || cooldown > interval) cooldown = Mathf.Min(0.3f, interval); // first shot comes quickly
@@ -51,6 +53,7 @@ public class LaserCannon : MonoBehaviour
             return;
         }
 
+        ActiveBonusTracker.Report("laser", "laser", "LASER", color, remaining, totalTime);
         UpdateBoltFlash(dt);
 
         cooldown -= dt;

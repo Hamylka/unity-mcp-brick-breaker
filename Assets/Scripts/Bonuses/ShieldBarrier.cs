@@ -41,7 +41,11 @@ public class ShieldBarrier : BallSurface
 
     private void Update()
     {
-        if (breakT < 0f) return;
+        if (breakT < 0f)
+        {
+            ActiveBonusTracker.Report("shield", "shield", "SHIELD", new Color(0.3f, 0.9f, 1f, 1f), -1f, 0f);
+            return;
+        }
         breakT += Time.deltaTime;
         float k = Mathf.Clamp01(breakT / BreakTime);
         transform.localScale = new Vector3(startScale.x, startScale.y * (1f - k), startScale.z * (1f + k * 2f));
