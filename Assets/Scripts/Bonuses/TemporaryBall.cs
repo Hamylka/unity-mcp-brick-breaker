@@ -10,7 +10,10 @@ public class TemporaryBall : MonoBehaviour
 {
     private static readonly Color HudColor = new(1f, 0.55f, 0.15f, 1f); // the ball's hot orange
 
+    private static int nextHudId;
+
     private BallController ball;
+    private string hudId; // unique per extra ball, so each gets its own HUD ring
     private float totalTime;
     private TrailRenderer[] trails;
     private float[] trailWidths;
@@ -23,6 +26,7 @@ public class TemporaryBall : MonoBehaviour
     {
         remaining = lifetime;
         totalTime = lifetime;
+        hudId = "multiball#" + nextHudId++;
         fadeTime = Mathf.Max(0.01f, fadeSeconds);
         startScale = transform.localScale;
 
@@ -57,7 +61,7 @@ public class TemporaryBall : MonoBehaviour
             Destroy(gameObject);
             return;
         }
-        ActiveBonusTracker.Report("multiball#" + GetInstanceID(), "multiball", "MULTI-BALL", HudColor, remaining, totalTime);
+        ActiveBonusTracker.Report(hudId, "multiball", "MULTI-BALL", HudColor, remaining, totalTime);
         if (remaining > fadeTime) return;
 
         float k = remaining / fadeTime;
