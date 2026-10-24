@@ -486,9 +486,10 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
         fillRect.pivot = new Vector2(0f, 0.5f);
         fillRect.offsetMin = fillRect.offsetMax = Vector2.zero;
 
-        // XP numbers under the bar.
-        xpText = NewText("XpNumbers", safeArea, "0/10", 4f, new Color(1f, 1f, 1f, 0.8f), PixelText.Align.Left);
-        Place(xpText.rectTransform, new Vector2(0f, 1f), new Vector2(0.5f, 0.5f), new Vector2(540f, -146f), new Vector2(560f, 32f));
+        // XP numbers centered inside the bar, drawn over the fill. A dark outline keeps them readable on the bright fill.
+        xpText = NewText("XpNumbers", track, "0/10", 4f, Color.white, PixelText.Align.Center);
+        Stretch(xpText.rectTransform);
+        AddRetroShadow(xpText, new Color(0.02f, 0.03f, 0.1f, 0.9f), 3f, 3f);
 
         // Banners, centered horizontally at their heights (not limited to the safe area).
         levelUpBanner = BuildBanner("LevelUpBanner", canvasObject.transform, "LEVEL UP!", bannerHeight, levelUpColor, levelUpOutlineColor, false);

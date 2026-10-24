@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -17,7 +18,24 @@ public static class RetroSfxGenerator
 
     // Musical notes (Hz) used by the jingles.
     private const float G4 = 392f, C5 = 523f, E5 = 659f, G5 = 784f, B5 = 988f, C6 = 1047f, D6 = 1175f, E6 = 1319f,
-        G6 = 1568f, B6 = 1976f, D7 = 2349f, A4 = 440f, F4 = 349f, C4 = 262f, G3 = 196f;
+        G6 = 1568f, B6 = 1976f, D7 = 2349f, A4 = 440f, F4 = 349f, C4 = 262f, G3 = 196f,
+        C7 = 2093f, D5 = 587f, A3 = 220f, Gs3 = 208f, A2 = 110f, Gs2 = 104f;
+
+    // Mixing defaults for sounds that are not in the scene's SoundManager yet: (volume, pitch jitter, min interval).
+    // Existing entries are never touched, so values tuned in the Inspector are kept.
+    private static readonly Dictionary<Sfx, (float volume, float jitter, float interval)> NewEntryDefaults = new()
+    {
+        { Sfx.BonusPickup, (0.6f, 0.02f, 0.05f) },
+        { Sfx.BonusExpire, (0.45f, 0f, 0.2f) },
+        { Sfx.LaserCharge, (0.45f, 0f, 0.2f) },
+        { Sfx.LaserShot, (0.35f, 0.06f, 0.05f) },
+        { Sfx.ShieldUp, (0.55f, 0f, 0.2f) },
+        { Sfx.ShieldBreak, (0.7f, 0.03f, 0.1f) },
+        { Sfx.MultiBallSplit, (0.55f, 0.03f, 0.1f) },
+        { Sfx.BallFade, (0.3f, 0.05f, 0.15f) },
+        { Sfx.BallPromote, (0.6f, 0f, 0.2f) },
+        { Sfx.HpScaleUp, (0.45f, 0f, 0.5f) },
+    };
 
     [MenuItem("Tools/Brick Breaker/Generate Sound Effects")]
     public static void GenerateAll()
@@ -71,8 +89,95 @@ public static class RetroSfxGenerator
         Save(Sfx.Restart, Mix((0f, Tone(0.3f, 200f, 1200f, Wave.Square, 0.5f, decay: 0.2f)),
                               (0f, Tone(0.3f, 100f, 600f, Wave.Triangle, 0.4f, decay: 0.2f))));
 
+        // Bonus items
+        // Pickup: a quick bright arpeggio landing on a shimmering high note, over a hiss of sparkle.
+        Save(Sfx.BonusPickup, Mix((0f, Arp(new[] { G5, C6, E6, G6 }, 0.04f, Wave.Square, 0.45f, 0.25f)),
+                                  (0.16f, Tone(0.28f, C7, C7, Wave.Triangle, 0.4f, decay: 0.15f, vibratoHz: 11f, vibratoDepth: 0.02f)),
+                                  (0f, Tone(0.22f, 4000f, 9000f, Wave.Noise, 0.12f, decay: 0.08f))));
+        // Expire (laser running out): the pickup's mirror, a short falling "power down".
+        Save(Sfx.BonusExpire, Mix((0f, Arp(new[] { G5, D5, G4 }, 0.06f, Wave.Triangle, 0.5f)),
+                                  (0f, Tone(0.25f, 520f, 140f, Wave.Square, 0.25f, duty: 0.125f, decay: 0.12f))));
+        // Laser charge: a warbling saw sweeping up, the cannon powering on.
+        Save(Sfx.LaserCharge, Mix((0f, Tone(0.38f, 200f, 1600f, Wave.Saw, 0.4f, decay: 0.3f, vibratoHz: 22f, vibratoDepth: 0.06f)),
+                                  (0f, Tone(0.38f, 100f, 800f, Wave.Square, 0.25f, duty: 0.25f, decay: 0.3f)),
+                                  (0.3f, Tone(0.12f, 1600f, 1600f, Wave.Square, 0.3f, duty: 0.25f, decay: 0.05f))));
+        // Laser shot: the classic "pew", a fast falling square with a crack of noise on top.
+        Save(Sfx.LaserShot, Mix((0f, Tone(0.13f, 1700f, 230f, Wave.Square, 0.55f, duty: 0.25f, decay: 0.06f)),
+                                (0f, Tone(0.05f, 9000f, 3000f, Wave.Noise, 0.25f, decay: 0.02f))));
+        // Shield up: a rising shimmer that settles on a soft open fifth.
+        Save(Sfx.ShieldUp, Mix((0f, Tone(0.28f, 220f, 880f, Wave.Triangle, 0.5f, decay: 0.25f)),
+                               (0f, Tone(0.28f, 440f, 1760f, Wave.Square, 0.2f, duty: 0.125f, decay: 0.2f, vibratoHz: 14f, vibratoDepth: 0.03f)),
+                               (0.22f, Tone(0.45f, C5, C5, Wave.Triangle, 0.4f, decay: 0.25f, vibratoHz: 6f, vibratoDepth: 0.015f)),
+                               (0.22f, Tone(0.45f, G5, G5, Wave.Triangle, 0.3f, decay: 0.25f, vibratoHz: 6f, vibratoDepth: 0.015f))));
+        // Shield break: glass shatter. A bright noise burst, scattered high pings and a low thud.
+        Save(Sfx.ShieldBreak, Mix((0f, Tone(0.4f, 9000f, 2500f, Wave.Noise, 0.6f, decay: 0.12f)),
+                                  (0f, Tone(0.22f, 170f, 55f, Wave.Triangle, 0.7f, decay: 0.08f)),
+                                  (0.01f, Tone(0.06f, 2640f, 2600f, Wave.Square, 0.2f, duty: 0.25f, decay: 0.03f)),
+                                  (0.05f, Tone(0.06f, 3520f, 3480f, Wave.Square, 0.18f, duty: 0.25f, decay: 0.03f)),
+                                  (0.09f, Tone(0.06f, 2200f, 2180f, Wave.Square, 0.16f, duty: 0.25f, decay: 0.03f)),
+                                  (0.14f, Tone(0.06f, 3100f, 3060f, Wave.Square, 0.12f, duty: 0.25f, decay: 0.03f))));
+        // Multi-ball split: three quick rising blips, one per ball.
+        Save(Sfx.MultiBallSplit, Mix((0f, Tone(0.06f, 700f, 900f, Wave.Square, 0.5f, duty: 0.25f, decay: 0.04f)),
+                                     (0.06f, Tone(0.06f, 900f, 1150f, Wave.Square, 0.5f, duty: 0.25f, decay: 0.04f)),
+                                     (0.12f, Tone(0.12f, 1150f, 1500f, Wave.Square, 0.5f, duty: 0.25f, decay: 0.06f)),
+                                     (0f, Tone(0.24f, 175f, 350f, Wave.Triangle, 0.4f, decay: 0.12f))));
+        // Ball fade: an extra ball blinking out, small and soft.
+        Save(Sfx.BallFade, Tone(0.18f, 900f, 300f, Wave.Triangle, 0.5f, decay: 0.07f));
+        // Ball promote: a short heroic two-note call when an extra takes over as the main ball.
+        Save(Sfx.BallPromote, Mix((0f, Tone(0.09f, G5, G5, Wave.Square, 0.45f, decay: 0.07f)),
+                                  (0.09f, Tone(0.35f, C6, C6, Wave.Square, 0.45f, decay: 0.2f, vibratoHz: 8f, vibratoDepth: 0.02f)),
+                                  (0.09f, Tone(0.35f, C5, C5, Wave.Triangle, 0.45f, decay: 0.2f))));
+
+        // Difficulty
+        // HP scale-up: a low, slightly ominous "dun-dun" (half step down) with a rumble. Kept quiet and short.
+        Save(Sfx.HpScaleUp, Mix((0f, Tone(0.16f, A3, A3, Wave.Square, 0.35f, decay: 0.1f)),
+                                (0f, Tone(0.16f, A2, A2, Wave.Triangle, 0.5f, decay: 0.1f)),
+                                (0.18f, Tone(0.45f, Gs3, Gs3 * 0.97f, Wave.Square, 0.35f, decay: 0.25f, vibratoHz: 6f, vibratoDepth: 0.02f)),
+                                (0.18f, Tone(0.45f, Gs2, Gs2 * 0.97f, Wave.Triangle, 0.5f, decay: 0.25f)),
+                                (0f, Tone(0.6f, 400f, 90f, Wave.Noise, 0.12f, decay: 0.25f))));
+
         AssetDatabase.Refresh();
+        RegisterNewSounds();
         Debug.Log($"Sound effects generated in {Folder}.");
+    }
+
+    /// <summary>
+    /// Adds an entry to the open scene's <see cref="SoundManager"/> for every sound it does not list yet,
+    /// so a new <see cref="Sfx"/> value is heard right after generating. Save the scene afterwards.
+    /// </summary>
+    private static void RegisterNewSounds()
+    {
+        SoundManager manager = Object.FindAnyObjectByType<SoundManager>(FindObjectsInactive.Include);
+        if (manager == null) return;
+
+        var serialized = new SerializedObject(manager);
+        SerializedProperty list = serialized.FindProperty("sounds");
+        var listed = new HashSet<int>();
+        for (int i = 0; i < list.arraySize; i++)
+            listed.Add(list.GetArrayElementAtIndex(i).FindPropertyRelative("id").intValue);
+
+        int added = 0;
+        foreach (Sfx id in System.Enum.GetValues(typeof(Sfx)))
+        {
+            if (listed.Contains((int)id)) continue;
+            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>($"{Folder}/{id}.wav");
+            if (clip == null) continue;
+
+            (float volume, float jitter, float interval) = NewEntryDefaults.TryGetValue(id, out var d) ? d : (0.6f, 0.04f, 0f);
+            list.InsertArrayElementAtIndex(list.arraySize);
+            SerializedProperty entry = list.GetArrayElementAtIndex(list.arraySize - 1);
+            entry.FindPropertyRelative("id").intValue = (int)id;
+            entry.FindPropertyRelative("clip").objectReferenceValue = clip;
+            entry.FindPropertyRelative("volume").floatValue = volume;
+            entry.FindPropertyRelative("pitchJitter").floatValue = jitter;
+            entry.FindPropertyRelative("minInterval").floatValue = interval;
+            added++;
+        }
+
+        if (added == 0) return;
+        serialized.ApplyModifiedProperties();
+        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty(manager.gameObject.scene);
+        Debug.Log($"Added {added} new sound(s) to the SoundManager. Save the scene to keep them.");
     }
 
     // ---------------------------------------------------------------- synthesis

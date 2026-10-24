@@ -41,18 +41,21 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   * **Upgrades (Roguelite style):** on level-up the game slows down to a full stop, then a card screen offers 3 random power-ups (count can be raised later by external stats). The player picks one and confirms. A Reroll button swaps the cards for a new roll (1 per level-up by default, `Base Rerolls` on `PowerUpManager`, extendable through `BonusRerolls`).
   * **Rarities:** Common (grey), Uncommon (green), Rare (blue), Epic (purple), Legendary (gold), picked by weight (60 / 25 / 10 / 4 / 1). Each power-up is a data asset (definition + effect), some with a max stack count.
 - **Power-ups & Items:**
-  * Bonus items drop on brick destruction (4% per brick, no extra chance for tougher bricks, `BonusDropper` enabled) and fall toward the paddle. Three bonuses so far, each a `BonusDefinition` + `BonusEffect` asset in `Assets/Data`. The relative drop weight (Drop Weight field on each `Bonus_*` asset, editable) is Multi-Ball 2, Laser 6, Shield 3:
+  * Bonus items drop on brick destruction (6% per brick, no extra chance for tougher bricks, `BonusDropper` enabled) and fall toward the paddle. Three bonuses so far, each a `BonusDefinition` + `BonusEffect` asset in `Assets/Data`. The relative drop weight (Drop Weight field on each `Bonus_*` asset, editable) is Multi-Ball 2, Laser 6, Shield 3:
     * **Multi-Ball:** 2 extra balls fan out from the ball in play for 10 s, shrinking away in the last 2 s. Losing an extra never ends the run, and if the main ball is lost while an extra is flying, that extra is promoted to main (stops fading, run continues). The run only ends when the last ball is lost.
     * **Laser:** 15 s, the paddle fires an instant bolt straight ahead every second, dealing the ball's current Damage to the first brick hit.
     * **Shield:** rare, one at a time. A barrier behind the paddle bounces the ball back once, then breaks.
 - **Art Direction (neon, retro, pixelated):**
   * The 3D scene renders at a fixed 640 px height and is upscaled with nearest-neighbour filtering (`RetroPixelation` on the camera). The UI stays at full resolution.
-  * Near-black background, glowing purple grid floor, dark walls with magenta neon tube trims, hot orange ball with a trail, glowing red lose line.
+  * Near-black background, glowing purple grid floor, dark walls with magenta neon tube trims, glowing red lose line.
+  * Ball (`BallVisual`): white-hot core in an orange shell (`BrickBreaker/Neon Fresnel` shader, `M_BallNeon`), halo, light pool on the floor, two-layer trail (thin white core in a wide orange-to-magenta tail), squash and stretch, sparks on every bounce.
+  * Bonus items (`BonusItemVisual` on the prefab): a faceted neon crystal in the bonus color (`M_BonusCrystal`), orbit ring, halo, floor light pool and a short trail.
   * Bricks and the paddle are rounded rectangles (generated mesh, visual only, physics stay boxes) with a dark glassy body and a glowing outline in their color.
+  * One-shot 3D particle effects (bursts, rings, sparks, embers) go through the static `NeonFx` helper: one shared particle system of additive squares (`Resources/FX/M_NeonFx`), no scene setup.
   * Post-processing: bloom, vignette, light chromatic aberration. Neon materials and the post-process profile live in `Assets/Art`.
   * UI: flat dark navy panels, cyan accents, and a built-in pixel font (`PixelFont` / `PixelText`) for all text. TextMeshPro is imported but not used yet.
 - **Audio:**
-  * 20 retro sound effects synthesized in code (**Tools > Brick Breaker > Generate Sound Effects**) and played by `SoundManager` (per-sound volume, pitch variation, rate limiting).
+  * 30 retro sound effects synthesized in code (**Tools > Brick Breaker > Generate Sound Effects**) and played by `SoundManager` (per-sound volume, pitch variation, rate limiting).
   * A 34-second synthwave loop (A minor, 112 BPM), generated with **Tools > Brick Breaker > Generate Music** and played by `MusicPlayer`. It fades in, is muffled while the game is slowed or paused, and fades out with a pitch drop on Game Over.
   * Any generated `.wav` in `Assets/Audio` can be replaced by a hand-made file with the same name.
 
@@ -136,3 +139,31 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   1. Playtest and tune the scaling (rows per proc, multiplier) and the notice.
   2. Dedicated sounds and visual effects for the bonus items (with Opus), plus a subtle cue sound for the HP scale-up.
   3. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
+
+### [2026-10-24] - Bonus and HP scale-up sounds and effects (by Claude)
+- **Done:** 10 new synthesized sounds (`Sfx` values appended at the end: BonusPickup, BonusExpire, LaserCharge, LaserShot, ShieldUp, ShieldBreak, MultiBallSplit, BallFade, BallPromote, HpScaleUp). The generator now adds any missing `Sfx` to the scene's `SoundManager` with default mixing values (existing entries untouched; save the scene after running it). New `NeonFx` static particle helper (`Burst`, `Ring`, `Sparks`, `Flash`, `Embers`, `Line`). Wired in:
+  * **Pickup** (all bonuses): chime + flash, ring and burst in the bonus color at the paddle.
+  * **Laser:** charge-up sweep and sparks on a fresh cannon, "pew" per shot, the bolt now starts fat and thins out, muzzle flash and impact sparks, power-down sound and fizzle when it runs out.
+  * **Shield:** hum-up sound, the barrier unrolls from the middle with a flare, idle glow pulse and drifting sparks, glass-shatter sound and a spray of shards on break. The barrier is now tinted cyan (bonus/HUD color) instead of the magenta tube material.
+  * **Multi-Ball:** split blips, flash and ring on the main ball, streaks along each new path; an expiring extra pops with a soft blip.
+  * **Ball promotion:** two-note call and gold flash + ring on the promoted ball (replaces the reused Confirm sound).
+  * **HP scale-up:** low "dun-dun" cue with the notice, and every living brick throws a couple of embers in its new color.
+- **Open issues:** compiled and generated, not yet heard or seen in play. Mix volumes and particle sizes (vs the 640 px pixelation) are first guesses: tune volumes on the `SoundManager` and sizes in the calls. The shield's collider also grows during the 0.35 s raise, so a ball arriving in that window could slip past the edges.
+- **Roadmap:** see the next entry.
+
+### [2026-10-24] - Neon bonus crystals and ball redesign (by Claude)
+- **Done:** new unlit shader `BrickBreaker/Neon Fresnel` (`Assets/Art/Shaders`): color goes from Core (facing the camera) to Rim (edges), with an optional center hotspot, all HDR for the bloom. Falling bonus items are now faceted crystals (`CrystalMesh`, flat-shaded hexagonal bipyramid) in the bonus color with a tilted orbit ring, halo, floor light pool, bob and trail (`BonusItemVisual`, built in `BonusItem.Initialize`, tunable on the prefab). The ball got `BallVisual` (see section 4); the mesh is drawn by a child so it can squash and stretch without touching the collider, and extra balls reuse the cloned children. `NeonGlow` is the shared helper for additive halo/floor quads (generated radial texture).
+- Checked in play mode with a screenshot: the three crystals read clearly in their colors at the 640 px pixelation, the ball reads as a hot orange core with a magenta-tipped tail.
+- **Open issues:** the crystals are big on purpose (very visible); shrink `Crystal Radius/Height` and `Ring Radius` on the prefab if they feel too large on a phone. The halo and floor light under the ball are subtle; bounce sparks and squash were not judged in motion yet.
+- **Bug to fix later (on its own `fix/...` branch, reported by the user):** level-up card rolls look far too repetitive. Several level-ups in a row offered the same three cards in a different order ("Power Ball", "Quick Ball", "Wide Paddle"). Likely cause, to confirm in `PowerUpManager`: the pool is tiny, 6 power-ups with one or two per rarity (Common: Quick Ball; Uncommon: Wide Paddle, Quick Learner; Rare: Power Ball; Epic: Time Warp; Legendary: Meteor Ball). Drawing 3 distinct cards with 60/25/10/4/1 weights then lands on nearly the same trio every time. Also check the fallback when a rolled rarity has no card left, and the max-stack filtering. Possible fixes: more power-ups per rarity, avoid repeating the previous offer, check the pick logic.
+- **Roadmap (in order):**
+  1. Playtest the new sounds, effects, crystals and ball; tune volumes and sizes.
+  2. Fix the repetitive card rolls (above).
+  3. Playtest and tune the HP scaling (rows per proc, multiplier) and the notice.
+  4. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
+
+### [2026-10-24] - HUD cleanup and crystal brightness (by Claude)
+- **Done:** the active bonus rings no longer show the seconds left (too tiny to read on a phone, the draining ring is enough); `ActiveBonusHud.ShowSeconds` brings them back. The XP numbers ("12/34") now sit centered inside the XP bar with a dark outline, instead of under it. The user toned the bonus crystals down by hand by 25% on the `BonusItem` prefab: `Core Brightness` 0.45, `Ring Intensity` 2.25, `Halo Intensity` 1.5, `Floor Glow Intensity` 1.2 (`Rim Intensity` unchanged at 5). The code defaults in `BonusItemVisual` still hold the older, brighter values; the prefab is the reference.
+- Checked with a play-mode screenshot (HUD with all three bonuses active).
+- **Drop rate (tuned by the user):** bonus drop chance raised from 4% to 6% per brick, still no extra chance per brick HP (`BonusDropper.Drop Chance` 0.06, `Extra Chance Per Hit Point` 0).
+- **Roadmap:** unchanged from the previous entry.

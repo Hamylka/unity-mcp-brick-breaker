@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 3328806862147981667}
   - component: {fileID: 4181006370320728947}
   - component: {fileID: 7994864573363146700}
+  - component: {fileID: 4747777953574979935}
   m_Layer: 0
   m_Name: BonusItem
   m_TagString: Untagged
@@ -157,3 +158,36 @@ MonoBehaviour:
   despawnZ: -4
   spinSpeed: 180
   targetRenderer: {fileID: 3328806862147981667}
+--- !u!114 &4747777953574979935
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8957129332855346550}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7534beed735638429681602c30aef6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BonusItemVisual
+  crystalMaterial: {fileID: 2100000, guid: 22dbd074eaf8d594fa4ceff2c59d6766, type: 2}
+  crystalRadius: 0.27
+  crystalHeight: 0.8
+  coreBrightness: 0.45
+  rimIntensity: 5
+  bobHeight: 0.06
+  bobSpeed: 5
+  ringRadius: 0.46
+  ringWidth: 0.045
+  ringTilt: 16
+  ringSpin: -140
+  ringIntensity: 2.25
+  haloSize: 1.7
+  haloIntensity: 1.5
+  floorGlowSize: 2.3
+  floorGlowIntensity: 1.2
+  floorY: 0.02
+  pulseDepth: 0.25
+  pulseSpeed: 6
+  trailTime: 0.25
+  trailWidth: 0.22

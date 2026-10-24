@@ -8,7 +8,8 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class TemporaryBall : MonoBehaviour
 {
-    private static readonly Color HudColor = new(1f, 0.55f, 0.15f, 1f); // the ball's hot orange
+    /// <summary>The ball's hot orange, used by the HUD row and the multi-ball particles.</summary>
+    public static readonly Color HudColor = new(1f, 0.55f, 0.15f, 1f);
 
     private static int nextHudId;
 
@@ -61,6 +62,9 @@ public class TemporaryBall : MonoBehaviour
         remaining -= Time.deltaTime; // scaled time: the countdown pauses with the game
         if (remaining <= 0f)
         {
+            // Blinks out with a small pop rather than just vanishing.
+            SoundManager.Play(Sfx.BallFade);
+            NeonFx.Burst(transform.position, HudColor, 10, 2.5f, 0.07f, 0.3f);
             Destroy(gameObject);
             return;
         }

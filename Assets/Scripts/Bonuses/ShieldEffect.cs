@@ -21,6 +21,6 @@ public class ShieldEffect : BonusEffect
     {
         if (ShieldBarrier.Current != null) return; // already protected, one at a time
         ShieldBarrier.Create(barrierMaterial, barrierZ, width, thickness);
-        SoundManager.Play(Sfx.Confirm);
+        SoundManager.Play(Sfx.ShieldUp);
     }
 }

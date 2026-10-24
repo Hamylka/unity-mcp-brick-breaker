@@ -41,7 +41,13 @@ public class MultiBallEffect : BonusEffect
 
             BallController extra = source.SpawnExtra(direction);
             extra.gameObject.AddComponent<TemporaryBall>().Begin(duration, fadeTime, procId);
+            NeonFx.Sparks(source.Position, direction, TemporaryBall.HudColor, 6, 6f, 25f, 0.08f, 0.25f); // a streak along each new path
         }
-        if (count > 0) SoundManager.Play(Sfx.OrbCollect);
+        if (count == 0) return;
+
+        // The split: the main ball flashes and throws off a ring, the new balls streak out of it.
+        SoundManager.Play(Sfx.MultiBallSplit);
+        NeonFx.Flash(source.Position, Color.white, 0.7f, 0.12f);
+        NeonFx.Ring(source.Position, TemporaryBall.HudColor, 20, 4f, 0.08f, 0.3f);
     }
 }

@@ -16,11 +16,18 @@ public class LaserCannon : MonoBehaviour
     private float cooldown;
     private Color color;
     private LineRenderer bolt;
+    private float boltWidth;
     private float flash;
 
     /// <summary>Starts (or refreshes) the cannon.</summary>
     public void Activate(float duration, float fireInterval, Material material, Color boltColor, float width)
     {
+        if (bolt == null) // a fresh cannon (a refresh only gets the shared pickup cue)
+        {
+            SoundManager.Play(Sfx.LaserCharge);
+            NeonFx.Sparks(transform.position, Vector3.up, boltColor, 14, 3f, 70f, 0.08f, 0.4f);
+        }
+
         remaining = duration;
         totalTime = duration;
         interval = fireInterval;
@@ -39,6 +46,7 @@ public class LaserCannon : MonoBehaviour
             bolt.enabled = false;
         }
         bolt.sharedMaterial = material;
+        boltWidth = width;
         bolt.widthMultiplier = width;
     }
 
@@ -48,6 +56,8 @@ public class LaserCannon : MonoBehaviour
         remaining -= dt;
         if (remaining <= 0f)
         {
+            SoundManager.Play(Sfx.BonusExpire);
+            NeonFx.Burst(transform.position, color, 12, 2f, 0.07f, 0.35f);
             if (bolt != null) Destroy(bolt.gameObject);
             Destroy(this);
             return;
@@ -85,8 +95,18 @@ public class LaserCannon : MonoBehaviour
         bolt.SetPosition(1, end);
         bolt.enabled = true;
         flash = BoltFlashTime;
-        SetBoltAlpha(1f);
-        SoundManager.Play(Sfx.OrbLaunch);
+        SetBoltFlash(1f);
+        SoundManager.Play(Sfx.LaserShot);
+
+        // Muzzle flash at the paddle, and sparks splashing back off whatever the bolt hit.
+        Color hot = Color.Lerp(color, Color.white, 0.5f);
+        NeonFx.Flash(origin, hot, 0.45f, 0.08f);
+        NeonFx.Sparks(origin, Vector3.forward, color, 5, 3f, 40f, 0.07f, 0.15f);
+        if (nearest < MaxRange)
+        {
+            NeonFx.Flash(end, hot, 0.5f, 0.1f);
+            NeonFx.Sparks(end, Vector3.back, color, 12, 5f, 120f, 0.09f, 0.3f);
+        }
     }
 
     private void UpdateBoltFlash(float dt)
@@ -98,7 +118,14 @@ public class LaserCannon : MonoBehaviour
             bolt.enabled = false;
             return;
         }
-        SetBoltAlpha(flash / BoltFlashTime);
+        SetBoltFlash(flash / BoltFlashTime);
+    }
+
+    // k goes 1 -> 0: the bolt starts fat and bright, then thins and fades, which reads as a zap instead of a line.
+    private void SetBoltFlash(float k)
+    {
+        bolt.widthMultiplier = boltWidth * Mathf.Lerp(0.2f, 1.8f, k * k);
+        SetBoltAlpha(k);
     }
 
     private void SetBoltAlpha(float alpha)
