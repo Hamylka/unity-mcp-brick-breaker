@@ -73,8 +73,24 @@ written by hand.
 
 ### Observations
 
-<!-- To fill in by Maxime: your own comparison of the two models (speed, autonomy, number of corrections needed,
-code quality, how they handled bugs, etc.). -->
+**Overall:** on a project of this scale (a prototype), I haven't found that Opus 5.5 makes a big difference compared
+to Sonnet 5.5. Opus also uses more of the token budget, so as a Claude Pro user, it is probably smarter to stay on
+Sonnet for most features.
+
+**Where Opus stood out:**
+
+- **Art and sound:** the art direction and the sound design were very convincing for a first version. I will probably
+  use Opus for this kind of task when prototyping in the future.
+- **Debugging:** Opus was much stronger here. When Unity froze, it went straight to the Unity logs, explained what
+  was going on and suggested fixes, whereas Sonnet mostly waited for Unity to become responsive again, which felt
+  rougher and more frustrating.
+- **Autonomy:** as a co-worker, Sonnet does its job well, but Opus is more independent: it takes more initiative,
+  for example by asking for permission to read the Unity logs on its own.
+- **Speed:** Opus's reasoning felt faster than Sonnet's, which makes sense since it uses more of the token budget.
+  The time Sonnet spent waiting for Unity probably slowed its side of the project down as well.
+
+**What both did well:** I never had to explain something twice with either model.
+
 
 ## The game
 
