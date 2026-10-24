@@ -8,7 +8,10 @@ using UnityEngine;
 [DisallowMultipleComponent]
 public class TemporaryBall : MonoBehaviour
 {
+    private static readonly Color HudColor = new(1f, 0.55f, 0.15f, 1f); // the ball's hot orange
+
     private BallController ball;
+    private float totalTime;
     private TrailRenderer[] trails;
     private float[] trailWidths;
     private Vector3 startScale;
@@ -19,6 +22,7 @@ public class TemporaryBall : MonoBehaviour
     public void Begin(float lifetime, float fadeSeconds)
     {
         remaining = lifetime;
+        totalTime = lifetime;
         fadeTime = Mathf.Max(0.01f, fadeSeconds);
         startScale = transform.localScale;
 
@@ -53,6 +57,7 @@ public class TemporaryBall : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+        ActiveBonusTracker.Report("multiball", "MULTI-BALL", HudColor, remaining, totalTime);
         if (remaining > fadeTime) return;
 
         float k = remaining / fadeTime;
