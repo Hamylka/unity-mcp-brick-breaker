@@ -41,7 +41,7 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   * **Upgrades (Roguelite style):** on level-up the game slows down to a full stop, then a card screen offers 3 random power-ups (count can be raised later by external stats). The player picks one and confirms. A Reroll button swaps the cards for a new roll (1 per level-up by default, `Base Rerolls` on `PowerUpManager`, extendable through `BonusRerolls`).
   * **Rarities:** Common (grey), Uncommon (green), Rare (blue), Epic (purple), Legendary (gold), picked by weight (60 / 25 / 10 / 4 / 1). Each power-up is a data asset (definition + effect), some with a max stack count.
 - **Power-ups & Items:**
-  * Bonus items drop on brick destruction (~8% per brick, `BonusDropper` enabled) and fall toward the paddle. Three bonuses so far, each a `BonusDefinition` + `BonusEffect` asset in `Assets/Data` (drop weights 10 / 6 / 2):
+  * Bonus items drop on brick destruction (4% per brick, no extra chance for tougher bricks, `BonusDropper` enabled) and fall toward the paddle. Three bonuses so far, each a `BonusDefinition` + `BonusEffect` asset in `Assets/Data`. The relative drop weight (Drop Weight field on each `Bonus_*` asset, editable) is Multi-Ball 3, Laser 6, Shield 2:
     * **Multi-Ball:** 2 extra balls fan out from the ball in play for 10 s, shrinking away in the last 2 s. Losing an extra never ends the run, and if the main ball is lost while an extra is flying, that extra is promoted to main (stops fading, run continues). The run only ends when the last ball is lost.
     * **Laser:** 15 s, the paddle fires an instant bolt straight ahead every second, dealing the ball's current Damage to the first brick hit.
     * **Shield:** rare, one at a time. A barrier behind the paddle bounces the ball back once, then breaks.
@@ -102,3 +102,10 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 - **Roadmap (in order):**
   1. Playtest the three bonuses and decide whether to keep the feature.
   2. If kept: dedicated sounds and visual effects (Opus), drop-rate balancing.
+
+### [2026-10-24] - Bonus drop balancing and last-ball rule (by Claude)
+- **Done:** playtesting showed Multi-Ball appeared too often. Drop chance is now 4% per brick with no extra chance per brick HP (the wall density does not change, so it was not needed). Multi-Ball weight lowered to 3, half of Laser (6); Shield stays rarest at 2. Weights are the `Drop Weight` field on each `Assets/Data/Bonus_*.asset`, so they can be tuned without code. Also: losing the main ball while an extra is flying promotes that extra to main, the run only ends when the last ball is lost.
+- **Open issues:** Laser and Shield not yet judged in playtests. Placeholder sounds, no Laser timer on the HUD.
+- **Roadmap (in order):**
+  1. **Brick HP scaling for the endless run (new, not coded yet):** every X rows, raise the HP of newly spawned bricks so the wall keeps getting tougher the longer a run lasts. X and the amount should be Inspector fields on `BrickGrid`, to be tuned with the existing per-row difficulty ramp.
+  2. Keep or drop the bonus feature after more playtests; if kept, dedicated sounds and visual effects (Opus).
