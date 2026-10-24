@@ -8,9 +8,9 @@ using UnityEngine.UI;
 /// </summary>
 public class HpScaleNotice : MonoBehaviour
 {
-    private const string Message = "DIFFICULTY INCREASING!";
+    private const string Message = "DIFFICULTY INCREASED!";
     private const float PixelSize = 5f;
-    private const float AnchorY = 0.88f;     // fraction of the screen height: just under the XP bar, above the bricks
+    private const float AnchorY = 0.84f;     // fraction of the screen height: just under the XP bar, above the bricks
     private const float FadeIn = 0.25f;
     private const float Hold = 1.8f;
     private const float FadeOut = 0.7f;
