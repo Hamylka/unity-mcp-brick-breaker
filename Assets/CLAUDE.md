@@ -42,7 +42,7 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   * **Rarities:** Common (grey), Uncommon (green), Rare (blue), Epic (purple), Legendary (gold), picked by weight (60 / 25 / 10 / 4 / 1). Each power-up is a data asset (definition + effect), some with a max stack count.
 - **Power-ups & Items:**
   * Bonus items drop on brick destruction (~8% per brick, `BonusDropper` enabled) and fall toward the paddle. Three bonuses so far, each a `BonusDefinition` + `BonusEffect` asset in `Assets/Data` (drop weights 10 / 6 / 2):
-    * **Multi-Ball:** 2 extra balls fan out from the ball in play for 10 s, shrinking away in the last 2 s. Losing an extra never ends the run.
+    * **Multi-Ball:** 2 extra balls fan out from the ball in play for 10 s, shrinking away in the last 2 s. Losing an extra never ends the run, and if the main ball is lost while an extra is flying, that extra is promoted to main (stops fading, run continues). The run only ends when the last ball is lost.
     * **Laser:** 15 s, the paddle fires an instant bolt straight ahead every second, dealing the ball's current Damage to the first brick hit.
     * **Shield:** rare, one at a time. A barrier behind the paddle bounces the ball back once, then breaks.
 - **Art Direction (neon, retro, pixelated):**

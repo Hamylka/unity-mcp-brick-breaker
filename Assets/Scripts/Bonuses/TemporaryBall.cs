@@ -30,6 +30,14 @@ public class TemporaryBall : MonoBehaviour
         ball.BallLost += HandleBallLost;
     }
 
+    /// <summary>Keeps the ball for good: restores its size and trail, and removes this component.</summary>
+    public void Cancel()
+    {
+        transform.localScale = startScale;
+        for (int i = 0; i < trails.Length; i++) trails[i].widthMultiplier = trailWidths[i];
+        Destroy(this);
+    }
+
     private void OnDestroy()
     {
         if (ball != null) ball.BallLost -= HandleBallLost;

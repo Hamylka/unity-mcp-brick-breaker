@@ -210,6 +210,18 @@ public class BallController : MonoBehaviour
         SoundManager.Play(Sfx.Launch);
     }
 
+    /// <summary>
+    /// Turns a temporary extra into a normal ball: it stops fading, regains its size and no longer expires.
+    /// Used when the main ball is lost while an extra is still flying.
+    /// </summary>
+    public void PromoteToMain()
+    {
+        if (!IsExtra) return;
+        IsExtra = false;
+        name = name.Replace(" (Extra)", "");
+        if (TryGetComponent(out TemporaryBall temporary)) temporary.Cancel();
+    }
+
     // Starts flying right away from a given spot (extras skip the paddle and the launch sound).
     private void StartFlying(Vector3 position, Vector3 direction)
     {

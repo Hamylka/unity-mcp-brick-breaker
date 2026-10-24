@@ -108,6 +108,9 @@ public class BrickGrid : MonoBehaviour
     /// <summary>Total rows spawned this run, including the starting wall.</summary>
     public int RowsSpawned => rowsSpawned;
 
+    /// <summary>Changes the ball whose flight gates the wall advance (when an extra ball becomes the main one).</summary>
+    public void SetBall(BallController newBall) => ball = newBall;
+
     /// <summary>Pause or resume the advance (for pause menus, cutscenes, freeze bonuses).</summary>
     public bool AdvanceEnabled
     {
