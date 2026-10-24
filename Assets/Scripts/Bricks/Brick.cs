@@ -51,6 +51,23 @@ public class Brick : MonoBehaviour
     /// <summary>Raised once, the moment the brick's hit points reach zero.</summary>
     public event Action<Brick> Destroyed;
 
+    /// <summary>The toughest brick currently spawning: the end of the palette gradient. Set by the grid.</summary>
+    public static int ColorScaleMaxHp { get; private set; } = 5;
+
+    private static event Action ColorScaleChanged;
+
+    /// <summary>Changes the gradient scale. Every living brick recolors with a small pulse.</summary>
+    public static void SetColorScale(int maxHitPoints)
+    {
+        int clamped = Mathf.Max(1, maxHitPoints);
+        if (clamped == ColorScaleMaxHp) return;
+        ColorScaleMaxHp = clamped;
+        ColorScaleChanged?.Invoke();
+    }
+
+    /// <summary>Sets the scale without recoloring anyone (new run).</summary>
+    public static void ResetColorScale(int maxHitPoints) => ColorScaleMaxHp = Mathf.Max(1, maxHitPoints);
+
     public int MaxHitPoints { get; private set; } = 1;
     public int HitPoints { get; private set; } = 1;
     public bool IsAlive => HitPoints > 0;
@@ -107,9 +124,27 @@ public class Brick : MonoBehaviour
         palette = brickPalette;
         MaxHitPoints = HitPoints = Mathf.Max(1, hitPoints);
         baseScale = transform.localScale;
-        shownColor = targetColor = palette != null ? palette.GetColor(HitPoints) : Color.white;
+        shownColor = targetColor = CurrentColor();
         ApplyColor(shownColor);
         enabled = false;
+
+        ColorScaleChanged -= OnColorScaleChanged;
+        ColorScaleChanged += OnColorScaleChanged;
+    }
+
+    private void OnDestroy() => ColorScaleChanged -= OnColorScaleChanged;
+
+    private Color CurrentColor() => palette != null ? palette.GetColor(HitPoints, ColorScaleMaxHp) : Color.white;
+
+    // The scale moved (the wall got tougher): fade to the new color and pulse so the change is noticeable.
+    private void OnColorScaleChanged()
+    {
+        if (!IsAlive || shrinking) return;
+        fromColor = shownColor;
+        targetColor = CurrentColor();
+        colorT = 0f;
+        punchT = 0f;
+        enabled = true;
     }
 
     /// <summary>Starts hidden (scale 0) and pops in after a delay, with a small overshoot.</summary>
@@ -134,7 +169,7 @@ public class Brick : MonoBehaviour
         if (HitPoints > 0)
         {
             fromColor = shownColor;
-            targetColor = palette != null ? palette.GetColor(HitPoints) : Color.white;
+            targetColor = CurrentColor();
             colorT = 0f;
             punchT = 0f;
             enabled = true;

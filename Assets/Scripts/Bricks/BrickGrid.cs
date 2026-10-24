@@ -76,6 +76,17 @@ public class BrickGrid : MonoBehaviour
     [SerializeField, Min(1)] private int clearWaveRows = 4;
     [Tooltip("Each row spawned after the starting wall makes tougher bricks more likely. 0 = no ramp.")]
     [SerializeField, Min(0f)] private float difficultyPerRow = 0.03f;
+    [Header("HP Scaling")]
+    [Tooltip("Weakest brick HP at the start of a run.")]
+    [SerializeField, Min(1)] private int baseMinHp = 1;
+    [Tooltip("Toughest brick HP at the start of a run. Also the end of the palette gradient.")]
+    [SerializeField, Min(1)] private int baseMaxHp = 5;
+    [Tooltip("Every this many rows spawned after the starting wall, the HP window scales up. 0 = never.")]
+    [SerializeField, Min(0)] private int rowsPerScaling = 10;
+    [Tooltip("Each scaling multiplies the min and max HP by this (compounding, rounded). 1.25 = +25% per proc.")]
+    [SerializeField, Min(1f)] private float hpMultiplier = 1.25f;
+
+    [Header("Endless Spawn Timing")]
     [Tooltip("Pop-in delay between neighbouring bricks of a new row (ripple from the center).")]
     [SerializeField, Min(0f)] private float spawnRipple = 0.04f;
     [Tooltip("Pop-in delay between rows when a whole wall or wave appears.")]
@@ -99,6 +110,15 @@ public class BrickGrid : MonoBehaviour
     public event Action BricksReachedPaddle;
     /// <summary>Raised when a step starts. Hook up camera shake or sound here.</summary>
     public event Action StepStarted;
+    /// <summary>Raised when the HP window scales up (min, max). Hook up the soft "it got harder" warning here.</summary>
+    public event Action<int, int> HpScaled;
+
+    /// <summary>Weakest brick HP that currently spawns.</summary>
+    public int CurrentMinHp { get; private set; } = 1;
+    /// <summary>Toughest brick HP that currently spawns.</summary>
+    public int CurrentMaxHp { get; private set; } = 5;
+    /// <summary>How many times the HP window has scaled up this run.</summary>
+    public int HpScaleTier { get; private set; }
 
     /// <summary>Multiplies the time between steps (upgrades). 1.25 = the wall is 25% slower.</summary>
     public void MultiplyStepInterval(float factor) => stepInterval *= Mathf.Max(0.1f, factor);
@@ -238,6 +258,9 @@ public class BrickGrid : MonoBehaviour
         }
         RemainingBricks = 0;
         rowsSpawned = 0;
+        HpScaleTier = 0;
+        ApplyHpWindow(0);
+        Brick.ResetColorScale(CurrentMaxHp);
 
         // Back to the starting position and fresh timers.
         offset = 0f;
@@ -270,6 +293,17 @@ public class BrickGrid : MonoBehaviour
         rng ??= seed == 0 ? new System.Random() : new System.Random(seed);
 
         int rowNumber = rowsSpawned++;
+
+        // Scale before the row spawns: bricks already on the wall recolor, the new row starts on the new scale.
+        int tier = rowsPerScaling > 0 ? Mathf.Max(0, rowNumber - (rows - 1)) / rowsPerScaling : 0;
+        if (tier > HpScaleTier)
+        {
+            HpScaleTier = tier;
+            ApplyHpWindow(tier);
+            Brick.SetColorScale(CurrentMaxHp);
+            HpScaled?.Invoke(CurrentMinHp, CurrentMaxHp);
+        }
+
         int buildColumns = mirror ? (columns + 1) / 2 : columns;
 
         for (int col = 0; col < buildColumns; col++)
@@ -357,24 +391,34 @@ public class BrickGrid : MonoBehaviour
     }
 
     // Tougher bricks become more likely the deeper into the run we are.
+    // Rolls inside the current [min, max] HP window. The weights curve is stretched across the window.
     private int PickHitPoints(int rowNumber)
     {
-        int count = hitPointWeights.Length;
-        if (palette != null) count = Mathf.Min(count, palette.MaxHitPoints);
+        int min = CurrentMinHp;
+        int max = CurrentMaxHp;
+        if (max <= min) return min;
 
         int extraRows = Mathf.Max(0, rowNumber - (rows - 1));
 
         float total = 0f;
-        for (int i = 0; i < count; i++) total += Weight(i, extraRows);
-        if (total <= 0f) return 1;
+        for (int hp = min; hp <= max; hp++) total += Weight(hp, extraRows);
+        if (total <= 0f) return min;
 
         double roll = rng.NextDouble() * total;
-        for (int i = 0; i < count; i++)
+        for (int hp = min; hp <= max; hp++)
         {
-            roll -= Weight(i, extraRows);
-            if (roll <= 0.0) return i + 1;
+            roll -= Weight(hp, extraRows);
+            if (roll <= 0.0) return hp;
         }
-        return count;
+        return max;
+    }
+
+    // Min and max HP for a scaling tier: base values times hpMultiplier^tier, rounded.
+    private void ApplyHpWindow(int tier)
+    {
+        float factor = Mathf.Pow(hpMultiplier, tier);
+        CurrentMinHp = Mathf.Max(1, Mathf.RoundToInt(baseMinHp * factor));
+        CurrentMaxHp = Mathf.Max(CurrentMinHp, Mathf.RoundToInt(baseMaxHp * factor));
     }
 
     // Fewer gaps the deeper into the run we are.
@@ -384,8 +428,14 @@ public class BrickGrid : MonoBehaviour
         return Mathf.Max(minEmptyChance, emptyChance - emptyChanceDropPerRow * extraRows);
     }
 
-    private float Weight(int index, int extraRows)
+    // Weight of one HP value: the weights curve sampled at its position in the window, then the per-row ramp.
+    private float Weight(int hp, int extraRows)
     {
-        return Mathf.Max(0f, hitPointWeights[index]) * (1f + index * difficultyPerRow * extraRows);
+        float u = CurrentMaxHp > CurrentMinHp ? (hp - CurrentMinHp) / (float)(CurrentMaxHp - CurrentMinHp) : 0f;
+        float position = u * (hitPointWeights.Length - 1);
+        int lower = Mathf.FloorToInt(position);
+        int upper = Mathf.Min(lower + 1, hitPointWeights.Length - 1);
+        float curve = Mathf.Lerp(hitPointWeights[lower], hitPointWeights[upper], position - lower);
+        return Mathf.Max(0f, curve) * (1f + position * difficultyPerRow * extraRows);
     }
 }
