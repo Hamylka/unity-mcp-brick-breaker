@@ -4977,6 +4977,10 @@ MonoBehaviour:
   waveDelay: 0
   clearWaveRows: 4
   difficultyPerRow: 0.05
+  baseMinHp: 1
+  baseMaxHp: 5
+  rowsPerScaling: 5
+  hpMultiplier: 1.75
   spawnRipple: 0.04
   waveRowDelay: 0.06
   dangerZ: 1.8
