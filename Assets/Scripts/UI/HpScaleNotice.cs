@@ -62,11 +62,7 @@ public class HpScaleNotice : MonoBehaviour
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 5; // under the level-up and game over screens
 
-        var scaler = canvasObject.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080f, 1920f);
-        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 0f;
+        ScreenColumn.ConfigureScaler(canvasObject.AddComponent<CanvasScaler>());
 
         var go = new GameObject("Notice", typeof(RectTransform), typeof(CanvasRenderer), typeof(PixelText));
         go.transform.SetParent(canvasObject.transform, false);
