@@ -91,7 +91,6 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
 
     private Banner levelUpBanner;
     private Banner clearBanner;
-    private Rect lastSafeArea;
 
     private float shown;       // animated value:  (level - 1) + fraction of the current level
     private float target;
@@ -159,7 +158,6 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
     private void Update()
     {
         float dt = Time.unscaledDeltaTime;
-        ApplySafeArea();
 
         // Bar: glide toward the target; crossing a whole number means a level was gained.
         shown = Mathf.SmoothDamp(shown, target, ref velocity, fillSmoothTime, Mathf.Infinity, dt);
@@ -255,16 +253,6 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
         const float c3 = c1 + 1f;
         float u = t - 1f;
         return 1f + c3 * u * u * u + c1 * u * u;
-    }
-
-    private void ApplySafeArea()
-    {
-        Rect area = Screen.safeArea;
-        if (area == lastSafeArea) return;
-        lastSafeArea = area;
-        safeArea.anchorMin = new Vector2(area.xMin / Screen.width, area.yMin / Screen.height);
-        safeArea.anchorMax = new Vector2(area.xMax / Screen.width, area.yMax / Screen.height);
-        safeArea.offsetMin = safeArea.offsetMax = Vector2.zero;
     }
 
     // ---------------------------------------------------------------- UI construction
@@ -447,14 +435,10 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
         canvas.sortingOrder = 10;
 
         // Reference layout is 1080x1920 portrait. No GraphicRaycaster: nothing here is interactive.
-        var scaler = canvasObject.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080f, 1920f);
-        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 0f; // portrait: width is the limiting side, taller phones just get more height
+        ScreenColumn.ConfigureScaler(canvasObject.AddComponent<CanvasScaler>());
 
-        safeArea = NewRect("SafeArea", canvasObject.transform);
-        Stretch(safeArea);
+        // Corner HUD lives in the playfield column (inside the safe area), so it stays above the game on wide screens.
+        safeArea = ScreenColumn.Create(canvasObject.transform, "SafeArea");
 
         // Level badge (top left): small "LV" label above a big number.
         badge = NewRect("LevelBadge", safeArea);

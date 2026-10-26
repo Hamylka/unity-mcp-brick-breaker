@@ -433,11 +433,7 @@ public class PowerUpScreen : MonoBehaviour
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 20;
 
-        var scaler = canvasObject.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080f, 1920f);
-        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 0f; // portrait: width is the limiting side, taller phones just get more height
+        ScreenColumn.ConfigureScaler(canvasObject.AddComponent<CanvasScaler>()); // centered layout fits the column
         canvasObject.AddComponent<GraphicRaycaster>();
 
         root = (RectTransform)canvasObject.transform;

@@ -79,9 +79,12 @@ public class BrickBreakerCamera : MonoBehaviour
         lastAspect = cam.aspect;
         if (lockHorizontalFov)
         {
-            // Convert horizontal FOV to vertical FOV for the current aspect ratio.
+            // Convert horizontal FOV to vertical FOV for the current aspect ratio. The FOV is locked on the
+            // playfield column, not the whole screen: on screens wider than 9:16 (Windows landscape) the framing
+            // stays the phone one and the extra width just shows more of the scene on the sides.
+            float aspect = Mathf.Min(cam.aspect, ScreenColumn.Aspect);
             float halfH = horizontalFov * 0.5f * Mathf.Deg2Rad;
-            cam.fieldOfView = 2f * Mathf.Atan(Mathf.Tan(halfH) / cam.aspect) * Mathf.Rad2Deg;
+            cam.fieldOfView = 2f * Mathf.Atan(Mathf.Tan(halfH) / aspect) * Mathf.Rad2Deg;
         }
         else
         {
