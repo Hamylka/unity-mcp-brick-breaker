@@ -176,3 +176,10 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   1. Fix the repetitive card rolls.
   2. Playtest and tune HP scaling, notice, bonus effects on a real device.
   3. More bonus item effects and power-ups.
+
+### [2026-10-26] - README status and roadmap update (by Claude)
+- **Done:** README "Status" now matches v0.1 (bonus drops and Reroll are active) and gains a roadmap.
+- **Roadmap additions (after the existing items):**
+  1. Design a logo for the game.
+  2. Windows version in landscape that does not break the current mobile (portrait) camera setup: keep the portrait camera as is, add a per-platform camera/layout path.
+  3. Special effects on the walls (ideas still to be thought out).
