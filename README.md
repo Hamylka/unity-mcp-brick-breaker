@@ -102,12 +102,12 @@ Sonnet for most features.
 | Bricks | Generated rows of multi-hit bricks, colored by remaining hit points, pushed one row toward the player every few seconds; new rows keep coming, tougher over time |
 | Clear bonus | Clearing every brick grants bonus XP, shows "CLEAR!" and spawns a fresh wave immediately |
 | Progression | Endless XP: each hit grants XP equal to the damage dealt; XP orbs fly to the HUD bar |
-| Power-ups | Roguelite level-up screen: pick one of several cards rolled by rarity (ball damage, ball speed, paddle width, wall slow, XP boost) |
+| Power-ups | Roguelite level-up screen: pick one of several cards rolled by rarity (ball damage, ball speed, paddle width, wall slow, XP boost), with a Reroll button |
 | Game Over | Losing the ball or letting the wall reach the red line ends the run; results screen with best level and Restart |
 | Art | Neon retro look: low-resolution pixel rendering, glowing rounded bricks and paddle, grid floor, bloom |
-| Audio | 20 synthesized retro sound effects and a synthwave music loop, all generated in code |
+| Audio | 30 synthesized retro sound effects and a synthwave music loop, all generated in code |
 | UI | Runtime-generated 5x7 pixel font, flat sprites and pooled pixel particles: no image or font assets |
-| Bonuses | Falling bonus items exist in code but are disabled for now |
+| Bonuses | Falling bonus items (6% per brick): Multi-Ball, Laser and Shield, with a timer HUD |
 
 ## Tech stack
 
@@ -123,7 +123,7 @@ Assets/
   Scripts/
     Ball/  Paddle/  Bricks/  Walls/  Camera/
     Game/              run flow and Game Over
-    Bonuses/           falling bonus items (disabled)
+    Bonuses/           falling bonus items and their effects
     Progression/       XP system
     PowerUps/          level-up power-ups and their effects
     UI/                HUD, card screen, Game Over screen, pixel font, particles
@@ -147,8 +147,17 @@ The sound effects and the music can be regenerated with **Tools > Brick Breaker 
 
 ## Status
 
-Playable prototype with a complete run loop. Bonus item drops are disabled, the Reroll button is not active yet,
-and balancing is not final.
+Version 0.1: playable prototype with a complete run loop. Bonus item drops (Multi-Ball, Laser, Shield) and the Reroll
+button are active. Balancing is not final, and the level-up card rolls are still repetitive (small power-up pool).
+
+### Roadmap
+
+1. Fix the repetitive level-up card rolls.
+2. Playtest and tune HP scaling, bonuses and HUD on a real phone.
+3. Design a logo for the game.
+4. Windows version in landscape, without breaking the current mobile camera setup (separate camera/layout per platform).
+5. Special effects on the walls (ideas still to be thought out).
+6. More bonus items and power-ups.
 
 ## Author
 
