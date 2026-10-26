@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neon Breaker Logo Mix</title>
+<style>
+  :root { --bg:#05040c; --panel:#0d0c1f; --line:#221e4a; --ink:#e8e6ff; --dim:#8d89b8; --cyan:#22e6ff; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 system-ui, sans-serif; padding:24px 16px; }
+  h1 { max-width:1180px; margin:0 auto 20px; font-size:16px; letter-spacing:.25em; color:var(--cyan); }
+  .concept { max-width:1180px; margin:0 auto 32px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px; }
+  .concept h2 { margin:0 0 4px; font-size:15px; letter-spacing:.12em; }
+  .concept p { margin:0 0 16px; color:var(--dim); max-width:760px; }
+  .word svg { width:100%; height:auto; display:block; border-radius:8px; }
+  .icons { display:flex; gap:18px; align-items:flex-end; flex-wrap:wrap; margin-top:18px; }
+  .icons figure { margin:0; text-align:center; color:var(--dim); font-size:11px; }
+  .icons svg { display:block; margin-bottom:6px; }
+</style>
+<script src="logo-lib.js"></script>
+</head>
+<body>
+<h1>NEON BREAKER / LOGO MIX</h1>
+<div id="root"></div>
+<script>
+// ---------- wordmarks ----------
+/** Brick wordmark: pixel NEON, brick BREAKER, the ball smashes the bar of the A. */
+function wordBrick() {
+  const p = 'w1'; let s = defs(p) + `<rect width="1280" height="640" fill="url(#${p}bg)"/>` + grid(p, 1280, 640, 470, 640);
+  const ne = cells('NEON', 2), cs = 15;
+  s += pixels(p, cs, (1280 - ne.cols * cs) / 2, 62, ne.cells, '#ff4fe0', '#ffe3fb');
+  const br = cells('BREAKER', 1), bw = 27, bh = 19, bx = (1280 - br.cols * bw) / 2, by = 192, a = 18;
+  s += brickWord(p, br.cells, bx, by, bw, bh, new Set([`${a + 1},3`, `${a + 2},3`, `${a + 3},3`]), 1.2, 1.6);
+  const hx = bx + (a + 2.5) * bw, hy = by + 3.5 * bh;
+  s += paddle(p, 395, 548, 150, 16);
+  s += ring(p, hx, hy, 34, '#ffffff', 2.5);
+  s += shards(p, hx, hy, 16, [HP[2], HP[1], HP[3], '#ffffff'], 7, 13, -Math.PI / 2, 1.25, 95);
+  s += ball(p, hx, hy, 15, 470, 548);
+  return svg(1280, 640, s);
+}
+/**
+ * The ball leaves the paddle, smashes through the A of BREAKER and becomes the O of NEON.
+ * tubes = true draws NEON as magenta glass tubes (neon sign style), false as glowing pixels.
+ */
+function wordThrough(p, tubes) {
+  let s = defs(p) + `<rect width="1280" height="640" fill="url(#${p}bg)"/>` + grid(p, 1280, 640, 480, 640);
+  const ne = cells('NEON', 2), cs = tubes ? 22 : 15, nx = (1280 - ne.cols * cs) / 2, ny = tubes ? 50 : 62;
+  const letters = ne.cells.filter(q => q.li !== 2);
+  s += tubes ? tube(p, tubePath(cs, nx, ny, letters), cs * .44, MAGENTA) : pixels(p, cs, nx, ny, letters, '#ff4fe0', '#ffe3fb');
+  const ox = nx + 16.5 * cs, oy = ny + 3.5 * cs, or = cs * 2.05;
+
+  const br = cells('BREAKER', 1), bw = 27, bh = 19, bx = (1280 - br.cols * bw) / 2, by = tubes ? 230 : 192, a = 18;
+  const hx = bx + (a + 2.5) * bw, hy = by + 3.5 * bh;
+  // extend the line O -> bar of the A down to the paddle
+  const k = (hx - ox) / (hy - oy), py = 548, px = hx + k * (py - hy);
+  // the path also clips the top right brick of the A
+  const ty = by + bh * .5, tx = hx + k * (ty - hy);
+  s += brickWord(p, br.cells, bx, by, bw, bh, new Set([`${a + 1},3`, `${a + 2},3`, `${a + 3},3`, `${a + 3},0`]), 1.2, 1.6);
+  s += paddle(p, f(px - 75), py, 150, 16);
+  s += ring(p, hx, hy, 30, '#ffffff', 2.5);
+  s += shards(p, hx, hy, 12, [HP[1], HP[2], '#ffffff'], 7, 12, -Math.PI / 2 + .3, 1.3, 85);
+  s += shards(p, tx, ty, 9, [HP[4], HP[3], '#ffffff'], 21, 11, -Math.PI / 3, 1.0, 70);
+  s += ball(p, ox, oy, or, px, py, 15);
+  return svg(1280, 640, s);
+}
+
+// ---------- icons (neon sign frame, wordmark bricks) ----------
+/** Two rows of rounded HP bricks in the magenta tube frame; the ball goes straight up. */
+function iconTwoRows(size) {
+  const p = 'i1' + size; let s = grid(p, 512, 512, 380, 256) + tubeFrame(p);
+  const bw = 100, bh = 46, gx = 14, x0 = (512 - 3 * bw - 2 * gx) / 2; let b = '';
+  [[104, HP[4]], [164, HP[2]]].forEach(([y, col], row) => {
+    for (let i = 0; i < 3; i++) if (!(row === 1 && i === 1)) b += brick(x0 + i * (bw + gx), y, bw, bh, col);
+  });
+  s += bloom(p, b, .9);
+  s += ring(p, 256, 187, 40, '#ffffff', 4);
+  s += shards(p, 256, 187, 12, [HP[2], HP[1], '#ffffff'], 5, 24, -Math.PI / 2, 1.5, 105);
+  s += paddle(p, 186, 412, 140, 22);
+  s += ball(p, 260, 268, 34, 256, 412, 30);
+  return icon(p, s, size);
+}
+/** Three rows like the advancing wall; the ball comes in at an angle like the wordmark. */
+function iconWall(size) {
+  const p = 'i2' + size; let s = grid(p, 512, 512, 392, 256) + tubeFrame(p);
+  const bw = 96, bh = 40, gx = 12, x0 = (512 - 3 * bw - 2 * gx) / 2; let b = '';
+  [[98, HP[4]], [148, HP[3]], [198, HP[1]]].forEach(([y, col], row) => {
+    for (let i = 0; i < 3; i++) if (!(row === 2 && i === 2)) b += brick(x0 + i * (bw + gx), y, bw, bh, col);
+  });
+  s += bloom(p, b, .9);
+  const hx = x0 + 2 * (bw + gx) + bw / 2, hy = 218;
+  s += ring(p, hx, hy, 40, '#ffffff', 4);
+  s += shards(p, hx, hy, 12, [HP[1], '#ffffff', HP[2]], 8, 24, -Math.PI / 2 + .2, 1.4, 100);
+  s += paddle(p, 104, 420, 140, 22);
+  s += ball(p, 334, 280, 32, 174, 420, 28);
+  return icon(p, s, size);
+}
+
+// ---------- page ----------
+const sizes = [240, 120, 64, 40];
+const iconRow = fn => `<div class="icons">${sizes.map(sz => `<figure>${fn(sz)}${sz}px</figure>`).join('')}</div>`;
+const sections = [
+  ['A / BRICK WORDMARK', 'The brick wordmark you liked, unchanged: pixel NEON, BREAKER in neon HP bricks, the ball smashing the bar of the A.', wordBrick()],
+  ['B / BALL BECOMES THE O (PIXEL)', 'Same bricks and pixel NEON, plus the best idea from the neon sign: the ball shoots off the paddle, smashes through the A and becomes the O of NEON. One shot tells the whole game.', wordThrough('w2', false)],
+  ['C / BALL BECOMES THE O (TUBES)', 'As B, but NEON is drawn in the magenta glass tubes of the neon sign, which ties the wordmark to the icon frame.', wordThrough('w3', true)],
+];
+document.getElementById('root').innerHTML = sections.map(([t, d, w]) => `
+  <section class="concept"><h2>${t}</h2><p>${d}</p><div class="word">${w}</div></section>`).join('') + `
+  <section class="concept"><h2>ICON 1 / NEON FRAME, TWO ROWS</h2><p>The neon sign icon you liked, rebuilt with the wordmark's rounded HP bricks and glassy paddle so both belong to the same family.</p>${iconRow(iconTwoRows)}</section>
+  <section class="concept"><h2>ICON 2 / NEON FRAME, WALL</h2><p>Three rows like the advancing wall, with the ball coming in at the same angle as in the wordmark.</p>${iconRow(iconWall)}</section>`;
+</script>
+</body>
+</html>

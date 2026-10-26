@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neon Breaker Logo</title>
+<style>
+  :root { --bg:#05040c; --panel:#0d0c1f; --line:#221e4a; --ink:#e8e6ff; --dim:#8d89b8; --cyan:#22e6ff; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.5 system-ui, sans-serif; padding:24px 16px; }
+  h1 { max-width:1180px; margin:0 auto 20px; font-size:16px; letter-spacing:.25em; color:var(--cyan); }
+  .concept { max-width:1180px; margin:0 auto 32px; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:20px; }
+  .concept h2 { margin:0 0 4px; font-size:15px; letter-spacing:.12em; }
+  .concept p { margin:0 0 16px; color:var(--dim); max-width:760px; }
+  .word svg { width:100%; height:auto; display:block; border-radius:8px; }
+  .icons { display:flex; gap:18px; align-items:flex-end; flex-wrap:wrap; margin-top:18px; }
+  .icons figure { margin:0; text-align:center; color:var(--dim); font-size:11px; }
+  .icons svg { display:block; margin-bottom:6px; }
+</style>
+</head>
+<body>
+<h1>NEON BREAKER / LOGO CONCEPTS</h1>
+<div id="root"></div>
+<script>
+// ---------- 5x7 pixel font, copied from Assets/Scripts/UI/PixelFont.cs ----------
+const FONT_SRC = `
+A .###. #...# #...# ##### #...# #...# #...#
+B ####. #...# #...# ####. #...# #...# ####.
+E ##### #.... #.... ####. #.... #.... #####
+K #...# #..#. #.#.. ##... #.#.. #..#. #...#
+N #...# ##..# #.#.# #..## #...# #...# #...#
+O .###. #...# #...# #...# #...# #...# .###.
+R ####. #...# #...# ####. #.#.. #..#. #...#`;
+const FONT = {};
+FONT_SRC.trim().split('\n').forEach(l => { const p = l.trim().split(' '); FONT[p[0]] = p.slice(1); });
+
+/** Filled cells of a word: {c, r, li (letter index), lc (column inside the letter)}. */
+function cells(text, gap = 1) {
+  const out = []; let x = 0;
+  [...text].forEach((ch, li) => {
+    FONT[ch].forEach((row, r) => [...row].forEach((v, c) => { if (v === '#') out.push({ c: x + c, r, li, lc: c }); }));
+    x += 5 + gap;
+  });
+  return { cells: out, cols: x - gap };
+}
+
+// ---------- palette (matches the game) ----------
+const HP = ['#ffffff', '#7af5ff', '#2fb4ff', '#3a62ff', '#9a3cff']; // 1 HP .. 5 HP
+const MAGENTA = '#ff3fd8', CYAN = '#22e6ff', GRID = '#8a3cff';
+const hex = h => [1, 3, 5].map(i => parseInt(h.substr(i, 2), 16));
+function lerpPal(pal, t) {
+  t = Math.max(0, Math.min(1, t));
+  const k0 = t * (pal.length - 1), i = Math.min(pal.length - 2, Math.floor(k0)), k = k0 - i;
+  const a = hex(pal[i]), b = hex(pal[i + 1]);
+  return '#' + a.map((v, j) => Math.round(v + (b[j] - v) * k).toString(16).padStart(2, '0')).join('');
+}
+function rng(seed) { return () => { seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const f = n => +n.toFixed(1);
+let uid = 0;
+
+// ---------- shared SVG pieces ----------
+function defs(p) {
+  return `<defs>
+  <filter id="${p}g1" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>
+  <filter id="${p}g2" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="9"/></filter>
+  <filter id="${p}g3" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="22"/></filter>
+  <radialGradient id="${p}bg" cx="50%" cy="42%" r="75%"><stop offset="0" stop-color="#1d0e40"/><stop offset=".5" stop-color="#0b0719"/><stop offset="1" stop-color="#030208"/></radialGradient>
+  <radialGradient id="${p}ball" cx="42%" cy="40%" r="62%"><stop offset="0" stop-color="#ffffff"/><stop offset=".3" stop-color="#fff0cc"/><stop offset=".62" stop-color="#ff9a2e"/><stop offset="1" stop-color="#ff3d7a"/></radialGradient>
+  <linearGradient id="${p}fade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".05"/><stop offset="1" stop-color="#fff"/></linearGradient>
+  </defs>`;
+}
+/** Bloom stack: wide haze, mid glow, tight glow, crisp shape. */
+function bloom(p, inner, k = 1, haze = true) {
+  return `${haze ? `<g filter="url(#${p}g3)" opacity="${.5 * k}">${inner}</g>` : ''}<g filter="url(#${p}g2)" opacity="${.75 * k}">${inner}</g><g filter="url(#${p}g1)" opacity="${k}">${inner}</g>${inner}`;
+}
+const svg = (w, h, body, size) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}"${size ? ` width="${size}" height="${size}"` : ''}>${body}</svg>`;
+
+/** Flat synthwave floor with a horizon line. */
+function grid(p, w, h, hy, vx, col = GRID) {
+  let s = '';
+  for (let i = -24; i <= 24; i++) s += `<line x1="${f(vx + i * w * .016)}" y1="${hy}" x2="${f(vx + i * w * .15)}" y2="${h}"/>`;
+  for (let k = 1; k <= 14; k++) { const y = hy + (h - hy) * Math.pow(k / 14, 2.3); s += `<line x1="0" y1="${f(y)}" x2="${w}" y2="${f(y)}"/>`; }
+  const id = p + 'fm' + (uid++);
+  return `<mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="${hy}" width="${w}" height="${h - hy}"><rect x="0" y="${hy}" width="${w}" height="${h - hy}" fill="url(#${p}fade)"/></mask>
+  <g mask="url(#${id})">${bloom(p, `<g stroke="${col}" stroke-width="2" fill="none">${s}</g>`, .7, false)}</g>
+  ${bloom(p, `<line x1="0" y1="${hy}" x2="${w}" y2="${hy}" stroke="${MAGENTA}" stroke-width="2.5"/>`)}`;
+}
+/** Floor grid drawn through a perspective projection proj(X, Z) -> [x, y, scale]. */
+function perspGrid(p, proj, x0, x1, xs, z0, z1, zs, col = GRID) {
+  let s = '';
+  for (let X = x0; X <= x1; X += xs) { const a = proj(X, z0), b = proj(X, z1); s += `<line x1="${f(a[0])}" y1="${f(a[1])}" x2="${f(b[0])}" y2="${f(b[1])}" opacity=".45"/>`; }
+  // rows get further apart with depth, like real floor tiles
+  for (let Z = z0, step = zs; Z <= z1; Z += step, step *= 1.12) { const a = proj(x0, Z), b = proj(x1, Z); s += `<line x1="${f(a[0])}" y1="${f(a[1])}" x2="${f(b[0])}" y2="${f(b[1])}" opacity="${f(Math.max(.06, a[2] * a[2]))}"/>`; }
+  return bloom(p, `<g stroke="${col}" stroke-width="2" fill="none">${s}</g>`, .7, false);
+}
+
+/** Rounded neon brick: dark glassy body, glowing outline, small glint. */
+function brick(x, y, w, h, col) {
+  const sw = Math.max(1.5, h * .14), r = h * .3;
+  return `<rect x="${f(x + sw / 2)}" y="${f(y + sw / 2)}" width="${f(w - sw)}" height="${f(h - sw)}" rx="${f(r)}" fill="${col}" fill-opacity=".13" stroke="${col}" stroke-width="${f(sw)}"/>`
+       + `<line x1="${f(x + r + sw)}" y1="${f(y + sw * 1.9)}" x2="${f(x + w * .42)}" y2="${f(y + sw * 1.9)}" stroke="#fff" stroke-opacity=".55" stroke-width="${f(sw * .55)}" stroke-linecap="round"/>`;
+}
+/** A word made of bricks, colored by row like brick HP (back rows violet, front rows white). */
+function brickWord(p, list, x0, y0, bw, bh, skip = new Set(), gapX = 1.5, gapY = 1.5) {
+  let s = '';
+  list.forEach(q => { if (!skip.has(q.c + ',' + q.r)) s += brick(x0 + q.c * bw + gapX, y0 + q.r * bh + gapY, bw - 2 * gapX, bh - 2 * gapY, lerpPal(HP, 1 - q.r / 6)); });
+  return bloom(p, s, .9);
+}
+/** Solid glowing pixels with a hot core. */
+function pixels(p, cs, x0, y0, list, col, core) {
+  let a = '', b = '';
+  list.forEach(({ c, r }) => {
+    const x = x0 + c * cs, y = y0 + r * cs, g = cs * .09;
+    a += `<rect x="${f(x + g)}" y="${f(y + g)}" width="${f(cs - 2 * g)}" height="${f(cs - 2 * g)}" rx="${f(cs * .14)}"/>`;
+    b += `<rect x="${f(x + cs * .28)}" y="${f(y + cs * .28)}" width="${f(cs * .44)}" height="${f(cs * .44)}" rx="${f(cs * .08)}"/>`;
+  });
+  return bloom(p, `<g fill="${col}">${a}</g>`) + `<g fill="${core}" opacity=".85">${b}</g>`;
+}
+/** Neon tube path through the centers of a word's pixels (diagonals round the corners). */
+function tubePath(cs, x0, y0, list) {
+  const set = new Set(list.map(q => q.c + ',' + q.r)), has = (c, r) => set.has(c + ',' + r);
+  const P = (c, r) => `${f(x0 + c * cs + cs / 2)},${f(y0 + r * cs + cs / 2)}`;
+  let d = '';
+  list.forEach(({ c, r }) => {
+    if (has(c + 1, r)) d += `M${P(c, r)}L${P(c + 1, r)}`;
+    if (has(c, r + 1)) d += `M${P(c, r)}L${P(c, r + 1)}`;
+    if (has(c + 1, r + 1) && !has(c + 1, r) && !has(c, r + 1)) d += `M${P(c, r)}L${P(c + 1, r + 1)}`;
+    if (has(c - 1, r + 1) && !has(c - 1, r) && !has(c, r + 1)) d += `M${P(c, r)}L${P(c - 1, r + 1)}`;
+  });
+  return d;
+}
+function tube(p, d, w, col) {
+  const st = `fill="none" stroke-linecap="round" stroke-linejoin="round"`;
+  return bloom(p, `<path d="${d}" ${st} stroke="${col}" stroke-width="${f(w)}"/>`) + `<path d="${d}" ${st} stroke="#fff" stroke-opacity=".9" stroke-width="${f(w * .3)}"/>`;
+}
+/** The game ball: white-hot core, orange shell, halo, two-layer trail toward (tx, ty). */
+function ball(p, x, y, r, tx, ty) {
+  let s = '';
+  if (tx !== undefined) {
+    const id = p + 'tr' + (uid++), dx = x - tx, dy = y - ty, L = Math.hypot(dx, dy), nx = -dy / L, ny = dx / L;
+    const poly = w => `${f(x + nx * w)},${f(y + ny * w)} ${f(tx)},${f(ty)} ${f(x - nx * w)},${f(y - ny * w)}`;
+    const g = `gradientUnits="userSpaceOnUse" x1="${f(x)}" y1="${f(y)}" x2="${f(tx)}" y2="${f(ty)}"`;
+    s += `<defs><linearGradient id="${id}" ${g}><stop offset="0" stop-color="#ff9a2e"/><stop offset=".45" stop-color="#ff3fb8" stop-opacity=".75"/><stop offset="1" stop-color="${MAGENTA}" stop-opacity="0"/></linearGradient>
+      <linearGradient id="${id}c" ${g}><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#ffd9a0" stop-opacity="0"/></linearGradient></defs>
+      <polygon points="${poly(r * 1.15)}" fill="url(#${id})" filter="url(#${p}g2)" opacity=".8"/>
+      <polygon points="${poly(r * 1.05)}" fill="url(#${id})"/>
+      <polygon points="${poly(r * .35)}" fill="url(#${id}c)"/>`;
+  }
+  return s + `<circle cx="${f(x)}" cy="${f(y)}" r="${f(Math.min(r * 3.4, r + 40))}" fill="#ff7a1f" opacity=".45" filter="url(#${p}g3)"/>
+    <circle cx="${f(x)}" cy="${f(y)}" r="${f(r * 1.6)}" fill="#ffae4a" opacity=".75" filter="url(#${p}g2)"/>
+    <circle cx="${f(x)}" cy="${f(y)}" r="${f(r)}" fill="url(#${p}ball)"/>
+    <circle cx="${f(x - r * .25)}" cy="${f(y - r * .28)}" r="${f(r * .32)}" fill="#fff" opacity=".9"/>`;
+}
+/** Brick shards flying away from an impact. */
+function shards(p, x, y, n, colors, seed, size, ang = -Math.PI / 2, spread = 1.4, dist = 100) {
+  const R = rng(seed); let s = '';
+  for (let i = 0; i < n; i++) {
+    const a = ang + (R() - .5) * spread * 2, d = dist * (.25 + R() * .9), sz = size * (.4 + R() * .9);
+    const cx = x + Math.cos(a) * d, cy = y + Math.sin(a) * d;
+    s += `<rect x="${f(cx - sz / 2)}" y="${f(cy - sz / 4)}" width="${f(sz)}" height="${f(sz / 2)}" fill="${colors[i % colors.length]}" opacity="${f(.55 + R() * .45)}" transform="rotate(${f(R() * 180)} ${f(cx)} ${f(cy)})"/>`;
+  }
+  return bloom(p, s, .8);
+}
+const ring = (p, x, y, r, col, w = 3) => bloom(p, `<circle cx="${f(x)}" cy="${f(y)}" r="${f(r)}" fill="none" stroke="${col}" stroke-width="${w}" opacity=".7"/>`, .8);
+function paddle(p, x, y, w, h) {
+  return `<ellipse cx="${f(x + w / 2)}" cy="${f(y + h * 1.4)}" rx="${f(w * .8)}" ry="${f(h * 1.4)}" fill="${CYAN}" opacity=".35" filter="url(#${p}g3)"/>`
+       + bloom(p, `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${f(h / 2)}" fill="${CYAN}" fill-opacity=".18" stroke="${CYAN}" stroke-width="${f(h * .22)}"/>`)
+       + `<line x1="${f(x + h * .7)}" y1="${f(y + h * .32)}" x2="${f(x + w * .5)}" y2="${f(y + h * .32)}" stroke="#fff" stroke-opacity=".7" stroke-width="${f(h * .14)}" stroke-linecap="round"/>`;
+}
+function icon(p, body, size) {
+  return svg(512, 512, `${defs(p)}<clipPath id="${p}clip"><rect width="512" height="512" rx="112"/></clipPath>
+    <g clip-path="url(#${p}clip)"><rect width="512" height="512" fill="url(#${p}bg)"/>${body}</g>
+    <rect x="1" y="1" width="510" height="510" rx="111" fill="none" stroke="#ffffff" stroke-opacity=".08" stroke-width="2"/>`, size);
+}
+const persp = (cx, hy, hc) => (X, Z) => { const s = 1 / (1 + Z); return [cx + X * s, hy + hc * s, s]; };
+function perspBrick(proj, X0, X1, Zn, Zf, col) {
+  const pts = [proj(X0, Zn), proj(X1, Zn), proj(X1, Zf), proj(X0, Zf)];
+  return `<polygon points="${pts.map(v => f(v[0]) + ',' + f(v[1])).join(' ')}" fill="${col}" fill-opacity=".14" stroke="${col}" stroke-width="${f(3.4 * pts[0][2])}" stroke-linejoin="round"/>`;
+}
+
+// ---------- Concept 1: brick wordmark ----------
+function c1Word() {
+  const p = 'a'; let s = defs(p) + `<rect width="1280" height="640" fill="url(#${p}bg)"/>` + grid(p, 1280, 640, 470, 640);
+  const ne = cells('NEON', 2), cs = 15;
+  s += pixels(p, cs, (1280 - ne.cols * cs) / 2, 62, ne.cells, '#ff4fe0', '#ffe3fb');
+  const br = cells('BREAKER', 1), bw = 27, bh = 19, bx = (1280 - br.cols * bw) / 2, by = 192, a = 18;
+  s += brickWord(p, br.cells, bx, by, bw, bh, new Set([`${a + 1},3`, `${a + 2},3`, `${a + 3},3`]), 1.2, 1.6);
+  const hx = bx + (a + 2.5) * bw, hy = by + 3.5 * bh;
+  s += paddle(p, 395, 548, 150, 16);
+  s += ring(p, hx, hy, 34, '#ffffff', 2.5);
+  s += shards(p, hx, hy, 16, [HP[2], HP[1], HP[3], '#ffffff'], 7, 13, -Math.PI / 2, 1.25, 95);
+  s += ball(p, hx, hy, 15, 470, 548);
+  return svg(1280, 640, s);
+}
+function c1Icon(size) {
+  const p = 'd' + size; let s = grid(p, 512, 512, 336, 256);
+  const n = cells('N'), bw = 68, bh = 34, x0 = 86, y0 = 82;
+  s += brickWord(p, n.cells, x0, y0, bw, bh, new Set(), 3, 3);
+  // the ball bounces off the underside of the diagonal, inside the open bottom of the N
+  const hx = x0 + 2.6 * bw, hy = y0 + 4.55 * bh;
+  s += paddle(p, 62, 446, 140, 22);
+  s += ring(p, hx + 20, hy - 22, 30, '#ffffff', 4);
+  s += shards(p, hx + 20, hy - 22, 9, [HP[1], '#ffffff', HP[2]], 3, 20, -Math.PI / 6, 1.0, 80);
+  s += ball(p, hx, hy, 25, 140, 446);
+  return icon(p, s, size);
+}
+
+// ---------- Concept 2: neon sign ----------
+function c2Word() {
+  const p = 'b'; let s = defs(p) + `<rect width="1280" height="640" fill="url(#${p}bg)"/>` + grid(p, 1280, 640, 540, 640);
+  const k = Math.tan(-9 * Math.PI / 180);
+  s += `<g transform="translate(640 0) skewX(-9) translate(-640 0)">`;
+  const ne = cells('NEON', 2), cs = 24, nx = (1280 - ne.cols * cs) / 2, ny = 56;
+  s += tube(p, tubePath(cs, nx, ny, ne.cells.filter(q => q.li !== 2)), cs * .44, MAGENTA);
+  const br = cells('BREAKER', 1), bs = 26, bx = (1280 - br.cols * bs) / 2, by = 300;
+  s += tube(p, tubePath(bs, bx, by, br.cells), bs * .44, CYAN);
+  s += tube(p, `M${bx + 30},${by + 222}L${bx + br.cols * bs - 30},${by + 222}`, 7, MAGENTA);
+  s += `</g>`;
+  // the O of NEON is the ball (circles are placed after the skew so they stay round)
+  const ox = nx + 16.5 * cs, oy = ny + 3.5 * cs, sx = 640 + (ox - 640) + k * oy;
+  s += `<ellipse cx="${f(sx)}" cy="${f(oy)}" rx="78" ry="24" fill="none" stroke="#ff9a2e" stroke-width="3" opacity=".8" transform="rotate(-18 ${f(sx)} ${f(oy)})" filter="url(#${p}g1)"/>`;
+  s += ball(p, sx, oy, 52);
+  s += shards(p, sx, oy, 10, ['#ffae4a', '#ffffff', MAGENTA], 11, 10, -Math.PI / 4, 1.6, 110);
+  return svg(1280, 640, s);
+}
+function c2Icon(size) {
+  const p = 'e' + size; let s = grid(p, 512, 512, 380, 256);
+  s += tube(p, `M120,46H392A74,74 0 0 1 466,120V392A74,74 0 0 1 392,466H120A74,74 0 0 1 46,392V120A74,74 0 0 1 120,46Z`, 11, MAGENTA);
+  const bw = 100, bh = 44, gx = 14, x0 = (512 - 3 * bw - 2 * gx) / 2;
+  let b = '';
+  [[100, HP[4]], [158, HP[2]]].forEach(([y, col], row) => {
+    for (let i = 0; i < 3; i++) if (!(row === 1 && i === 1)) b += `<rect x="${x0 + i * (bw + gx)}" y="${y}" width="${bw}" height="${bh}" rx="12" fill="${col}" fill-opacity=".12" stroke="${col}" stroke-width="8"/>`;
+  });
+  s += bloom(p, b) + `<g fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="2.5">${b.replace(/stroke="[^"]+" stroke-width="8"/g, '')}</g>`;
+  const hx = 256, hy = 180;
+  s += shards(p, hx, hy, 12, [HP[2], HP[1], '#ffffff'], 5, 24, -Math.PI / 2, 1.5, 110);
+  s += tube(p, 'M196,420L316,420', 16, CYAN);
+  s += ball(p, 262, 262, 36, 250, 412);
+  return icon(p, s, size);
+}
+
+// ---------- Concept 3: playfield in perspective ----------
+function c3Word() {
+  const p = 'c', proj = persp(640, 150, 410); let s = defs(p) + `<rect width="1280" height="640" fill="url(#${p}bg)"/>`;
+  s += perspGrid(p, proj, -3300, 3300, 110, -.16, 12, .1);
+  s += bloom(p, `<line x1="0" y1="150" x2="1280" y2="150" stroke="${MAGENTA}" stroke-width="2.5"/>`);
+  const ne = cells('NEON', 2), cs = 15;
+  s += pixels(p, cs, (1280 - ne.cols * cs) / 2, 208, ne.cells, '#ff4fe0', '#ffe3fb');
+  const br = cells('BREAKER', 1), bw = 27, dz = .117, half = br.cols * bw / 2, a = 18;
+  let b = '';
+  br.cells.forEach(q => {
+    if (q.li === 3 && q.r === 3 && q.lc === 2) return;
+    const zn = (6 - q.r) * dz, col = lerpPal(HP, 1 - q.r / 6);
+    b += perspBrick(proj, q.c * bw - half + 2.5, (q.c + 1) * bw - half - 2.5, zn + .01, zn + dz - .01, col);
+  });
+  s += bloom(p, b, .9);
+  const hit = proj(0, 3.5 * dz), bp = proj(0, 1.5 * dz);
+  s += shards(p, hit[0], hit[1], 12, [HP[2], HP[1], '#ffffff'], 9, 11, -Math.PI / 2, 1.2, 70);
+  // red lose line and paddle on the near floor
+  const l0 = proj(-700, -.06), l1 = proj(700, -.06);
+  s += bloom(p, `<line x1="${f(l0[0])}" y1="${f(l0[1])}" x2="${f(l1[0])}" y2="${f(l1[1])}" stroke="#ff2a4a" stroke-width="2.5" opacity=".9"/>`, .8);
+  s += paddle(p, 560, 606, 160, 18);
+  s += ball(p, bp[0], bp[1], 15, 612, 606);
+  return svg(1280, 640, s);
+}
+function c3Icon(size) {
+  const p = 'f' + size, proj = persp(256, -300, 750); let s = perspGrid(p, proj, -1200, 1200, 80, -.2, 1.5, .08);
+  const dz = .12, z0 = .19; let b = '';
+  for (let r = 0; r < 4; r++) for (let i = 0; i < 5; i++) {
+    if (r === 0 && i === 2) continue;
+    const zn = z0 + r * dz;
+    b += perspBrick(proj, -200 + i * 80 + 4, -200 + (i + 1) * 80 - 4, zn + .012, zn + dz - .012, lerpPal(HP, (r + 1) / 4));
+  }
+  s += bloom(p, b, .9);
+  const hit = proj(0, z0 + dz / 2);
+  s += ring(p, hit[0], hit[1], 44, '#ffffff', 4);
+  s += shards(p, hit[0], hit[1], 12, [HP[1], '#ffffff', HP[2]], 4, 22, -Math.PI / 2, 1.3, 90);
+  s += paddle(p, 176, 432, 160, 24);
+  s += ball(p, 268, 372, 24, 236, 432);
+  return icon(p, s, size);
+}
+
+// ---------- page ----------
+const concepts = [
+  ['1 / BRICK WORDMARK', 'BREAKER is spelled with the game’s own rounded neon bricks, colored like brick HP (violet at the back, white at the front). The ball has just smashed the bar of the A. Icon: a brick “N” with the ball breaking through the diagonal.', c1Word, c1Icon],
+  ['2 / NEON SIGN', 'The pixel font drawn as glowing glass tubes, slanted for speed. The O of NEON is the ball itself. Icon: a magenta tube frame, two rows of bricks, one smashed. The most “arcade marquee” option.', c2Word, c2Icon],
+  ['3 / PLAYFIELD', 'The title lies on the floor like the wall in the game, seen from behind the paddle. The ball flies up between the legs of the A. Icon: the in-game view itself, which tells the player exactly what they will get.', c3Word, c3Icon],
+];
+document.getElementById('root').innerHTML = concepts.map(([t, d, w, ic]) => `
+  <section class="concept"><h2>${t}</h2><p>${d}</p>
+    <div class="word">${w()}</div>
+    <div class="icons">${[240, 120, 64, 40].map(sz => `<figure>${ic(sz)}${sz}px</figure>`).join('')}</div>
+  </section>`).join('');
+</script>
+</body>
+</html>
