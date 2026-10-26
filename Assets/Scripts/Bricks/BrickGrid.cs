@@ -123,6 +123,23 @@ public class BrickGrid : MonoBehaviour
     /// <summary>Multiplies the time between steps (upgrades). 1.25 = the wall is 25% slower.</summary>
     public void MultiplyStepInterval(float factor) => stepInterval *= Mathf.Max(0.1f, factor);
 
+    /// <summary>Width of one brick cell (X), for area-of-effect distances.</summary>
+    public float BrickWidth => lengthInCells * cellSize;
+    /// <summary>Depth of one brick cell (Z).</summary>
+    public float CellDepth => cellSize;
+
+    /// <summary>Fills the list with the bottom brick of every stack that still has one alive (the bricks the ball can hit).</summary>
+    public void GetLiveBricks(System.Collections.Generic.List<Brick> result)
+    {
+        result.Clear();
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            if (!transform.GetChild(i).TryGetComponent(out BrickStack stack)) continue;
+            Brick bottom = stack.Bottom;
+            if (bottom != null && bottom.IsAlive) result.Add(bottom);
+        }
+    }
+
     public int RemainingBricks { get; private set; }
     public bool IsGameOver { get; private set; }
     /// <summary>Total rows spawned this run, including the starting wall.</summary>

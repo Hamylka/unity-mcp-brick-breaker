@@ -175,7 +175,7 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 - **Roadmap (in order):**
   1. Fix the repetitive card rolls.
   2. Playtest and tune HP scaling, notice, bonus effects on a real device.
-  3. More bonus item effects and power-ups.
+  3. More bonus item effects.
 
 ### [2026-10-26] - README status and roadmap update (by Claude)
 - **Done:** README "Status" now matches v0.1 (bonus drops and Reroll are active) and gains a roadmap.
@@ -198,3 +198,18 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 - **Done (branch `feature/logo`):** game logo and app icon, picked from two rounds of concepts. **Wordmark:** NEON in the game's glowing magenta pixel font, BREAKER in rounded neon HP bricks (violet at the top to white at the bottom), and one shot that tells the game: the ball leaves the cyan paddle, smashes the A and becomes the O of NEON. **Icon:** a magenta neon tube frame around a three-row wall, one brick smashed, the ball coming in at the same angle as in the wordmark. The art is SVG drawn by code in `Design/Logo` (`logo-lib.js` helpers, `logo-final.js` final designs, concept pages kept for reference) and rendered to PNG with `Design/Logo/export-logo.ps1` (headless Edge): `Assets/Art/Logo` holds `Icon_App` (1024), the Android adaptive layers `Icon_Adaptive_Foreground/Background` (432, the frame is left out because the launcher mask draws the outline) and `Logo_Wordmark` (transparent, 2400x1200, for a future title screen); `Design/Logo/export` holds the 512 store icon and the key art with background. Player Settings: default icon = `Icon_App`, Android adaptive icon = the two layers. Splash screen: the wordmark (imported as a sprite) for 2.5 s on the game's near-black (#05040C, no overlay), Unity logo below it (light on dark, dolly animation).
 - **Open issues:** none for the icon wiring: the default icon and the Android adaptive layers are saved in `ProjectSettings.asset` (only the icon lines were committed; the keystore and window settings in that file are not part of this branch). The splash screen was not yet seen in a build. The icon is not yet checked on a real launcher.
 - **Roadmap:** check the icon on the phone; use the wordmark on a title screen or in the landscape side areas.
+
+### [2026-10-26] - Area-of-effect power-ups (by Claude)
+- **Done (branch `feature/aoe-powerups`):** 6 new level-up power-ups, the pool goes from 6 to 12 cards (this is also the fix for the repetitive card rolls: every rarity now has at least two cards). All are one `AreaDamageEffect` asset (kind + amount) in `Assets/Data/PowerUps`, run by the new `AreaDamage` component, which `AreaDamageEffect` adds to the `BrickGrid` object on first pick (fresh every run) and which listens to `BrickGrid.BrickHit`. Damage dealt by `AreaDamage` never triggers area effects again (no chain reactions), and it still gives XP for HP actually removed.
+  * **Shockwave** (Common, max 4): 25% of the damage dealt splashes onto the 4 neighbours. Fractions pile up per brick (`Brick.DamageCarry`), so 25% of a 1-damage ball removes an HP every 4 hits.
+  * **Piercing Ball** (Uncommon, max 2): the hit also goes through the next brick(s) behind in the same column (half the damage, min 1).
+  * **Chain Lightning** (Rare, max 3): a destroyed brick arcs 1 damage to the nearest bricks (+1 arc per pick, range 2.2).
+  * **Volatile Bricks** (Epic, max 2): a destroyed brick blasts its 3x3 block for 1 damage (+1 per pick).
+  * **Cleave** (Epic, max 3): every 6th hit sweeps its whole row for 1 damage (5th, then 4th with more picks).
+  * **Meltdown** (Legendary, max 1): hit bricks burn 1 HP per second for 3 s; a burning brick that dies sets its neighbours alight.
+  * `BrickGrid` gained `GetLiveBricks`, `BrickWidth` and `CellDepth` (area geometry). Geometry, ranges and burn timing are Inspector fields on `AreaDamage`; amounts and stacks are on each asset.
+- **Open issues:** compiles clean and assets are in the scene pool, but not playtested (balance of the percentages, burn cascades in low-HP walls, sound volume when many bricks are hit at once). Effects reuse existing sounds and simple `NeonFx` particles; dedicated sounds and visuals are still to do (Opus). Card descriptions are short fixed texts (they do not show the current stack value).
+- **Roadmap (in order):**
+  1. Playtest the six power-ups (use `Debug: Trigger Level Up Choice` on `PowerUpManager`) and tune percentages, stack limits and rarities.
+  2. Dedicated sounds and visual effects for the AoE power-ups (with Opus).
+  3. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
