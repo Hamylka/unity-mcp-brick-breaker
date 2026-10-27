@@ -210,7 +210,17 @@ public class BallController : MonoBehaviour
             if (stack == null) continue;
 
             if (phaseIgnored.Add(other)) Physics.IgnoreCollision(sphere, other, true);
-            if (phaseInside.Add(other)) stack.TakeDamage(Damage);
+            if (!phaseInside.Add(other)) continue;
+
+            // Unrounded damage with the fraction carried on the brick, so a halved 1-damage ball still
+            // removes an HP every second brick it passes through.
+            Brick bottom = stack.Bottom;
+            if (bottom == null) continue;
+            bottom.DamageCarry += damage * DamageMultiplier;
+            int whole = Mathf.FloorToInt(bottom.DamageCarry + 0.001f);
+            if (whole <= 0) continue;
+            bottom.DamageCarry = Mathf.Max(0f, bottom.DamageCarry - whole);
+            stack.TakeDamage(whole);
         }
     }
 

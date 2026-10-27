@@ -65,11 +65,11 @@ public class BallBuffAura : MonoBehaviour
     {
         if (buff == null) return;
         liveCount--;
-        if (ball != null)
-        {
-            buff.Remove(ball);
-            NeonFx.Burst(ball.Position, buff.color, 10, 2f, 0.08f, 0.3f);
-        }
+        if (ball != null) buff.Remove(ball);
+
+        // No effects while the scene is closing (they would spawn objects during teardown).
+        if (!gameObject.scene.isLoaded) return;
+        if (ball != null) NeonFx.Burst(ball.Position, buff.color, 10, 2f, 0.08f, 0.3f);
         SoundManager.Play(Sfx.BonusExpire, 1f, 0.6f);
     }
 }

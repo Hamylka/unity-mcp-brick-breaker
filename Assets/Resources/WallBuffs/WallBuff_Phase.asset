@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PhaseWallBuff
   label: PHASE
   color: {r: 0.55, g: 0.4, b: 1, a: 1}
-  duration: 10
+  duration: 6
   weight: 1
