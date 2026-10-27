@@ -79,6 +79,32 @@ public class Brick : MonoBehaviour
     /// <summary>Sets the scale without recoloring anyone (new run).</summary>
     public static void ResetColorScale(int maxHitPoints) => ColorScaleMaxHp = Mathf.Max(1, maxHitPoints);
 
+    /// <summary>
+    /// Ball damage used to turn HP into hits left (<see cref="HitsFor"/>). The color ramp runs on hits, not HP,
+    /// so a damage upgrade cools the whole wall down. Fed every frame by the grid.
+    /// </summary>
+    public static int HitDamage { get; private set; } = 1;
+
+    private static event Action HitDamageChanged;
+
+    /// <summary>Changes the damage reference. Every living brick fades to its new color (no pulse: it can happen often).</summary>
+    public static void SetHitDamage(int damage)
+    {
+        int clamped = Mathf.Max(1, damage);
+        if (clamped == HitDamage) return;
+        HitDamage = clamped;
+        HitDamageChanged?.Invoke();
+    }
+
+    /// <summary>Sets the damage reference without recoloring anyone (new run).</summary>
+    public static void ResetHitDamage(int damage) => HitDamage = Mathf.Max(1, damage);
+
+    /// <summary>Ball hits needed to remove this many HP with the current <see cref="HitDamage"/> (AoE not counted).</summary>
+    public static int HitsFor(int hitPoints) => Mathf.Max(1, Mathf.CeilToInt(hitPoints / (float)HitDamage));
+
+    /// <summary>Estimated ball hits left to break this brick.</summary>
+    public int HitsLeft => HitsFor(HitPoints);
+
     public int MaxHitPoints { get; private set; } = 1;
     public int HitPoints { get; private set; } = 1;
     public bool IsAlive => HitPoints > 0;
@@ -152,13 +178,23 @@ public class Brick : MonoBehaviour
 
         ColorScaleChanged -= OnColorScaleChanged;
         ColorScaleChanged += OnColorScaleChanged;
+        HitDamageChanged -= OnHitDamageChanged;
+        HitDamageChanged += OnHitDamageChanged;
         BrickHpOverlay.Register(this);
     }
 
     private void OnDestroy()
     {
         ColorScaleChanged -= OnColorScaleChanged;
+        HitDamageChanged -= OnHitDamageChanged;
         BrickHpOverlay.Unregister(this);
+    }
+
+    // Ball damage changed: a slow fade to the color of the new hits-left count.
+    private void OnHitDamageChanged()
+    {
+        if (!IsAlive || shrinking) return;
+        StartColorFade(shownColor, shownToughness, colorFadeTime * 2.5f);
     }
 
     // ---- read by BrickHpOverlay (HP numbers / pips display modes)
@@ -169,11 +205,12 @@ public class Brick : MonoBehaviour
     public float VisualScale => baseScale.x > 0f ? transform.localScale.x / baseScale.x : 1f;
     /// <summary>World size of the brick (its mesh, not the collider).</summary>
     public Vector3 Size => size;
-    /// <summary>Color of the HP left (the label's tint, without the hit flash).</summary>
+    /// <summary>Color of the hits left (the label's tint, without the hit flash).</summary>
     public Color HpColor => CurrentColor();
 
-    private Color CurrentColor() => palette != null ? palette.GetColor(HitPoints, ColorScaleMaxHp) : Color.white;
-    private float CurrentToughness() => BrickPalette.GetToughness(HitPoints, ColorScaleMaxHp);
+    // The ramp runs on hits left: white = breaks in one hit, hot red = as many hits as the toughest brick spawning now.
+    private Color CurrentColor() => palette != null ? palette.GetColor(HitsLeft, HitsFor(ColorScaleMaxHp)) : Color.white;
+    private float CurrentToughness() => BrickPalette.GetToughness(HitsLeft, HitsFor(ColorScaleMaxHp));
 
     // Fades from a start color and toughness to the ones of the current HP.
     private void StartColorFade(Color from, float fromTough, float duration)

@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 /// <summary>
 /// Draws a number or pips over every brick for the Numbers / Pips display modes (<see cref="BrickHpDisplay"/>):
-/// the estimated ball hits left to break it (HP divided by the current ball damage, rounded up), not its raw HP.
+/// the estimated ball hits left to break it (<see cref="Brick.HitsLeft"/>), not its raw HP. One-hit bricks show nothing.
 /// The labels live on a screen-space canvas, not in 3D: the scene is rendered at 640 px, where a brick is only
 /// about 10 px tall, too small for crisp glyphs, while the UI stays at full resolution. Each label follows its
 /// brick every frame (projected through the camera), scales with it (spawn pop-in, hit punch) and pops when the
@@ -86,11 +86,11 @@ public class BrickHpOverlay : MonoBehaviour
             bricks.RemoveAll(b => b == null);
             BrickHpDisplay.Mode mode = BrickHpDisplay.Current;
             float scaleFactor = Mathf.Max(0.0001f, canvas.scaleFactor);
-            int damage = CurrentBallDamage();
             for (int i = 0; i < bricks.Count; i++)
             {
                 Brick brick = bricks[i];
-                if (!brick.ShowsHpLabel) continue;
+                // One-hit bricks carry no label: only the bricks that take work stand out.
+                if (!brick.ShowsHpLabel || brick.HitsLeft <= 1) continue;
                 if (!assigned.TryGetValue(brick, out Label label))
                 {
                     label = pool.Count > 0 ? pool.Pop() : CreateLabel();
@@ -99,7 +99,7 @@ public class BrickHpOverlay : MonoBehaviour
                     label.popT = 1f;
                     assigned.Add(brick, label);
                 }
-                if (UpdateLabel(label, brick, mode, scaleFactor, damage)) label.frame = frame;
+                if (UpdateLabel(label, brick, mode, scaleFactor)) label.frame = frame;
             }
         }
 
@@ -116,21 +116,8 @@ public class BrickHpOverlay : MonoBehaviour
         }
     }
 
-    // Damage of the main ball (buffs included); the strongest ball if only extras are flying; 1 with no ball.
-    private static int CurrentBallDamage()
-    {
-        int best = 1;
-        foreach (BallController ball in BallController.Active)
-        {
-            if (ball == null) continue;
-            if (!ball.IsExtra) return ball.Damage;
-            best = Mathf.Max(best, ball.Damage);
-        }
-        return best;
-    }
-
     /// <returns>False when the brick is off screen (behind the camera).</returns>
-    private bool UpdateLabel(Label label, Brick brick, BrickHpDisplay.Mode mode, float scaleFactor, int damage)
+    private bool UpdateLabel(Label label, Brick brick, BrickHpDisplay.Mode mode, float scaleFactor)
     {
         float dt = Time.deltaTime;
         Transform t = brick.transform;
@@ -146,7 +133,7 @@ public class BrickHpOverlay : MonoBehaviour
 
         // Shown value: ball hits left to break the brick, not its raw HP (much smaller numbers, fewer pips).
         int hp = brick.HitPoints;
-        int hits = Mathf.Max(1, Mathf.CeilToInt(hp / (float)damage));
+        int hits = brick.HitsLeft;
         bool pips = mode == BrickHpDisplay.Mode.Pips && hits <= MaxPips;
         if (hits != label.hits || mode != label.mode)
         {
