@@ -25,7 +25,7 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 
 ## 4. Systems & Features Blueprint
 - **Brick System:**
-  * Rectangular 2:1 bricks generated in a grid (7 columns, 4 starting rows, Cell Size ~0.5 tuned in the Inspector, `Brick Height` 0.4). Bricks have HP (1 = white, 2 = cyan, 3 = azure, 4 = blue, 5 = violet) and shift toward white as they lose HP.
+  * Rectangular 2:1 bricks generated in a grid (7 columns, 4 starting rows, Cell Size ~0.5 tuned in the Inspector, `Brick Height` 0.4). Bricks have HP shown as a heat ramp (starting wall: 1 = white, 2 = cyan, 3 = lime, 4 = amber, 5 = hot red; the ramp stretches as the HP window scales up). Tough bricks have a fuller body and a stronger glow, weak ones look hollow; every non-lethal hit flashes the brick white and throws chips in its old color, then it settles on the color of the HP left.
   * Stacking (several layers per cell) exists in code but is set to 1 layer max: tall stacks hid the ball.
   * **Advancing wall (Space Invaders style):** the whole wall steps one row toward the paddle every 5 seconds, only while the ball is in play.
   * **Endless rows:** every step adds a new row at the back. Later rows get fewer gaps and tougher bricks (difficulty ramp per row).
@@ -64,11 +64,21 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 Single source of truth for what is left. Update it at the end of every task (tick off, add, reorder); changelog entries below only describe what was done.
 
 **Next up (in order)**
-1. **Playtest the XP rework:** orb merging, colors and origin (ball), then the XP pace (`XP Scaling Exponent` on `BrickGrid`, Base XP / Power on `ExperienceSystem`; level-ups were too frequent). Re-check the wall-clear bonus (50% of the level cost, now paid in big orbs).
-2. **Playtest and tune the power-ups:** the 6 AoE cards (percentages, stack limits, rarities, burn cascades, sound volume with many hits at once; use `Debug: Trigger Level Up Choice` on `PowerUpManager`). Card descriptions still show fixed text: `PowerUpEffect.Describe(stacks + 1)` (added for the pause screen) can now show the value at the next level.
-3. **Playtest the wall buff zones** (see changelog): zone look and position, 20 s / 10 s pacing, the 2x damage buff, then more buff types (each a `WallBuff` subclass + asset in `Resources/WallBuffs`) and a proper visual pass (with Opus).
-4. **Make the Phase buff readable (later, with Opus):** while the ball phases through bricks it is not visible enough (only violet embers). Give the ball a clear look for the duration (ghostly or translucent ball, tint, trail change, a pass-through effect on each brick entered) and check it at the 640 px pixelation.
-5. **Make brick HP more obvious:** the HP color grading (`BrickPalette` gradient, white = 1 HP to dark blue = toughest, `Brick.SetColorScale`) is too subtle to read at a glance. Make a brick's toughness readable instantly, e.g. a wider, more saturated color range, brighter or thicker outlines on tough bricks, an HP number or pips on the brick, or a clearer change on every hit. Check it at the 640 px pixelation and on a phone.
+1. **Make the Phase buff readable (with Opus):** while the ball phases through bricks it is not visible enough (only violet embers). Give the ball a clear look for the duration (ghostly or translucent ball, tint, trail change, a pass-through effect on each brick entered) and check it at the 640 px pixelation.
+2. **VFX and SFX enhancement pass (with Opus):** replace the placeholder and reused cues with dedicated ones. Sounds and visuals for the AoE power-ups (Shockwave, Piercing, Chain Lightning, Volatile, Cleave, Meltdown; mix when many bricks are hit at once), the wall buff zones (zone look at the camera's grazing angle, take/expire cues) and the buffed ball, the bonus items (pickup/expire sounds are still partly reused). Check every effect at the 640 px pixelation and against the bloom.
+3. **Playtest the brick HP readability** (see changelog): colors at a glance in a long run (HP window scaled up), the hit flash and chips with many hits at once, then on a phone.
+4. **Playtest the XP rework:** orb merging, colors and origin (ball), then the XP pace (`XP Scaling Exponent` on `BrickGrid`, Base XP / Power on `ExperienceSystem`; level-ups were too frequent). Re-check the wall-clear bonus (50% of the level cost, now paid in big orbs).
+5. **Playtest and tune the power-ups:** the 6 AoE cards (percentages, stack limits, rarities, burn cascades; use `Debug: Trigger Level Up Choice` on `PowerUpManager`). Card descriptions still show fixed text: `PowerUpEffect.Describe(stacks + 1)` (added for the pause screen) can now show the value at the next level.
+6. **Playtest the wall buff zones** (see changelog): zone position, 20 s / 10 s pacing, the 2x damage and Phase buffs, then more buff types (each a `WallBuff` subclass + asset in `Resources/WallBuffs`).
+
+**Windows / landscape**
+- Make a Windows build and try it (window resize, fullscreen toggle).
+- Fill the side areas (neon decoration, later stats / the wordmark).
+
+**Later**
+- More bonus item effects (each a new `BonusEffect` subclass plus a `BonusDefinition` asset).
+- More wall effects beyond the buff zones (ideas to be thought out).
+- Title screen using `Logo_Wordmark`.
 
 **Playtest on a real phone**
 - HP scaling (5 rows / x1.75), "DIFFICULTY INCREASED!" notice (position, size, wording), brick recolor.
@@ -76,15 +86,6 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - Card level pips and tags, app icon on a launcher, splash screen in a build.
 - Pause screen: button size and spot under the notch, row text size, scrolling a long power-up list, auto-pause when the app goes to the background.
 
-**Windows / landscape**
-- Make a Windows build and try it (window resize, fullscreen toggle).
-- Fill the side areas (neon decoration, later stats / the wordmark).
-
-**Later**
-- Dedicated sounds and visual effects for the AoE power-ups (with Opus).
-- More bonus item effects (each a new `BonusEffect` subclass plus a `BonusDefinition` asset).
-- More wall effects beyond the buff zones (ideas to be thought out).
-- Title screen using `Logo_Wordmark`.
 ## 6. Project Changelog & Architecture Status
 ### [2026-10-21] - Project Initialization
 - Define base architecture and project scope.
@@ -229,3 +230,12 @@ Single source of truth for what is left. Update it at the end of every task (tic
   * **Open issues:** no visual on the ball while phasing beyond the violet embers (a ghostly look would help); the hit lands when the ball is ~0.3 from the brick, slightly before overlap.
 - **Tuning (same branch, user request):** Phase now lasts 6 s and halves the ball's damage while it is on (`PhaseWallBuff > Damage Multiplier` 0.5, fractions carried per brick through `Brick.DamageCarry`, so a 1-damage ball removes an HP every second brick it passes). Spawn odds are 75% 2x damage / 25% Phase (weights 3 and 1 on the assets). Zones appear farther from the paddle: `Min T` / `Max T` are now 0.4 / 0.8 (world Z about 3.4 to 9.8). Also fixed: `BallBuffAura` no longer spawns particles while the scene closes (it logged "objects not cleaned up" on leaving play mode).
   * **Checked:** play mode, phase ball took the wall from 37 to 20 total HP, no new errors. Not seen by eye.
+
+### [2026-10-27] - Brick HP readability and roadmap reorder (by Claude)
+- **Done (branch `feature/brick-hp-readability`):** brick toughness now reads at a glance, three cues stacked:
+  * **Heat ramp:** `BrickPalette` gradient is now white (1 HP), cyan, lime, amber, hot red (toughest spawning), keys at quarter steps so each HP of the starting wall (1 to 5) is its own hue. Written into `Assets/Data/BrickPalette.asset` (the stale `hitPointColors` array is gone) and as the code default. `BrickPalette.GetToughness(hp, scaleMax)` is the shared 0-1 ratio.
+  * **Weight:** `Brick > HP Readability` scales the body brightness (`Body By Toughness` 0.4x to 2.6x) and the outline glow (`Glow By Toughness` 0.7x to 1.45x) with toughness, so weak bricks look hollow and tough ones solid and bright.
+  * **Every hit:** a non-lethal hit flashes the brick white-hot (`Hit Flash Brightness` 1.6, `Hit Flash Time` 0.18 s, ease-out) and throws `Hit Chips` (4) in its old color, then it settles on the color of the HP left. The HP scale-up recolor keeps its own fade (`Color Fade Time`).
+- **Checked:** play-mode screenshot with every HP step forced on the wall: the five colors are distinct at the game resolution, body fill visible on the tough bricks. No console errors. The hit flash and chips were not judged in motion.
+- **Roadmap:** reordered so non-playtest work comes first, a VFX/SFX enhancement pass (absorbs the old "dedicated AoE sounds and visuals" item) sits before the playtests, and the "Playtest on a real phone" group moved to the end.
+- **Open issues:** the hot red of the toughest bricks is close to the lose line and the magenta wall trims; shift the last key toward orange-red if it confuses. With many hits at once (AoE power-ups) the chips may get busy: lower `Hit Chips`. No HP number on the brick: values grow into the dozens with HP scaling, so color and weight carry it for now.
