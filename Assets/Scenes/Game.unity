@@ -4352,8 +4352,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExperienceSystem
   grid: {fileID: 1367461215}
-  baseXp: 15
-  power: 1.25
+  baseXp: 12
+  power: 1.2
   clearBonus: 0.5
   logLevelUps: 1
   showDebugOverlay: 0

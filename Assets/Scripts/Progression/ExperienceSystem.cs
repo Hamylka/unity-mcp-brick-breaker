@@ -14,9 +14,9 @@ public class ExperienceSystem : MonoBehaviour
 
     [Header("Level Curve (editable at runtime for balancing)")]
     [Tooltip("XP needed to leave level 1. Also scales the whole curve.")]
-    [SerializeField, Min(1)] private int baseXp = 15;
+    [SerializeField, Min(1)] private int baseXp = 12;
     [Tooltip("Exponent of the curve. 1 = linear, higher = steeper.")]
-    [SerializeField, Min(0.1f)] private float power = 1.25f;
+    [SerializeField, Min(0.1f)] private float power = 1.2f;
 
     [Header("Wall Clear Bonus")]
     [Tooltip("Clearing every brick grants this share of the XP needed for the current level (0.5 = 50%).")]
