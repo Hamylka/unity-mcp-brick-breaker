@@ -748,7 +748,7 @@ public class PauseScreen : MonoBehaviour
         BuildHpDisplaySelector(buttons);
     }
 
-    // "BRICK HP" setting: a segmented control (COLOR / NUMBERS / PIPS) between the list and the buttons.
+    // "BRICK HP" setting: a segmented control (PIPS / COLOR / NUMBERS) between the list and the buttons.
     private void BuildHpDisplaySelector(RectTransform parent)
     {
         Image panel = NewImage("HpDisplay", parent, panelColor, UiSprites.RoundedRect);
@@ -759,7 +759,7 @@ public class PauseScreen : MonoBehaviour
 
         const float segmentWidth = 236f;
         const float gap = 8f;
-        var modes = (BrickHpDisplay.Mode[])System.Enum.GetValues(typeof(BrickHpDisplay.Mode));
+        BrickHpDisplay.Mode[] modes = BrickHpDisplay.Order;
         for (int i = 0; i < modes.Length; i++)
         {
             BrickHpDisplay.Mode mode = modes[i];
