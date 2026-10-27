@@ -16,6 +16,11 @@ public class CardView : MonoBehaviour, IPointerClickHandler
     public PowerUpRarity Rarity;
     public Color RarityColor;
 
+    // Level display: the pip of the level this pick grants (blinks), and the NEW!/MAX! corner tag (pulses). Both optional.
+    public Image NextPip;
+    public Color NextPipColor;
+    public RectTransform Tag;
+
     public float Width;
     public float BaseX;
     public float SelectT;

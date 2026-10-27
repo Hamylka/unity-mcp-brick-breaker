@@ -218,3 +218,14 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   4. Playtest the six power-ups (use `Debug: Trigger Level Up Choice` on `PowerUpManager`) and tune percentages, stack limits and rarities.
   5. Dedicated sounds and visual effects for the AoE power-ups (with Opus).
   6. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
+
+### [2026-10-27] - Power-up card levels (by Claude)
+- **Done (branch `feature/card-max-level`):** every level-up card now shows the level the pick grants and the cap: "LV 2/3" under the rarity, plus a row of pips (one per level: owned filled, the one this pick grants blinking, the rest empty). Unlimited power-ups show "LV n" and no pips. When the pick reaches the cap, the label and pips turn gold and a pulsing "MAX!" tag sits in the card's top-right corner; a first pick gets a green "NEW!" tag there instead (a 1-level power-up like Meltdown shows NEW!, with a gold "LV 1/1"). Colors are `Level Color` / `Max Level Color` on `PowerUpScreen`; the code is `PowerUpScreen.BuildLevelDisplay`, animated through `CardView.NextPip` / `Tag`.
+- **Checked:** play-mode screenshots with forced stack counts (1/4 NEW, 2/4, 3/3 MAX, unlimited LV 4).
+- **Open issues:** not yet judged on a phone (pip and tag size). Card descriptions still show fixed text, not the value at the next level.
+- **Roadmap (in order):**
+  1. **Rebalance how the player XP scales** (level-ups too frequent): `ExperienceSystem` Base XP / Power and/or XP per brick, checked against the AoE power-ups.
+  2. **Rework the XP bubbles and color-code them by value** (e.g. 5 XP = green, 25 XP = blue), together with the rebalance.
+  3. Playtest the AoE power-ups and tune percentages, stack limits and rarities.
+  4. Dedicated sounds and visual effects for the AoE power-ups (with Opus).
+  5. More bonus item effects.
