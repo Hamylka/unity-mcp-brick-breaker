@@ -3,7 +3,8 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Draws the HP number or pips over every brick for the Numbers / Pips display modes (<see cref="BrickHpDisplay"/>).
+/// Draws a number or pips over every brick for the Numbers / Pips display modes (<see cref="BrickHpDisplay"/>):
+/// the estimated ball hits left to break it (HP divided by the current ball damage, rounded up), not its raw HP.
 /// The labels live on a screen-space canvas, not in 3D: the scene is rendered at 640 px, where a brick is only
 /// about 10 px tall, too small for crisp glyphs, while the UI stays at full resolution. Each label follows its
 /// brick every frame (projected through the camera), scales with it (spawn pop-in, hit punch) and pops when the
@@ -11,7 +12,7 @@ using UnityEngine.UI;
 /// </summary>
 public class BrickHpOverlay : MonoBehaviour
 {
-    private const int MaxPips = 10;     // above this many HP, Pips mode shows the number
+    private const int MaxPips = 10;     // above this many hits, Pips mode shows the number
     private const int PipsPerRow = 5;
     private const float PopTime = 0.22f;
 
@@ -30,6 +31,7 @@ public class BrickHpOverlay : MonoBehaviour
         public PixelText text;
         public RectTransform rect;
         public int hitPoints = -1;
+        public int hits = -1;
         public BrickHpDisplay.Mode mode;
         public float popT = 1f;
         public int frame;
@@ -84,6 +86,7 @@ public class BrickHpOverlay : MonoBehaviour
             bricks.RemoveAll(b => b == null);
             BrickHpDisplay.Mode mode = BrickHpDisplay.Current;
             float scaleFactor = Mathf.Max(0.0001f, canvas.scaleFactor);
+            int damage = CurrentBallDamage();
             for (int i = 0; i < bricks.Count; i++)
             {
                 Brick brick = bricks[i];
@@ -92,10 +95,11 @@ public class BrickHpOverlay : MonoBehaviour
                 {
                     label = pool.Count > 0 ? pool.Pop() : CreateLabel();
                     label.hitPoints = -1;
+                    label.hits = -1;
                     label.popT = 1f;
                     assigned.Add(brick, label);
                 }
-                if (UpdateLabel(label, brick, mode, scaleFactor)) label.frame = frame;
+                if (UpdateLabel(label, brick, mode, scaleFactor, damage)) label.frame = frame;
             }
         }
 
@@ -112,8 +116,21 @@ public class BrickHpOverlay : MonoBehaviour
         }
     }
 
+    // Damage of the main ball (buffs included); the strongest ball if only extras are flying; 1 with no ball.
+    private static int CurrentBallDamage()
+    {
+        int best = 1;
+        foreach (BallController ball in BallController.Active)
+        {
+            if (ball == null) continue;
+            if (!ball.IsExtra) return ball.Damage;
+            best = Mathf.Max(best, ball.Damage);
+        }
+        return best;
+    }
+
     /// <returns>False when the brick is off screen (behind the camera).</returns>
-    private bool UpdateLabel(Label label, Brick brick, BrickHpDisplay.Mode mode, float scaleFactor)
+    private bool UpdateLabel(Label label, Brick brick, BrickHpDisplay.Mode mode, float scaleFactor, int damage)
     {
         float dt = Time.deltaTime;
         Transform t = brick.transform;
@@ -127,18 +144,22 @@ public class BrickHpOverlay : MonoBehaviour
         float widthUnits = Mathf.Abs(cam.WorldToScreenPoint(t.position + half).x - cam.WorldToScreenPoint(t.position - half).x) / scaleFactor;
         float pixel = Mathf.Clamp(Mathf.Floor(widthUnits / widthPerPixel), minPixelSize, maxPixelSize);
 
+        // Shown value: ball hits left to break the brick, not its raw HP (much smaller numbers, fewer pips).
         int hp = brick.HitPoints;
-        bool pips = mode == BrickHpDisplay.Mode.Pips && hp <= MaxPips;
-        if (hp != label.hitPoints || mode != label.mode)
+        int hits = Mathf.Max(1, Mathf.CeilToInt(hp / (float)damage));
+        bool pips = mode == BrickHpDisplay.Mode.Pips && hits <= MaxPips;
+        if (hits != label.hits || mode != label.mode)
         {
-            if (label.hitPoints > 0 && hp < label.hitPoints && mode == label.mode) label.popT = 0f;
-            label.hitPoints = hp;
+            label.hits = hits;
             label.mode = mode;
-            label.text.Text = pips ? PipText(hp) : hp.ToString();
+            label.text.Text = pips ? PipText(hits) : hits.ToString();
             label.text.Spacing = pips ? 0f : 1f;
             label.text.LineGap = pips ? 0f : 3f;
             label.rect.sizeDelta = new Vector2(400f, 120f);
         }
+        // Pop when this brick was hit, not when a damage upgrade lowers every label at once.
+        if (label.hitPoints > 0 && hp < label.hitPoints) label.popT = 0f;
+        label.hitPoints = hp;
         // A row of 5 pips is 25 font pixels wide (4-pixel squares, 1 apart): size them so a full row fits the brick.
         float pixelSize = pips ? Mathf.Clamp(Mathf.Floor(widthUnits / 26f), minPixelSize, maxPixelSize) : pixel;
         if (!Mathf.Approximately(label.text.PixelSize, pixelSize)) label.text.PixelSize = pixelSize; // the setter rebuilds the mesh
