@@ -65,9 +65,9 @@ Single source of truth for what is left. Update it at the end of every task (tic
 
 **Next up (in order)**
 1. **Playtest the XP rework:** orb merging, colors and origin (ball), then the XP pace (`XP Scaling Exponent` on `BrickGrid`, Base XP / Power on `ExperienceSystem`; level-ups were too frequent). Re-check the wall-clear bonus (50% of the level cost, now paid in big orbs).
-2. **Playtest Chain Lightning** (reworked, see changelog): check the arc count (2, then 3 at the second pick), the 20% damage with fraction carry, and the bolt look.
-3. **Playtest and tune the power-ups:** the 6 AoE cards (percentages, stack limits, rarities, burn cascades, sound volume with many hits at once; use `Debug: Trigger Level Up Choice` on `PowerUpManager`). Card descriptions still show fixed text: `PowerUpEffect.Describe(stacks + 1)` (added for the pause screen) can now show the value at the next level.
-4. **Playtest the wall buff zones** (see changelog): zone look and position, 20 s / 10 s pacing, the 2x damage buff, then more buff types (each a `WallBuff` subclass + asset in `Resources/WallBuffs`) and a proper visual pass (with Opus).
+2. **Playtest and tune the power-ups:** the 6 AoE cards (percentages, stack limits, rarities, burn cascades, sound volume with many hits at once; use `Debug: Trigger Level Up Choice` on `PowerUpManager`). Card descriptions still show fixed text: `PowerUpEffect.Describe(stacks + 1)` (added for the pause screen) can now show the value at the next level.
+3. **Playtest the wall buff zones** (see changelog): zone look and position, 20 s / 10 s pacing, the 2x damage buff, then more buff types (each a `WallBuff` subclass + asset in `Resources/WallBuffs`) and a proper visual pass (with Opus).
+4. **Make the Phase buff readable (later, with Opus):** while the ball phases through bricks it is not visible enough (only violet embers). Give the ball a clear look for the duration (ghostly or translucent ball, tint, trail change, a pass-through effect on each brick entered) and check it at the 640 px pixelation.
 5. **Make brick HP more obvious:** the HP color grading (`BrickPalette` gradient, white = 1 HP to dark blue = toughest, `Brick.SetColorScale`) is too subtle to read at a glance. Make a brick's toughness readable instantly, e.g. a wider, more saturated color range, brighter or thicker outlines on tough bricks, an HP number or pips on the brick, or a clearer change on every hit. Check it at the 640 px pixelation and on a phone.
 
 **Playtest on a real phone**
