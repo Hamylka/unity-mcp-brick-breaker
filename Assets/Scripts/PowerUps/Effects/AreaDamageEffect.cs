@@ -8,11 +8,11 @@ public class AreaDamageEffect : PowerUpEffect
     {
         /// <summary>Amount = share of the damage dealt that splashes onto the neighbours (0.25 = 25%).</summary>
         Shockwave,
-        /// <summary>Amount = jumps added: a destroyed brick arcs 1 damage to that many nearby bricks.</summary>
+        /// <summary>Amount = arc damage added per pick, as a share of the ball's hit damage (0.2 = 20%). Each pick also adds one arc.</summary>
         ChainLightning,
         /// <summary>Amount = extra bricks the shot goes through, in the same column.</summary>
         Piercing,
-        /// <summary>Amount = damage a destroyed brick deals to its 3x3 block.</summary>
+        /// <summary>Amount = blast damage added per pick, as a share of the ball's hit damage (0.5 = 50%), dealt to the 3x3 block.</summary>
         Volatile,
         /// <summary>Every few hits sweep the whole row. Amount is unused: each pick shortens the delay.</summary>
         Cleave,
@@ -31,9 +31,9 @@ public class AreaDamageEffect : PowerUpEffect
         switch (kind)
         {
             case Kind.Shockwave: area.AddSplash(amount); break;
-            case Kind.ChainLightning: area.AddChain(Mathf.RoundToInt(amount)); break;
+            case Kind.ChainLightning: area.AddChain(1, amount); break;
             case Kind.Piercing: area.AddPierce(Mathf.RoundToInt(amount)); break;
-            case Kind.Volatile: area.AddBlast(Mathf.RoundToInt(amount)); break;
+            case Kind.Volatile: area.AddBlast(amount); break;
             case Kind.Cleave: area.AddCleave(); break;
             case Kind.Meltdown: area.EnableMeltdown(); break;
         }

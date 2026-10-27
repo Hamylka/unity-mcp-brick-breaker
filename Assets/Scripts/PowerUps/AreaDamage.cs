@@ -40,8 +40,9 @@ public class AreaDamage : MonoBehaviour
     private bool applying;
     private float splashPercent;
     private int chainJumps;
+    private float chainPercent;
     private int pierceDepth;
-    private int blastDamage;
+    private float blastPercent;
     private int cleaveEvery;
     private int cleaveCounter;
     private bool meltdown;
@@ -54,7 +55,8 @@ public class AreaDamage : MonoBehaviour
     public float SplashPercent => splashPercent;
     public int ChainJumps => chainJumps;
     public int PierceDepth => pierceDepth;
-    public int BlastDamage => blastDamage;
+    public float BlastPercent => blastPercent;
+    public float ChainPercent => chainPercent;
     public int CleaveEvery => cleaveEvery;
     public bool Meltdown => meltdown;
 
@@ -66,9 +68,16 @@ public class AreaDamage : MonoBehaviour
     }
 
     public void AddSplash(float percent) => splashPercent += Mathf.Max(0f, percent);
-    public void AddChain(int jumps) => chainJumps += Mathf.Max(0, jumps);
+    /// <summary>Adds arcs and raises the arc damage, as a share of the ball's hit damage (0.2 = 20%).</summary>
+    public void AddChain(int jumps, float percent)
+    {
+        chainJumps += Mathf.Max(0, jumps);
+        chainPercent += Mathf.Max(0f, percent);
+    }
+
     public void AddPierce(int depth) => pierceDepth += Mathf.Max(0, depth);
-    public void AddBlast(int damage) => blastDamage += Mathf.Max(0, damage);
+    /// <summary>Raises the blast damage, as a share of the ball's hit damage (0.5 = 50%).</summary>
+    public void AddBlast(float percent) => blastPercent += Mathf.Max(0f, percent);
     /// <summary>First pick: every 6th hit sweeps the row. Each further pick shortens that by one, down to 3.</summary>
     public void AddCleave() => cleaveEvery = cleaveEvery == 0 ? 6 : Mathf.Max(3, cleaveEvery - 1);
     public void EnableMeltdown() => meltdown = true;
@@ -110,7 +119,7 @@ public class AreaDamage : MonoBehaviour
 
             if (killed)
             {
-                if (blastDamage > 0) Blast(origin);
+                if (blastPercent > 0f) Blast(origin);
                 if (chainJumps > 0) Chain(brick);
                 if (burns.Exists(b => b.Brick == brick)) SpreadBurn(brick);
             }
@@ -132,12 +141,9 @@ public class AreaDamage : MonoBehaviour
         Collect(source.transform.position, neighbourRadius, source);
         foreach (Brick neighbour in targets)
         {
-            neighbour.DamageCarry += dealt * splashPercent;
-            int whole = Mathf.FloorToInt(neighbour.DamageCarry);
-            if (whole <= 0) continue;
-            neighbour.DamageCarry -= whole;
-            NeonFx.Burst(neighbour.transform.position, ShockColor, 4, 2f, 0.07f, 0.3f);
-            neighbour.TakeHit(whole);
+            // Every neighbour sparks on every hit, even when the fraction has not yet added up to a whole HP.
+            NeonFx.Burst(neighbour.transform.position, ShockColor, 3, 1.5f, 0.06f, 0.25f);
+            DealFraction(neighbour, dealt * splashPercent);
         }
         if (targets.Count > 0) NeonFx.Ring(source.transform.position, ShockColor, 14, 2.5f, 0.07f, 0.25f);
     }
@@ -193,7 +199,8 @@ public class AreaDamage : MonoBehaviour
         Collect(origin, blastRadius, null);
         NeonFx.Ring(origin, BlastColor, 24, 4f, 0.1f, 0.35f);
         NeonFx.Burst(origin, BlastColor, 14, 3f, 0.1f, 0.4f);
-        foreach (Brick neighbour in targets) neighbour.TakeHit(blastDamage);
+        float damage = HitDamage() * blastPercent;
+        foreach (Brick neighbour in targets) DealFraction(neighbour, damage);
     }
 
     // Chain Lightning: arcs jump from a destroyed brick to the nearest bricks still standing.
@@ -209,12 +216,13 @@ public class AreaDamage : MonoBehaviour
         targets.Sort((a, b) => (a.transform.position - origin).sqrMagnitude
             .CompareTo((b.transform.position - origin).sqrMagnitude));
 
+        float damage = HitDamage() * chainPercent;
         for (int i = 0; i < targets.Count && i < chainJumps; i++)
         {
             Vector3 position = targets[i].transform.position;
             NeonFx.Line(origin, position, Vector3.up, ChainColor, 12, 1.5f, 0.07f, 0.3f);
             NeonFx.Flash(position, ChainColor, 0.4f, 0.1f);
-            targets[i].TakeHit(1);
+            DealFraction(targets[i], damage);
         }
     }
 
@@ -274,6 +282,24 @@ public class AreaDamage : MonoBehaviour
         }
         burns.AddRange(newBurns);
         newBurns.Clear();
+    }
+
+    // The damage of the ball's current hit (the strongest ball in play): percent-based effects scale from it.
+    private static int HitDamage()
+    {
+        int best = 1;
+        foreach (BallController ball in BallController.Active) best = Mathf.Max(best, ball.Damage);
+        return best;
+    }
+
+    // Fractions pile up on each brick (DamageCarry) until they make a whole HP, so low percentages still count.
+    private static void DealFraction(Brick target, float damage)
+    {
+        target.DamageCarry += damage;
+        int whole = Mathf.FloorToInt(target.DamageCarry + 0.001f);
+        if (whole <= 0) return;
+        target.DamageCarry = Mathf.Max(0f, target.DamageCarry - whole);
+        target.TakeHit(whole);
     }
 
     // Fills 'targets' with the live bricks within 'radius' brick sizes of a point (distance measured in bricks:

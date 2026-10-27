@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: ChainLightningEffect
   m_EditorClassIdentifier: Assembly-CSharp::AreaDamageEffect
   kind: 1
-  amount: 1
+  amount: 0.2

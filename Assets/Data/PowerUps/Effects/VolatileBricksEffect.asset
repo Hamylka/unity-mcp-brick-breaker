@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: VolatileBricksEffect
   m_EditorClassIdentifier: Assembly-CSharp::AreaDamageEffect
   kind: 3
-  amount: 1
+  amount: 0.5

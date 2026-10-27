@@ -201,10 +201,10 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 
 ### [2026-10-26] - Area-of-effect power-ups (by Claude)
 - **Done (branch `feature/aoe-powerups`):** 6 new level-up power-ups, the pool goes from 6 to 12 cards (this is also the fix for the repetitive card rolls: every rarity now has at least two cards). All are one `AreaDamageEffect` asset (kind + amount) in `Assets/Data/PowerUps`, run by the new `AreaDamage` component, which `AreaDamageEffect` adds to the `BrickGrid` object on first pick (fresh every run) and which listens to `BrickGrid.BrickHit`. Damage dealt by `AreaDamage` never triggers area effects again (no chain reactions), and it still gives XP for HP actually removed.
-  * **Shockwave** (Common, max 4): 25% of the damage dealt splashes onto the 4 neighbours. Fractions pile up per brick (`Brick.DamageCarry`), so 25% of a 1-damage ball removes an HP every 4 hits.
+  * **Shockwave** (Common, max 4): 25% of the damage dealt splashes onto the 4 neighbours (checked in play mode: exactly the bricks to the sides, in front and behind, and only those). It only reaches bricks that exist, so gaps and the wall edges mean fewer than 4 targets, and fractions pile up per brick (`Brick.DamageCarry`): 25% of a 1-damage ball removes an HP every 4 hits. Every neighbour now sparks on every hit so the reach is visible.
   * **Piercing Ball** (Uncommon, max 2): the hit also goes through the next brick(s) behind in the same column (half the damage, min 1).
-  * **Chain Lightning** (Rare, max 3): a destroyed brick arcs 1 damage to the nearest bricks (+1 arc per pick, range 2.2).
-  * **Volatile Bricks** (Epic, max 2): a destroyed brick blasts its 3x3 block for 1 damage (+1 per pick).
+  * **Chain Lightning** (Rare, max 3): a destroyed brick arcs to the nearest bricks (+1 arc per pick, range 2.2) for 20% of the ball's hit damage per pick (20 / 40 / 60%).
+  * **Volatile Bricks** (Epic, max 2): a destroyed brick blasts its 3x3 block for 50% of the ball's hit damage per pick (50 / 100%). Both use the strongest ball in play and the same fraction carry as Shockwave.
   * **Cleave** (Epic, max 3): every 6th hit sweeps its whole row for 1 damage (5th, then 4th with more picks).
   * **Meltdown** (Legendary, max 1): hit bricks burn 1 HP per second for 3 s; a burning brick that dies sets its neighbours alight.
   * `BrickGrid` gained `GetLiveBricks`, `BrickWidth` and `CellDepth` (area geometry). Geometry, ranges and burn timing are Inspector fields on `AreaDamage`; amounts and stacks are on each asset.
