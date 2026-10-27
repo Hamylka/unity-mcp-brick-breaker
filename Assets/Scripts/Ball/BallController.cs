@@ -64,6 +64,20 @@ public class BallController : MonoBehaviour
     /// <summary>Temporary damage factor (wall buffs). 1 = normal.</summary>
     public float DamageMultiplier { get; set; } = 1f;
 
+    /// <summary>
+    /// While true the ball passes through bricks: each brick it enters takes a normal hit once and the ball
+    /// does not bounce. Walls and the paddle still bounce it.
+    /// </summary>
+    public bool Phasing { get; set; }
+
+    private const float PhaseLookAhead = 0.3f;
+    private const float PhaseExitMargin = 0.05f;
+    private readonly HashSet<Collider> phaseIgnored = new(); // brick colliders collisions are switched off for
+    private readonly HashSet<Collider> phaseInside = new();  // ...that already took their hit for this pass
+    private readonly List<Collider> phaseScratch = new();
+    private readonly Collider[] phaseHits = new Collider[16];
+    private SphereCollider sphere;
+
     private static readonly List<BallController> active = new();
 
     /// <summary>Every enabled ball: the main one and any temporary extras (multi-ball).</summary>
@@ -137,6 +151,7 @@ public class BallController : MonoBehaviour
         }
 
         boost = Mathf.Max(0f, boost - Time.fixedDeltaTime / boostDecayTime);
+        UpdatePhasing();
 
         // Re-apply every step so the speed can never drift.
         Direction = ClampDirection(Direction);
@@ -157,6 +172,45 @@ public class BallController : MonoBehaviour
                 body.isKinematic = true;
                 BallLost?.Invoke(this);
             }
+        }
+    }
+
+    /// <summary>
+    /// Phasing: bricks near the ball get their collision switched off before the ball touches them and take one
+    /// normal hit; they are switched back on once the ball has left them (and the phasing is over).
+    /// </summary>
+    private void UpdatePhasing()
+    {
+        if (!Phasing && phaseIgnored.Count == 0) return;
+        if (sphere == null) sphere = GetComponent<SphereCollider>();
+
+        Vector3 position = body.position;
+        float radius = sphere.radius * Mathf.Max(transform.lossyScale.x, transform.lossyScale.z);
+
+        // Forget bricks the ball has left; give their collision back once phasing is over.
+        phaseScratch.Clear();
+        phaseScratch.AddRange(phaseIgnored);
+        foreach (Collider brick in phaseScratch)
+        {
+            if (brick == null) { phaseIgnored.Remove(brick); phaseInside.Remove(brick); continue; }
+            bool left = Vector3.Distance(brick.ClosestPoint(position), position) > radius + PhaseExitMargin;
+            if (!left) continue;
+            phaseInside.Remove(brick);
+            if (Phasing) continue;
+            Physics.IgnoreCollision(sphere, brick, false);
+            phaseIgnored.Remove(brick);
+        }
+        if (!Phasing) return;
+
+        int count = Physics.OverlapSphereNonAlloc(position, radius + PhaseLookAhead, phaseHits);
+        for (int i = 0; i < count; i++)
+        {
+            Collider other = phaseHits[i];
+            BrickStack stack = other.GetComponentInParent<BrickStack>();
+            if (stack == null) continue;
+
+            if (phaseIgnored.Add(other)) Physics.IgnoreCollision(sphere, other, true);
+            if (phaseInside.Add(other)) stack.TakeDamage(Damage);
         }
     }
 

@@ -146,7 +146,7 @@ public class WallBuffZone : MonoBehaviour
 
         strip.transform.localScale = new Vector3(len, 1.05f, 1f);
         core.transform.localScale = new Vector3(len * 0.8f, 0.35f, 1f);
-        floorPatch.transform.localScale = new Vector3(1.8f, len * 1.15f, 1f);
+        floorPatch.transform.localScale = new Vector3(2.25f, len * 1.15f, 1f);
 
         NeonGlow.SetColor(strip, With(NeonGlow.Hdr(buff.color, 1.4f), strength * 0.55f));
         NeonGlow.SetColor(core, With(NeonGlow.Hdr(buff.color, 3f), strength));

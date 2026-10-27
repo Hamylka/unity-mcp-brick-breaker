@@ -15,7 +15,7 @@ public class WallBuffZoneSpawner : MonoBehaviour
     [SerializeField, Min(1f)] private float spawnInterval = 20f;
     [SerializeField, Min(1f)] private float zoneLifetime = 10f;
     [Tooltip("Zone length along the wall, in world units.")]
-    [SerializeField, Min(0.5f)] private float zoneLength = 2.5f;
+    [SerializeField, Min(0.5f)] private float zoneLength = 3.125f;
     [Tooltip("Where along the wall (0 = near the paddle, 1 = far end) a zone may appear.")]
     [SerializeField, Range(0f, 1f)] private float minT = 0.2f;
     [SerializeField, Range(0f, 1f)] private float maxT = 0.7f;
