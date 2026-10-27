@@ -25,6 +25,10 @@ public class AreaDamage : MonoBehaviour
     [Tooltip("Furthest an arc of Chain Lightning can jump, in world units.")]
     [SerializeField, Min(0.5f)] private float chainRange = 2.2f;
 
+    [Header("Cleave")]
+    [Tooltip("Damage of the row sweep, as a share of the ball's hit damage (1.5 = 150%).")]
+    [SerializeField, Min(0f)] private float cleaveDamagePercent = 1.5f;
+
     [Header("Meltdown")]
     [SerializeField, Min(1)] private int burnTicks = 3;
     [SerializeField, Min(0.1f)] private float burnTickInterval = 1f;
@@ -58,6 +62,11 @@ public class AreaDamage : MonoBehaviour
     public float BlastPercent => blastPercent;
     public float ChainPercent => chainPercent;
     public int CleaveEvery => cleaveEvery;
+    /// <summary>Hits counted toward the next Cleave sweep (0 to CleaveEvery - 1).</summary>
+    public int CleaveCharge => cleaveCounter;
+
+    /// <summary>Raised when a Cleave sweep goes off (the HUD meter flashes on it).</summary>
+    public event System.Action CleaveFired;
     public bool Meltdown => meltdown;
 
     /// <summary>The area-damage component of this grid, added on first use.</summary>
@@ -115,6 +124,7 @@ public class AreaDamage : MonoBehaviour
             {
                 cleaveCounter = 0;
                 Cleave(brick);
+                CleaveFired?.Invoke();
             }
 
             if (killed)
@@ -182,13 +192,14 @@ public class AreaDamage : MonoBehaviour
         float rowZ = source.transform.position.z;
         float halfDepth = grid.CellDepth * 0.5f;
 
+        float damage = HitDamage() * cleaveDamagePercent;
         int swept = 0;
         foreach (Brick candidate in live)
         {
             if (candidate == source || Mathf.Abs(candidate.transform.position.z - rowZ) > halfDepth) continue;
             swept++;
             NeonFx.Sparks(candidate.transform.position, Vector3.up, CleaveColor, 4, 3f, 40f, 0.07f, 0.25f);
-            candidate.TakeHit(1);
+            DealFraction(candidate, damage);
         }
         if (swept > 0) NeonFx.Flash(source.transform.position, CleaveColor, 0.7f, 0.15f);
     }

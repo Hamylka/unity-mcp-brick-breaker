@@ -138,7 +138,7 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 - **Roadmap (in order):**
   1. Playtest and tune the scaling (rows per proc, multiplier) and the notice.
   2. Dedicated sounds and visual effects for the bonus items (with Opus), plus a subtle cue sound for the HP scale-up.
-  3. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
+  4. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
 
 ### [2026-10-24] - Bonus and HP scale-up sounds and effects (by Claude)
 - **Done:** 10 new synthesized sounds (`Sfx` values appended at the end: BonusPickup, BonusExpire, LaserCharge, LaserShot, ShieldUp, ShieldBreak, MultiBallSplit, BallFade, BallPromote, HpScaleUp). The generator now adds any missing `Sfx` to the scene's `SoundManager` with default mixing values (existing entries untouched; save the scene after running it). New `NeonFx` static particle helper (`Burst`, `Ring`, `Sparks`, `Flash`, `Embers`, `Line`). Wired in:
@@ -205,11 +205,12 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   * **Piercing Ball** (Uncommon, max 2): the hit also goes through the next brick(s) behind in the same column (half the damage, min 1).
   * **Chain Lightning** (Rare, max 3): a destroyed brick arcs to the nearest bricks (+1 arc per pick, range 2.2) for 20% of the ball's hit damage per pick (20 / 40 / 60%).
   * **Volatile Bricks** (Epic, max 2): a destroyed brick blasts its 3x3 block for 50% of the ball's hit damage per pick (50 / 100%). Both use the strongest ball in play and the same fraction carry as Shockwave.
-  * **Cleave** (Epic, max 3): every 6th hit sweeps its whole row for 1 damage (5th, then 4th with more picks).
+  * **Cleave** (Epic, max 3): every 6th hit sweeps its whole row for 150% of the ball's hit damage (every 5th, then 4th with more picks). The new `CleaveMeter` (`Assets/Scripts/UI`, builds itself) shows a segmented bar near the bottom of the screen, one segment per hit needed, the last one pulses before the sweep and the bar flashes when it fires; it only appears once Cleave is picked.
   * **Meltdown** (Legendary, max 1): hit bricks burn 1 HP per second for 3 s; a burning brick that dies sets its neighbours alight.
   * `BrickGrid` gained `GetLiveBricks`, `BrickWidth` and `CellDepth` (area geometry). Geometry, ranges and burn timing are Inspector fields on `AreaDamage`; amounts and stacks are on each asset.
 - **Open issues:** compiles clean and assets are in the scene pool, but not playtested (balance of the percentages, burn cascades in low-HP walls, sound volume when many bricks are hit at once). Effects reuse existing sounds and simple `NeonFx` particles; dedicated sounds and visuals are still to do (Opus). Card descriptions are short fixed texts (they do not show the current stack value).
 - **Roadmap (in order):**
-  1. Playtest the six power-ups (use `Debug: Trigger Level Up Choice` on `PowerUpManager`) and tune percentages, stack limits and rarities.
-  2. Dedicated sounds and visual effects for the AoE power-ups (with Opus).
-  3. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
+  1. **Show the max level on the power-up cards** (next priority): display the current and maximum stack on a card, like "Lv2/3" (`PowerUpDefinition.MaxStacks` and `PowerUpManager.GetStacks` already exist; unlimited power-ups show only their level).
+  2. Playtest the six power-ups (use `Debug: Trigger Level Up Choice` on `PowerUpManager`) and tune percentages, stack limits and rarities.
+  3. Dedicated sounds and visual effects for the AoE power-ups (with Opus).
+  4. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
