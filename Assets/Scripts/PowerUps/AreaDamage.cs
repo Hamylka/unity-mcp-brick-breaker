@@ -55,6 +55,7 @@ public class AreaDamage : MonoBehaviour
 
     private readonly List<Brick> live = new();
     private readonly List<Brick> targets = new();
+    private readonly HashSet<Brick> visited = new();
     private readonly List<Burn> burns = new();
     private readonly List<Burn> newBurns = new();
 
@@ -79,11 +80,11 @@ public class AreaDamage : MonoBehaviour
     }
 
     public void AddSplash(float percent) => splashPercent += Mathf.Max(0f, percent);
-    /// <summary>Adds arcs and raises the arc damage, as a share of the ball's hit damage (0.2 = 20%).</summary>
-    public void AddChain(int jumps, float percent)
+    /// <summary>First pick: 2 arcs. Each further pick adds one. Arc damage is a fixed share of the ball's hit damage (0.2 = 20%), it does not stack.</summary>
+    public void AddChain(float percent)
     {
-        chainJumps += Mathf.Max(0, jumps);
-        chainPercent += Mathf.Max(0f, percent);
+        chainJumps = chainJumps == 0 ? 2 : chainJumps + 1;
+        chainPercent = Mathf.Max(0f, percent);
     }
 
     public void AddPierce(int depth) => pierceDepth += Mathf.Max(0, depth);
@@ -135,10 +136,11 @@ public class AreaDamage : MonoBehaviour
                 CleaveFired?.Invoke();
             }
 
+            if (chainJumps > 0) Chain(brick);
+
             if (killed)
             {
                 if (blastPercent > 0f) Blast(origin);
-                if (chainJumps > 0) Chain(brick);
                 if (burns.Exists(b => b.Brick == brick)) SpreadBurn(brick);
             }
             else if (meltdown)
@@ -222,27 +224,46 @@ public class AreaDamage : MonoBehaviour
         foreach (Brick neighbour in targets) DealFraction(neighbour, damage);
     }
 
-    // Chain Lightning: arcs jump from a destroyed brick to the nearest bricks still standing.
+    // Chain Lightning: every time a brick is hit, an arc leaps from it to each of the 'chainJumps' nearest bricks
+    // in range, dealing a share of the ball's current damage (fractions carry per brick like the other effects).
     private void Chain(Brick source)
     {
-        grid.GetLiveBricks(live);
-        Vector3 origin = source.transform.position;
-
-        targets.Clear();
-        foreach (Brick candidate in live)
-            if (candidate != source && (candidate.transform.position - origin).sqrMagnitude <= chainRange * chainRange)
-                targets.Add(candidate);
-        targets.Sort((a, b) => (a.transform.position - origin).sqrMagnitude
-            .CompareTo((b.transform.position - origin).sqrMagnitude));
+        Vector3 from = source.transform.position;
+        visited.Clear();
+        visited.Add(source);
 
         float damage = HitDamage() * chainPercent;
-        for (int i = 0; i < targets.Count && i < chainJumps; i++)
+        bool anyArc = false;
+        for (int jump = 0; jump < chainJumps; jump++)
         {
-            Vector3 position = targets[i].transform.position;
-            NeonFx.Line(origin, position, Vector3.up, ChainColor, 12, 1.5f, 0.07f, 0.3f);
-            NeonFx.Flash(position, ChainColor, 0.4f, 0.1f);
-            DealFraction(targets[i], damage);
+            Brick next = NearestUnvisited(from);
+            if (next == null) break;
+
+            visited.Add(next);
+            Vector3 to = next.transform.position;
+            ChainBolt.Spawn(from, to, ChainColor);
+            NeonFx.Flash(to, ChainColor, 0.5f, 0.12f);
+            NeonFx.Sparks(to, Vector3.up, ChainColor, 5, 3f, 60f, 0.07f, 0.25f);
+            DealFraction(next, damage);
+            anyArc = true;
         }
+        if (anyArc) SoundManager.Play(Sfx.LaserShot, Random.Range(1.5f, 1.8f));
+    }
+
+    private Brick NearestUnvisited(Vector3 from)
+    {
+        grid.GetLiveBricks(live);
+        Brick best = null;
+        float bestSqr = chainRange * chainRange;
+        foreach (Brick candidate in live)
+        {
+            if (visited.Contains(candidate)) continue;
+            float sqr = (candidate.transform.position - from).sqrMagnitude;
+            if (sqr > bestSqr) continue;
+            bestSqr = sqr;
+            best = candidate;
+        }
+        return best;
     }
 
     // Meltdown: burning bricks lose 1 HP per tick, and a burning brick that dies sets its neighbours alight.

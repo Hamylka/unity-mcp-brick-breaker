@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ChainLightning
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Chain Lightning
-  description: +1 arc when a brick dies
+  description: Hits arc to 2 bricks for 20% dmg, +1 arc per level
   rarity: 2
   icon: '...###.
 
@@ -28,5 +28,5 @@ MonoBehaviour:
     ..##...
 
     .#.....'
-  maxStacks: 3
+  maxStacks: 2
   effect: {fileID: 11400000, guid: 33ac40d1a20c8234b8bca2824f5325db, type: 2}
