@@ -14,7 +14,7 @@ public class ActiveBonusHud : MonoBehaviour
     private const float RingGap = 10f;
     private const float RowGap = 14f;
     private const float Margin = 30f;
-    private const float TopOffset = 155f;
+    private const float TopOffset = 180f; // clears the pause button (bottom edge at 148)
     private const float LabelGap = 14f;
     private const float LabelHeight = 21f; // 7 font pixels at size 3
     private const float WarnTime = 2f;
