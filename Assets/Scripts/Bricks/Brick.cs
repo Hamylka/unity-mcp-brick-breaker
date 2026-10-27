@@ -73,6 +73,8 @@ public class Brick : MonoBehaviour
     public bool IsAlive => HitPoints > 0;
     /// <summary>Fractional damage waiting to become a whole HP (splash power-ups at low damage).</summary>
     public float DamageCarry { get; set; }
+    /// <summary>XP granted per HP removed. Shrinks for bricks spawned after the HP window scaled up (set by <see cref="BrickGrid"/>).</summary>
+    public float XpPerHp { get; set; } = 1f;
 
     private MaterialPropertyBlock block;
     private Vector3 baseScale = Vector3.one;

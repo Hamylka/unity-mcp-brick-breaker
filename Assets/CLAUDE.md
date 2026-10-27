@@ -230,3 +230,9 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   4. Dedicated sounds and visual effects for the AoE power-ups (with Opus).
   5. More bonus item effects.
   6. **Pause screen (new, not coded yet):** a pause button/menu that freezes the run and shows the current game stats (level, XP, bricks destroyed, run time, ball damage, wall HP window) and the power-ups picked so far with their level ("LV 2/3", reusing the card level pips). Resume and Restart buttons; same pixel UI style as the Game Over and card screens.
+
+### [2026-10-27] - XP rebalance (by Claude)
+- **Done (branch `feature/xp-rebalance`):** analysis showed XP followed the wall's HP (x1.75 per 5 rows) while the level curve only grows polynomially, so level-ups sped up the longer a run lasted (about 27 in 180 s if every brick is cleared, one every ~5 s late on). Two changes: (1) each brick now carries `Brick.XpPerHp`, set at spawn by `BrickGrid` to `hpMultiplier^(-XP Scaling Exponent x HpScaleTier)` (`BrickGrid > HP Scaling > XP Scaling Exponent`, default 0.5; 0 = old flat 1 XP per HP, 1 = constant XP per row), and `ExperienceSystem` multiplies the XP of every hit by it (splash, burn and chain damage included, they go through `BrickHit`); (2) level curve slowed to Base XP 15 and Power 1.25 (scene and code defaults).
+- **Expected pace** (simulation, upper bound, assumes every spawned brick is cleared): level 3 at ~15 s, 5 at ~55 s, 10 at ~150 s, 15 at ~215 s, so roughly 10-12 picks in 3 minutes instead of ~27.
+- **Open issues:** not playtested. The real pace depends on the player's damage output; tune `XP Scaling Exponent`, Base XP and Power. The wall-clear bonus (50% of the level cost) is unchanged, re-check it. XP orbs still send one orb per XP (max 8 per hit), so lower per-hit XP may now show a single orb: this goes with the orb rework.
+- **Roadmap:** playtest the pace; rework and color-code the XP orbs; playtest the AoE power-ups; pause screen.
