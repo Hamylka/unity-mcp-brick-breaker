@@ -183,6 +183,10 @@ public class BrickGrid : MonoBehaviour
         if (generateOnStart) Generate();
     }
 
+    // Brick colors show the hits left with the current ball damage: recolor them when it changes
+    // (damage upgrade, wall buff, main ball lost to an extra). Does nothing while it stays the same.
+    private void Update() => Brick.SetHitDamage(BallController.MainDamage);
+
     private void OnValidate()
     {
         if (maxLayers < minLayers) maxLayers = minLayers;
@@ -281,6 +285,7 @@ public class BrickGrid : MonoBehaviour
         HpScaleTier = 0;
         ApplyHpWindow(0);
         Brick.ResetColorScale(CurrentMaxHp);
+        Brick.ResetHitDamage(BallController.MainDamage);
 
         // Back to the starting position and fresh timers.
         offset = 0f;

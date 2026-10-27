@@ -83,6 +83,25 @@ public class BallController : MonoBehaviour
     /// <summary>Every enabled ball: the main one and any temporary extras (multi-ball).</summary>
     public static IReadOnlyList<BallController> Active => active;
 
+    /// <summary>
+    /// Damage of the main ball (buffs included), or of the strongest extra if only extras are flying, 1 with no ball.
+    /// The reference for "hits left" on bricks (color and HP labels).
+    /// </summary>
+    public static int MainDamage
+    {
+        get
+        {
+            int best = 1;
+            foreach (BallController ball in active)
+            {
+                if (ball == null) continue;
+                if (!ball.IsExtra) return ball.Damage;
+                best = Mathf.Max(best, ball.Damage);
+            }
+            return best;
+        }
+    }
+
     /// <summary>True for temporary copies made by <see cref="SpawnExtra"/>. Losing one never ends the run.</summary>
     public bool IsExtra { get; private set; }
 

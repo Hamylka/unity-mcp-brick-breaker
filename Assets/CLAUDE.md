@@ -25,7 +25,8 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 
 ## 4. Systems & Features Blueprint
 - **Brick System:**
-  * Rectangular 2:1 bricks generated in a grid (7 columns, 4 starting rows, Cell Size ~0.5 tuned in the Inspector, `Brick Height` 0.4). Bricks have HP (1 = white, 2 = cyan, 3 = azure, 4 = blue, 5 = violet) and shift toward white as they lose HP.
+  * Rectangular 2:1 bricks generated in a grid (7 columns, 4 starting rows, Cell Size ~0.5 tuned in the Inspector, `Brick Height` 0.4). Bricks have HP; their color is a heat ramp of the **hits left** to break them with the current ball damage, `ceil(HP / damage)` (`Brick.HitsLeft`; with damage 1 on the starting wall: 1 = white, 2 = cyan, 3 = lime, 4 = amber, 5 = hot red; hot red is always the hits the toughest brick spawning now would take, so the ramp stretches as the HP window scales up and cools down as damage grows: white = one-shot). Tough bricks have a fuller body and a stronger glow, weak ones look hollow; every non-lethal hit flashes the brick white and throws chips in its old color, then it settles on the color of the hits left.
+  * **HP display setting** (player choice, pause screen "BRICK HP" row listing PIPS / COLOR / NUMBERS, saved between runs in PlayerPrefs, **PIPS by default**): COLOR (the above only), NUMBERS (a pixel number over each brick) or PIPS (one square per hit beyond the first, in a single row: 1 pip = 2 hits up to 4 pips = 5 hits; a pixel skull from 6 hits, meaning "tough, leave it for later"). Both show the hits left (same value as the color), not the raw HP; one-hit bricks show no label. Labels are drawn by `BrickHpOverlay` on a full-resolution UI canvas that follows the bricks, not in the pixelated 3D scene.
   * Stacking (several layers per cell) exists in code but is set to 1 layer max: tall stacks hid the ball.
   * **Advancing wall (Space Invaders style):** the whole wall steps one row toward the paddle every 5 seconds, only while the ball is in play.
   * **Endless rows:** every step adds a new row at the back. Later rows get fewer gaps and tougher bricks (difficulty ramp per row).
@@ -64,11 +65,21 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 Single source of truth for what is left. Update it at the end of every task (tick off, add, reorder); changelog entries below only describe what was done.
 
 **Next up (in order)**
-1. **Playtest the XP rework:** orb merging, colors and origin (ball), then the XP pace (`XP Scaling Exponent` on `BrickGrid`, Base XP / Power on `ExperienceSystem`; level-ups were too frequent). Re-check the wall-clear bonus (50% of the level cost, now paid in big orbs).
-2. **Playtest and tune the power-ups:** the 6 AoE cards (percentages, stack limits, rarities, burn cascades, sound volume with many hits at once; use `Debug: Trigger Level Up Choice` on `PowerUpManager`). Card descriptions still show fixed text: `PowerUpEffect.Describe(stacks + 1)` (added for the pause screen) can now show the value at the next level.
-3. **Playtest the wall buff zones** (see changelog): zone look and position, 20 s / 10 s pacing, the 2x damage buff, then more buff types (each a `WallBuff` subclass + asset in `Resources/WallBuffs`) and a proper visual pass (with Opus).
-4. **Make the Phase buff readable (later, with Opus):** while the ball phases through bricks it is not visible enough (only violet embers). Give the ball a clear look for the duration (ghostly or translucent ball, tint, trail change, a pass-through effect on each brick entered) and check it at the 640 px pixelation.
-5. **Make brick HP more obvious:** the HP color grading (`BrickPalette` gradient, white = 1 HP to dark blue = toughest, `Brick.SetColorScale`) is too subtle to read at a glance. Make a brick's toughness readable instantly, e.g. a wider, more saturated color range, brighter or thicker outlines on tough bricks, an HP number or pips on the brick, or a clearer change on every hit. Check it at the 640 px pixelation and on a phone.
+1. **Make the Phase buff readable (with Opus):** while the ball phases through bricks it is not visible enough (only violet embers). Give the ball a clear look for the duration (ghostly or translucent ball, tint, trail change, a pass-through effect on each brick entered) and check it at the 640 px pixelation.
+2. **VFX and SFX enhancement pass (with Opus):** replace the placeholder and reused cues with dedicated ones. Sounds and visuals for the AoE power-ups (Shockwave, Piercing, Chain Lightning, Volatile, Cleave, Meltdown; mix when many bricks are hit at once), the wall buff zones (zone look at the camera's grazing angle, take/expire cues) and the buffed ball, the bonus items (pickup/expire sounds are still partly reused). Check every effect at the 640 px pixelation and against the bloom.
+3. **Playtest the brick HP readability** (see changelog): colors at a glance in a long run (HP window scaled up), the hit flash and chips with many hits at once, the NUMBERS / PIPS display modes (hits-left values, label size, the 6-hit skull threshold, labels over the ball), then on a phone.
+4. **Playtest the XP rework:** orb merging, colors and origin (ball), then the XP pace (`XP Scaling Exponent` on `BrickGrid`, Base XP / Power on `ExperienceSystem`; level-ups were too frequent). Re-check the wall-clear bonus (50% of the level cost, now paid in big orbs).
+5. **Playtest and tune the power-ups:** the 6 AoE cards (percentages, stack limits, rarities, burn cascades; use `Debug: Trigger Level Up Choice` on `PowerUpManager`). Card descriptions still show fixed text: `PowerUpEffect.Describe(stacks + 1)` (added for the pause screen) can now show the value at the next level.
+6. **Playtest the wall buff zones** (see changelog): zone position, 20 s / 10 s pacing, the 2x damage and Phase buffs, then more buff types (each a `WallBuff` subclass + asset in `Resources/WallBuffs`).
+
+**Windows / landscape**
+- Make a Windows build and try it (window resize, fullscreen toggle).
+- Fill the side areas (neon decoration, later stats / the wordmark).
+
+**Later**
+- More bonus item effects (each a new `BonusEffect` subclass plus a `BonusDefinition` asset).
+- More wall effects beyond the buff zones (ideas to be thought out).
+- Title screen using `Logo_Wordmark`.
 
 **Playtest on a real phone**
 - HP scaling (5 rows / x1.75), "DIFFICULTY INCREASED!" notice (position, size, wording), brick recolor.
@@ -76,15 +87,6 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - Card level pips and tags, app icon on a launcher, splash screen in a build.
 - Pause screen: button size and spot under the notch, row text size, scrolling a long power-up list, auto-pause when the app goes to the background.
 
-**Windows / landscape**
-- Make a Windows build and try it (window resize, fullscreen toggle).
-- Fill the side areas (neon decoration, later stats / the wordmark).
-
-**Later**
-- Dedicated sounds and visual effects for the AoE power-ups (with Opus).
-- More bonus item effects (each a new `BonusEffect` subclass plus a `BonusDefinition` asset).
-- More wall effects beyond the buff zones (ideas to be thought out).
-- Title screen using `Logo_Wordmark`.
 ## 6. Project Changelog & Architecture Status
 ### [2026-10-21] - Project Initialization
 - Define base architecture and project scope.
@@ -229,3 +231,31 @@ Single source of truth for what is left. Update it at the end of every task (tic
   * **Open issues:** no visual on the ball while phasing beyond the violet embers (a ghostly look would help); the hit lands when the ball is ~0.3 from the brick, slightly before overlap.
 - **Tuning (same branch, user request):** Phase now lasts 6 s and halves the ball's damage while it is on (`PhaseWallBuff > Damage Multiplier` 0.5, fractions carried per brick through `Brick.DamageCarry`, so a 1-damage ball removes an HP every second brick it passes). Spawn odds are 75% 2x damage / 25% Phase (weights 3 and 1 on the assets). Zones appear farther from the paddle: `Min T` / `Max T` are now 0.4 / 0.8 (world Z about 3.4 to 9.8). Also fixed: `BallBuffAura` no longer spawns particles while the scene closes (it logged "objects not cleaned up" on leaving play mode).
   * **Checked:** play mode, phase ball took the wall from 37 to 20 total HP, no new errors. Not seen by eye.
+
+### [2026-10-27] - Brick HP readability and roadmap reorder (by Claude)
+- **Done (branch `feature/brick-hp-readability`):** brick toughness now reads at a glance, three cues stacked:
+  * **Heat ramp:** `BrickPalette` gradient is now white (1 HP), cyan, lime, amber, hot red (toughest spawning), keys at quarter steps so each HP of the starting wall (1 to 5) is its own hue. Written into `Assets/Data/BrickPalette.asset` (the stale `hitPointColors` array is gone) and as the code default. `BrickPalette.GetToughness(hp, scaleMax)` is the shared 0-1 ratio.
+  * **Weight:** `Brick > HP Readability` scales the body brightness (`Body By Toughness` 0.4x to 2.6x) and the outline glow (`Glow By Toughness` 0.7x to 1.45x) with toughness, so weak bricks look hollow and tough ones solid and bright.
+  * **Every hit:** a non-lethal hit flashes the brick white-hot (`Hit Flash Brightness` 1.6, `Hit Flash Time` 0.18 s, ease-out) and throws `Hit Chips` (4) in its old color, then it settles on the color of the HP left. The HP scale-up recolor keeps its own fade (`Color Fade Time`).
+- **Checked:** play-mode screenshot with every HP step forced on the wall: the five colors are distinct at the game resolution, body fill visible on the tough bricks. No console errors. The hit flash and chips were not judged in motion.
+- **Roadmap:** reordered so non-playtest work comes first, a VFX/SFX enhancement pass (absorbs the old "dedicated AoE sounds and visuals" item) sits before the playtests, and the "Playtest on a real phone" group moved to the end.
+- **Open issues:** the hot red of the toughest bricks is close to the lose line and the magenta wall trims; shift the last key toward orange-red if it confuses. With many hits at once (AoE power-ups) the chips may get busy: lower `Hit Chips`. No HP number on the brick: values grow into the dozens with HP scaling, so color and weight carry it for now.
+- **HP display modes (same branch, user request):** the player picks how brick HP is shown, from a new "BRICK HP" row on the pause screen (segmented COLOR / NUMBERS / PIPS, above the Restart/Resume buttons; the power-up list got 75 units shorter to make room). `BrickHpDisplay` (static, `Assets/Scripts/Bricks`) holds the mode, saves it in PlayerPrefs (`BrickHpDisplay`, default COLOR) and raises `Changed`.
+  * **Labels:** `BrickHpOverlay` (`Assets/Scripts/UI`, builds itself, canvas order 4 under the HUD) draws one `PixelText` per brick on a screen-space canvas and moves it onto its brick every frame. A first pass drew the labels in 3D, but at the 640 px render a brick is ~10 px tall and the digits were mush or spilled onto the next row; the UI is full resolution, so the labels are crisp. Size follows the brick's width on screen (`Width Per Pixel` 19, whole font pixels, 2 to 6), mostly white tinted by the HP color (`Whiteness` 0.6), 1-pixel dark drop shadow (an outline filled the holes of small glyphs). Labels scale with the brick (spawn pop-in, hit punch), pop when the HP drops, vanish on death. Bricks register in `Initialize` and unregister on destroy; `Brick` exposes `ShowsHpLabel`, `VisualScale`, `Size`, `HpColor`.
+  * **Pips:** a new `*` glyph in `PixelFont` (4x4 square); up to 10 HP as rows of 5, the number above that. `PixelText` gained `Spacing` / `LineGap` setters (pips use 0).
+  * **Checked:** play-mode screenshots of both modes with forced HP values (1 to 140): numbers readable up to 3 digits, pips countable. The selector buttons switch the mode and save it (tested through their click handler); the selector re-syncs whenever the pause screen opens. No console errors.
+  * **Open issues:** two-row pips (6 to 10 HP) reach into the row behind; labels draw over the ball and particles (UI is on top of the 3D scene); not tried on a phone.
+- **Hits left instead of HP (same branch, user request):** NUMBERS and PIPS now show the estimated ball hits to break each brick, `ceil(HP / damage)`, with the damage of the main ball (`BallController.Damage`, so wall buffs count; the strongest extra if no main ball; 1 with no ball). Labels get much lighter as damage grows (a 140 HP brick against a 5-damage ball shows 28), and pips cover far more bricks before the 10 cap. A label only pops when its own brick loses HP, not when a damage upgrade lowers every label at once. AoE damage (splash, chain, burn) is not counted, so it is an estimate.
+  * **Checked:** play mode, ball damage 5, HP 1/2/3/4/5/8/12/27/140 read 1/1/1/1/1/2/3/6/28 on screen. No console errors.
+  * **Idea, not done:** hide the label on 1-hit bricks so only the tough ones carry a number.
+- **Color by hits left, no label on one-shots (same branch, user request):** the brick color ramp now runs on hits left instead of HP: `palette.GetColor(HitsLeft, HitsFor(ColorScaleMaxHp))`. `Brick.HitDamage` (static) is the damage reference, fed every frame by `BrickGrid.Update` from the new `BallController.MainDamage` (main ball, buffs included; strongest extra if no main ball; 1 with no ball); when it changes every living brick fades to its new color (2.5x `Color Fade Time`, no pulse, since the 2x / Phase wall buffs change it often). `Brick.HitsFor(hp)` / `HitsLeft` are the shared formula, also used by `BrickHpOverlay`, so colors and labels always agree. NUMBERS / PIPS now hide the label on bricks that break in one hit.
+  * **Checked:** play mode, HP 1/2/3/4/5/10/20 with color scale 20: damage 1 gives the full ramp; after raising the ball to damage 5 the bricks re-faded to white (HP 1-5, one hit, no label), teal "2" (HP 10) and hot red "4" (HP 20, the new max), only the 2 and 4 labels left on screen. No console errors.
+  * **Open issues:** a damage upgrade turns most of the wall white at once (intended: they are one-shots now), check that it does not hide the difficulty ramp; AoE damage is still not counted in the estimate.
+- **Skull past 10 hits (same branch, user pick among 5 ideas):** in PIPS mode a brick that needs more than 10 hits now shows a single pixel skull instead of its number (new `@` glyph in `PixelFont`, 5x7: dome, two 2-pixel eye sockets, jaw with teeth), drawn one font pixel bigger than the digits so the face reads. It says "tough, leave it for later" without an exact count. NUMBERS mode is unchanged.
+  * **Checked:** play mode, HP 1/2/3/5/8/10/11/25/60 at damage 1: labels were nothing (1 hit), pips (2 to 10) and `@` (11, 25, 60); screenshot at digit size showed the skulls on the hot bricks. The +1 size bump was not seen on screen (Unity stopped advancing frames while unfocused). No console errors.
+  * **Other ideas kept for later:** big pip per 5 hits + small pips, a pip row with a "+N" count, tiered pip colors (1 / 5 / 25 like the XP orbs), a segmented fill bar.
+- **Skull from 6 hits (same branch, user request):** the skull now replaces the pips from 6 hits instead of 11 (`BrickHpOverlay.MaxPips` 5), so pips are always a single row of 2 to 5 squares. This also removes the open issue of two-row pips reaching into the row behind. Compile checked, not re-seen on screen.
+- **PIPS by default, new order (same branch, user request):** the selector now lists PIPS / COLOR / NUMBERS (`BrickHpDisplay.Order`) and a player who never picked gets PIPS (`BrickHpDisplay.Default`). The choice is still saved in PlayerPrefs (`BrickHpDisplay` key); the enum values are pinned (Color 0, Numbers 1, Pips 2) so a saved choice keeps its meaning whatever the display order, and an unknown saved value falls back to the default.
+  * **Checked:** play mode with the key deleted (fresh install): mode = Pips, selector left to right PIPS (highlighted), COLOR, NUMBERS; clicking NUMBERS saved 1, and after restarting play mode the run started in NUMBERS. The editor key was deleted again afterwards, so the editor starts on the default.
+- **Pips = hits minus one (same branch, user request):** a pip now counts the hits beyond the first, so 2 hits = 1 pip, 5 hits = 4 pips (max), 6+ hits = skull, 1 hit = no label. Pips are now at most 4 squares wide.
+  * **Checked:** play mode, damage 1: labels read 2 hits `*`, 3 `**`, 4 `***`, 5 `****`, 6 and 9 `@`; 20 one-hit bricks showed 0 labels. No console errors.

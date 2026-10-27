@@ -18,7 +18,9 @@ public class PauseScreen : MonoBehaviour
     private const float TitlePixel = 14f;
     private const float StatsY = 515f;
     private const float ListTop = 365f;
-    private const float ListBottom = -615f;
+    private const float ListBottom = -540f;
+    private const float HpDisplayY = -608f;
+    private const float HpDisplayHeight = 96f;
     private const float ListWidth = 960f;
     private const float RowHeight = 124f;
     private const float RowGap = 14f;
@@ -102,6 +104,7 @@ public class PauseScreen : MonoBehaviour
     private PixelText restartLabel;
     private UiButton restartButton;
     private CanvasGroup buttonsGroup;
+    private readonly List<(BrickHpDisplay.Mode mode, Image image, PixelText label, UiButton button)> hpDisplayOptions = new();
     private PixelText countText;
     private Image wipe;
 
@@ -224,6 +227,8 @@ public class PauseScreen : MonoBehaviour
     // Rebuilds the stats and the power-up list from the current run.
     private void Fill()
     {
+        RefreshHpDisplaySelector();
+
         int level = experience != null ? experience.Level : 1;
         float runTime = game != null ? game.RunTime : 0f;
         int seconds = Mathf.FloorToInt(runTime);
@@ -360,6 +365,11 @@ public class PauseScreen : MonoBehaviour
         bool interactive = state == State.Open && k >= 1f;
         resumeButton.Interactable = interactive;
         restartButton.Interactable = interactive;
+        foreach (var option in hpDisplayOptions)
+        {
+            option.button.Interactable = interactive;
+            option.image.rectTransform.localScale = Vector3.one * (option.button.IsPressed ? 0.93f : 1f);
+        }
 
         float scale = EaseOutBack(k);
         float pulse = interactive ? 1f + 0.035f * Mathf.Sin(time * 5f) : 1f;
@@ -734,6 +744,54 @@ public class PauseScreen : MonoBehaviour
         resumeButton.Clicked += Resume;
         PixelText resumeLabel = NewText("Label", resumeRect, "RESUME", 7f, ink);
         Stretch(resumeLabel.rectTransform);
+
+        BuildHpDisplaySelector(buttons);
+    }
+
+    // "BRICK HP" setting: a segmented control (PIPS / COLOR / NUMBERS) between the list and the buttons.
+    private void BuildHpDisplaySelector(RectTransform parent)
+    {
+        Image panel = NewImage("HpDisplay", parent, panelColor, UiSprites.RoundedRect);
+        Place(panel.rectTransform, new Vector2(0f, HpDisplayY), new Vector2(ListWidth, HpDisplayHeight));
+
+        PixelText title = NewText("Label", panel.rectTransform, "BRICK HP", 3f, accentColor);
+        Place(title.rectTransform, new Vector2(-ListWidth * 0.5f + 115f, 0f), new Vector2(210f, 30f));
+
+        const float segmentWidth = 236f;
+        const float gap = 8f;
+        BrickHpDisplay.Mode[] modes = BrickHpDisplay.Order;
+        for (int i = 0; i < modes.Length; i++)
+        {
+            BrickHpDisplay.Mode mode = modes[i];
+            float x = ListWidth * 0.5f - 12f - (modes.Length - 1 - i) * (segmentWidth + gap) - segmentWidth * 0.5f;
+            Image image = NewImage($"Option_{mode}", panel.rectTransform, rowColor, UiSprites.RoundedRect);
+            image.raycastTarget = true;
+            Place(image.rectTransform, new Vector2(x, 0f), new Vector2(segmentWidth, HpDisplayHeight - 20f));
+            PixelText label = NewText("Label", image.rectTransform, BrickHpDisplay.Label(mode), 4f, detailColor);
+            Stretch(label.rectTransform);
+            var button = image.gameObject.AddComponent<UiButton>();
+            button.Clicked += () =>
+            {
+                if (BrickHpDisplay.Current == mode) return;
+                BrickHpDisplay.Current = mode;
+                SoundManager.Play(Sfx.CardSelect, 1.1f);
+                RefreshHpDisplaySelector();
+            };
+            hpDisplayOptions.Add((mode, image, label, button));
+        }
+        RefreshHpDisplaySelector();
+    }
+
+    // The chosen option is filled with the accent color, the others stay dark.
+    private void RefreshHpDisplaySelector()
+    {
+        Color ink = new(0.04f, 0.05f, 0.12f, 1f);
+        foreach (var option in hpDisplayOptions)
+        {
+            bool selected = option.mode == BrickHpDisplay.Current;
+            option.image.color = selected ? accentColor : rowColor;
+            option.label.color = selected ? ink : detailColor;
+        }
     }
 
     // ---------------------------------------------------------------- small helpers
