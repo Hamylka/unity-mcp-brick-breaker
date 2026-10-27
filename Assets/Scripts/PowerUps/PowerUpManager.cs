@@ -117,6 +117,7 @@ public class PowerUpManager : MonoBehaviour
         {
             var context = new PowerUpContext
             {
+                Manager = this,
                 Paddle = paddle,
                 Grid = grid,
                 Experience = experience,

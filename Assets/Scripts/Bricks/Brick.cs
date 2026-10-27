@@ -71,6 +71,8 @@ public class Brick : MonoBehaviour
     public int MaxHitPoints { get; private set; } = 1;
     public int HitPoints { get; private set; } = 1;
     public bool IsAlive => HitPoints > 0;
+    /// <summary>Fractional damage waiting to become a whole HP (splash power-ups at low damage).</summary>
+    public float DamageCarry { get; set; }
 
     private MaterialPropertyBlock block;
     private Vector3 baseScale = Vector3.one;
