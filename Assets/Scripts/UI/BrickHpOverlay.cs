@@ -12,7 +12,7 @@ using UnityEngine.UI;
 /// </summary>
 public class BrickHpOverlay : MonoBehaviour
 {
-    private const int MaxPips = 10;     // above this many hits, Pips mode shows the number
+    private const int MaxPips = 10;     // above this many hits, Pips mode shows a skull
     private const int PipsPerRow = 5;
     private const float PopTime = 0.22f;
 
@@ -135,11 +135,13 @@ public class BrickHpOverlay : MonoBehaviour
         int hp = brick.HitPoints;
         int hits = brick.HitsLeft;
         bool pips = mode == BrickHpDisplay.Mode.Pips && hits <= MaxPips;
+        // Too many hits to count at a glance: one skull ("@" glyph) that just says "tough, leave it for later".
+        bool skull = mode == BrickHpDisplay.Mode.Pips && hits > MaxPips;
         if (hits != label.hits || mode != label.mode)
         {
             label.hits = hits;
             label.mode = mode;
-            label.text.Text = pips ? PipText(hits) : hits.ToString();
+            label.text.Text = pips ? PipText(hits) : skull ? "@" : hits.ToString();
             label.text.Spacing = pips ? 0f : 1f;
             label.text.LineGap = pips ? 0f : 3f;
             label.rect.sizeDelta = new Vector2(400f, 120f);
@@ -148,7 +150,9 @@ public class BrickHpOverlay : MonoBehaviour
         if (label.hitPoints > 0 && hp < label.hitPoints) label.popT = 0f;
         label.hitPoints = hp;
         // A row of 5 pips is 25 font pixels wide (4-pixel squares, 1 apart): size them so a full row fits the brick.
-        float pixelSize = pips ? Mathf.Clamp(Mathf.Floor(widthUnits / 26f), minPixelSize, maxPixelSize) : pixel;
+        float pixelSize = pips ? Mathf.Clamp(Mathf.Floor(widthUnits / 26f), minPixelSize, maxPixelSize)
+            : skull ? Mathf.Min(pixel + 1f, maxPixelSize) // a lone icon, one step bigger than digits so its face reads
+            : pixel;
         if (!Mathf.Approximately(label.text.PixelSize, pixelSize)) label.text.PixelSize = pixelSize; // the setter rebuilds the mesh
 
         Color color = Color.Lerp(brick.HpColor, Color.white, whiteness);
