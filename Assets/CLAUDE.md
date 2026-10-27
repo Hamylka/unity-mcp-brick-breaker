@@ -229,3 +229,4 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   3. Playtest the AoE power-ups and tune percentages, stack limits and rarities.
   4. Dedicated sounds and visual effects for the AoE power-ups (with Opus).
   5. More bonus item effects.
+  6. **Pause screen (new, not coded yet):** a pause button/menu that freezes the run and shows the current game stats (level, XP, bricks destroyed, run time, ball damage, wall HP window) and the power-ups picked so far with their level ("LV 2/3", reusing the card level pips). Resume and Restart buttons; same pixel UI style as the Game Over and card screens.
