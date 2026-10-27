@@ -4,6 +4,7 @@ using UnityEngine;
 /// <summary>Everything a power-up effect may need when it is applied.</summary>
 public class PowerUpContext
 {
+    public PowerUpManager Manager;
     public PaddleController Paddle;
     public BrickGrid Grid;
     public ExperienceSystem Experience;

@@ -30,6 +30,8 @@ public class AreaDamage : MonoBehaviour
     [SerializeField, Min(0f)] private float cleaveDamagePercent = 1.5f;
 
     [Header("Meltdown")]
+    [Tooltip("Damage of one tick, as a share of the burning brick's maximum HP (0.2 = 20%).")]
+    [SerializeField, Min(0f)] private float burnPercentMaxHp = 0.2f;
     [SerializeField, Min(1)] private int burnTicks = 3;
     [SerializeField, Min(0.1f)] private float burnTickInterval = 1f;
 
@@ -287,7 +289,7 @@ public class AreaDamage : MonoBehaviour
                 burn.TicksLeft--;
 
                 NeonFx.Embers(burn.Brick.transform.position, BurnColor, 2, 0.07f, 0.6f);
-                burn.Brick.TakeHit(1);
+                DealFraction(burn.Brick, burn.Brick.MaxHitPoints * burnPercentMaxHp);
 
                 if (!burn.Brick.IsAlive) SpreadBurn(burn.Brick);
                 else if (burn.TicksLeft <= 0) burns.RemoveAt(i);

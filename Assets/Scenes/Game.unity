@@ -5160,6 +5160,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a7a8c92c8738091458e96dcc5a1e5ba6, type: 2}
   - {fileID: 11400000, guid: 4cb75c260a2e0d741a4b3b17633f985f, type: 2}
   - {fileID: 11400000, guid: d6b26d4c7d49c704a82f16ec85c19b60, type: 2}
+  - {fileID: 11400000, guid: 20acfaee587e9674cb36115261148392, type: 2}
   baseChoiceCount: 3
   baseRerolls: 1
   rarityWeights:
