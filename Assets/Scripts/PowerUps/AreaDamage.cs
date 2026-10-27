@@ -50,6 +50,7 @@ public class AreaDamage : MonoBehaviour
     private int pierceDepth;
     private float blastPercent;
     private int cleaveEvery;
+    private int cleavePicks;
     private int cleaveCounter;
     private bool meltdown;
 
@@ -91,7 +92,9 @@ public class AreaDamage : MonoBehaviour
     /// <summary>Raises the blast damage, as a share of the ball's hit damage (0.5 = 50%).</summary>
     public void AddBlast(float percent) => blastPercent += Mathf.Max(0f, percent);
     /// <summary>First pick: every 6th hit sweeps the row. Each further pick shortens that by one, down to 3.</summary>
-    public void AddCleave() => cleaveEvery = cleaveEvery == 0 ? 6 : Mathf.Max(3, cleaveEvery - 1);
+    public void AddCleave() => cleaveEvery = CleaveEveryFor(++cleavePicks);
+    /// <summary>Hits needed per Cleave sweep after this many picks (0 = no Cleave).</summary>
+    public static int CleaveEveryFor(int picks) => picks <= 0 ? 0 : Mathf.Max(3, 7 - picks);
     public void EnableMeltdown() => meltdown = true;
 
     private void Awake() => grid = GetComponent<BrickGrid>();

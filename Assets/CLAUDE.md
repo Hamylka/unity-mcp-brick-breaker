@@ -32,6 +32,7 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   * **Wall clear bonus:** destroying every brick grants 50% of the XP needed for the current level (as XP orbs), shows a "CLEAR!" banner, immediately spawns a 4-row wave and restarts the step timer.
   * **Lose line:** a red line near the paddle. If a brick reaches it, the run ends.
 - **Game Over:** the run ends when the ball falls past the paddle (no lives) or the wall reaches the lose line. The game slows to a stop, then a pixel-style Game Over screen shows the reason, level, bricks destroyed, run time and best level (saved between runs, with a "NEW BEST!" effect), and a Restart button that reloads the scene. Owned by `GameManager`.
+- **Pause:** a pause button (top right) or Escape / P freezes the run, and the run pauses itself when the app goes to the background. The pause screen shows the run stats and every power-up picked with its level, pips and total effect (`PowerUpEffect.Describe`). Resume counts down 3-2-1; Restart needs a second tap. Owned by `PauseScreen` (builds itself).
 - **Ball damage:** the ball has a Damage stat (starts at 1). A hit removes that many HP from the bottom brick of a stack.
 - **Progression / RPG Elements:**
   * Endless experience (XP) system starting at Level 1.
@@ -65,13 +66,14 @@ Single source of truth for what is left. Update it at the end of every task (tic
 **Next up (in order)**
 1. **Playtest the XP rework:** orb merging, colors and origin (ball), then the XP pace (`XP Scaling Exponent` on `BrickGrid`, Base XP / Power on `ExperienceSystem`; level-ups were too frequent). Re-check the wall-clear bonus (50% of the level cost, now paid in big orbs).
 2. **Playtest Chain Lightning** (reworked, see changelog): check the arc count (2, then 3 at the second pick), the 20% damage with fraction carry, and the bolt look.
-3. **Pause screen:** a pause button/menu that freezes the run and shows level, XP, bricks destroyed, run time, ball damage, wall HP window, and the power-ups picked with their level ("LV 2/3", reusing the card pips). Resume and Restart buttons, same pixel UI as Game Over and the cards.
-4. **Playtest and tune the power-ups:** the 6 AoE cards (percentages, stack limits, rarities, burn cascades, sound volume with many hits at once; use `Debug: Trigger Level Up Choice` on `PowerUpManager`). Card descriptions still show fixed text, not the value at the next level.
+3. **Playtest and tune the power-ups:** the 6 AoE cards (percentages, stack limits, rarities, burn cascades, sound volume with many hits at once; use `Debug: Trigger Level Up Choice` on `PowerUpManager`). Card descriptions still show fixed text: `PowerUpEffect.Describe(stacks + 1)` (added for the pause screen) can now show the value at the next level.
+4. **Wall buff zones:** small glowing zones on the side walls that give the ball a temporary buff when it bounces inside one (first idea: double damage for 5 s). Rules: one zone at a time; a zone spawns every ~20 s and stays ~10 s. If the ball hits it, the zone is consumed and the 20 s timer only restarts once the buff has faded; if it expires untouched, the timer restarts right away. Starting point: `Wall` / `WallZone` (`Assets/Scripts/Walls`) already detect a bounce inside a normalized range of a wall. Needs a clear zone look (neon, pulsing, fade-out warning), a buff indicator on the ball and in the active bonus HUD (`ActiveBonusTracker.Report`), and room for more buff types later (each a small data asset like the bonuses).
 
 **Playtest on a real phone**
 - HP scaling (5 rows / x1.75), "DIFFICULTY INCREASED!" notice (position, size, wording), brick recolor.
 - Bonus items and effects: crystal size, Shield/Laser/Multi-Ball feel, bonus HUD rings, sound mix and particle sizes.
 - Card level pips and tags, app icon on a launcher, splash screen in a build.
+- Pause screen: button size and spot under the notch, row text size, scrolling a long power-up list, auto-pause when the app goes to the background.
 
 **Windows / landscape**
 - Make a Windows build and try it (window resize, fullscreen toggle).
@@ -80,7 +82,7 @@ Single source of truth for what is left. Update it at the end of every task (tic
 **Later**
 - Dedicated sounds and visual effects for the AoE power-ups (with Opus).
 - More bonus item effects (each a new `BonusEffect` subclass plus a `BonusDefinition` asset).
-- Special effects on the walls (ideas to be thought out).
+- More wall effects beyond the buff zones (ideas to be thought out).
 - Title screen using `Logo_Wordmark`.
 ## 6. Project Changelog & Architecture Status
 ### [2026-10-21] - Project Initialization
@@ -207,3 +209,9 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Done:** Chain Lightning now procs on any hit (`AreaDamage > Chain Chance`, 40%), jumps brick to brick (each arc starts from the previous target, never revisits, range 2.2), and every arc removes at least 1 HP (`max(1, round(hit damage x percent))`). New `ChainBolt` (`Assets/Scripts/Visuals`): a flickering jagged LineRenderer on the NeonFx material, plus flash, sparks and a pitched `LaserShot` sound. Card text is now "Hits may arc to +1 brick".
 - **Open issues:** compiles clean but not played; check the bolt's look at the 640 px pixelation, the proc rate and a dedicated sound (Opus).
 - **Respec (same day, user request):** Chain Lightning is now "when a brick is hit, fires an arc to the 2 nearest bricks for 20% of the current ball damage, stacks to 3 jumps". It fires on every hit (no proc chance, the `Chain Chance` field was removed), arcs fan out from the hit brick (no hopping), damage is a fixed 20% (no longer stacking) with the usual fraction carry, first pick = 2 arcs, second pick = 3 (cap), so `maxStacks` on the power-up is 2. A 1-damage ball removes an HP from a target only every 5 arcs on it: raise the percent on `ChainLightningEffect` if it feels weak.
+
+### [2026-10-27] - Pause screen (by Claude)
+- **Done (branch `feature/pause-screen`):** new `PauseScreen` (`Assets/Scripts/UI`, builds itself at startup like the HUD, no scene setup). A cyan pause button sits top right, level with the XP bar (hidden during level-up cards, slow-downs and Game Over); it pauses on touch-down so the same tap cannot launch the ball. Escape / P toggle it, and the run pauses itself when the app goes to the background (`OnApplicationPause`). The screen: "PAUSED" in big pixel letters that pop in and ride a sine wave (cyan, magenta drop shadow), a 3x2 stats panel (level, time, bricks, damage, wall HP window, XP), then a scrolling list of every power-up picked, rarest first: rarity bar, icon on its diamond, name in the rarity color, "LV 2/3" with pips (gold "MAX" when capped) and one line of what it does in total. Rows slide in one after the other, pixel motes drift up behind. RESUME fades the panels and counts down 3-2-1 before the game runs again; RESTART turns into "SURE?" (shaking) and needs a second tap within 2.5 s.
+- **Total effect texts:** `PowerUpEffect.Describe(stacks)` (virtual, null falls back to the card description) is implemented on every effect, e.g. "+3 DAMAGE PER HIT", "BALL SPEED +21%" (multipliers compound), "EVERY 5 HITS SWEEP THE ROW". `AreaDamage.CleaveEveryFor(picks)` is now the single Cleave interval formula. Also added: `PowerUpManager.Owned`, `UiButton.Pressed` (touch-down event), `PixelParticleSystem.Clear`.
+- **Checked:** play-mode screenshots (pause screen with 10 power-ups, HUD button) and resume (time scale back to 1, overlay hidden).
+- **Open issues:** not tried on a phone (button under the notch, row text at size 3, list scrolling by drag). Sounds reuse existing cues (CardSelect, Confirm, CountTick, Denied, Restart). Editing scripts during play mode breaks the self-built UI (domain reload): restart play mode after a change.

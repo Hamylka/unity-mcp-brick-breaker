@@ -38,4 +38,21 @@ public class AreaDamageEffect : PowerUpEffect
             case Kind.Meltdown: area.EnableMeltdown(); break;
         }
     }
+
+    public override string Describe(int stacks)
+    {
+        int percent = Mathf.RoundToInt(amount * 100f);
+        switch (kind)
+        {
+            case Kind.Shockwave: return $"{percent * stacks}% SPLASH TO NEIGHBOURS";
+            case Kind.ChainLightning: return $"ARCS TO {stacks + 1} BRICKS FOR {percent}% DMG";
+            case Kind.Piercing:
+                int depth = Mathf.RoundToInt(amount) * stacks;
+                return $"PIERCES {depth} MORE BRICK{(depth > 1 ? "S" : "")}";
+            case Kind.Volatile: return $"DEAD BRICKS BLAST 3X3 FOR {percent * stacks}% DMG";
+            case Kind.Cleave: return $"EVERY {AreaDamage.CleaveEveryFor(stacks)} HITS SWEEP THE ROW";
+            case Kind.Meltdown: return "HITS BURN, FIRE SPREADS ON DEATH";
+            default: return null;
+        }
+    }
 }

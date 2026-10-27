@@ -8,6 +8,8 @@ public class UiButton : MonoBehaviour, IPointerClickHandler, IPointerDownHandler
     public bool Interactable { get; set; } = true;
     public bool IsPressed { get; private set; }
     public event Action Clicked;
+    /// <summary>Raised on touch-down, before the tap is released (for actions that must beat other input, like pausing).</summary>
+    public event Action Pressed;
     /// <summary>Raised when the button is tapped while not interactable (for a "denied" sound or shake).</summary>
     public event Action DeniedClick;
 
@@ -20,6 +22,7 @@ public class UiButton : MonoBehaviour, IPointerClickHandler, IPointerDownHandler
     public void OnPointerDown(PointerEventData eventData)
     {
         IsPressed = Interactable;
+        if (Interactable) Pressed?.Invoke();
     }
 
     public void OnPointerUp(PointerEventData eventData)

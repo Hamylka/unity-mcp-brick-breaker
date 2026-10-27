@@ -10,4 +10,6 @@ public class WallSlowEffect : PowerUpEffect
     {
         if (context.Grid != null) context.Grid.MultiplyStepInterval(1f + percent);
     }
+
+    public override string Describe(int stacks) => $"WALL STEPS +{CompoundPercent(percent, stacks)}% SLOWER";
 }
