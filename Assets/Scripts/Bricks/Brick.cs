@@ -88,6 +88,7 @@ public class Brick : MonoBehaviour
     public float XpPerHp { get; set; } = 1f;
 
     private MaterialPropertyBlock block;
+    private Vector3 size = new(1f, 0.4f, 0.5f);
     private Vector3 baseScale = Vector3.one;
     private Color shownColor = Color.white;
     private Color fromColor = Color.white;
@@ -125,6 +126,7 @@ public class Brick : MonoBehaviour
     /// </summary>
     public void ApplySize(Vector3 size)
     {
+        this.size = size;
         var filter = GetComponent<MeshFilter>();
         if (roundedShape && filter != null)
         {
@@ -150,9 +152,25 @@ public class Brick : MonoBehaviour
 
         ColorScaleChanged -= OnColorScaleChanged;
         ColorScaleChanged += OnColorScaleChanged;
+        BrickHpOverlay.Register(this);
     }
 
-    private void OnDestroy() => ColorScaleChanged -= OnColorScaleChanged;
+    private void OnDestroy()
+    {
+        ColorScaleChanged -= OnColorScaleChanged;
+        BrickHpOverlay.Unregister(this);
+    }
+
+    // ---- read by BrickHpOverlay (HP numbers / pips display modes)
+
+    /// <summary>False while the brick is dying, so its label disappears with the hit.</summary>
+    public bool ShowsHpLabel => IsAlive && !shrinking;
+    /// <summary>Current animated size compared to the resting size (spawn pop-in, hit punch).</summary>
+    public float VisualScale => baseScale.x > 0f ? transform.localScale.x / baseScale.x : 1f;
+    /// <summary>World size of the brick (its mesh, not the collider).</summary>
+    public Vector3 Size => size;
+    /// <summary>Color of the HP left (the label's tint, without the hit flash).</summary>
+    public Color HpColor => CurrentColor();
 
     private Color CurrentColor() => palette != null ? palette.GetColor(HitPoints, ColorScaleMaxHp) : Color.white;
     private float CurrentToughness() => BrickPalette.GetToughness(HitPoints, ColorScaleMaxHp);

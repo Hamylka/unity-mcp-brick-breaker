@@ -47,6 +47,28 @@ public class PixelText : MaskableGraphic
         }
     }
 
+    /// <summary>Gap between letters, in font pixels.</summary>
+    public float Spacing
+    {
+        get => spacing;
+        set
+        {
+            spacing = Mathf.Max(0f, value);
+            SetVerticesDirty();
+        }
+    }
+
+    /// <summary>Gap between lines, in font pixels.</summary>
+    public float LineGap
+    {
+        get => lineGap;
+        set
+        {
+            lineGap = Mathf.Max(0f, value);
+            SetVerticesDirty();
+        }
+    }
+
     public Align Alignment
     {
         get => alignment;
