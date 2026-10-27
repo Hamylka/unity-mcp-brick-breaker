@@ -12,7 +12,7 @@ using UnityEngine.UI;
 /// </summary>
 public class BrickHpOverlay : MonoBehaviour
 {
-    private const int MaxPips = 10;     // above this many hits, Pips mode shows a skull
+    private const int MaxPips = 5;      // above this many hits (one full row), Pips mode shows a skull
     private const int PipsPerRow = 5;
     private const float PopTime = 0.22f;
 
