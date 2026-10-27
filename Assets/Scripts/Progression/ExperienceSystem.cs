@@ -14,7 +14,7 @@ public class ExperienceSystem : MonoBehaviour
 
     [Header("Level Curve (editable at runtime for balancing)")]
     [Tooltip("XP needed to leave level 1. Also scales the whole curve.")]
-    [SerializeField, Min(1)] private int baseXp = 10;
+    [SerializeField, Min(1)] private int baseXp = 12;
     [Tooltip("Exponent of the curve. 1 = linear, higher = steeper.")]
     [SerializeField, Min(0.1f)] private float power = 1.2f;
 
@@ -90,8 +90,8 @@ public class ExperienceSystem : MonoBehaviour
     {
         lastHitPosition = brick.transform.position;
 
-        // 1 XP per hit point removed. Fractions of the multiplier carry over, so small bonuses still add up.
-        xpRemainder += damageDealt * xpMultiplier;
+        // 1 XP per hit point removed (less on bricks spawned after the HP window scaled, see Brick.XpPerHp). Fractions of the multiplier carry over, so small bonuses still add up.
+        xpRemainder += damageDealt * brick.XpPerHp * xpMultiplier;
         int amount = Mathf.FloorToInt(xpRemainder);
         if (amount <= 0) return;
         xpRemainder -= amount;

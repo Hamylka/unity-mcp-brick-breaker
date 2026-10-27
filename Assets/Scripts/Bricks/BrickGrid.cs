@@ -86,6 +86,9 @@ public class BrickGrid : MonoBehaviour
     [Tooltip("Each scaling multiplies the min and max HP by this (compounding, rounded). 1.25 = +25% per proc.")]
     [SerializeField, Min(1f)] private float hpMultiplier = 1.25f;
 
+    [Tooltip("Bricks spawned at HP tier T give XP per HP x hpMultiplier^(-T x this). 0 = flat 1 XP per HP, 1 = XP per row stays constant as HP scales, 0.25 = a gentle drop.")]
+    [SerializeField, Range(0f, 1f)] private float xpScalingExponent = 0.25f;
+
     [Header("Endless Spawn Timing")]
     [Tooltip("Pop-in delay between neighbouring bricks of a new row (ripple from the center).")]
     [SerializeField, Min(0f)] private float spawnRipple = 0.04f;
@@ -361,6 +364,7 @@ public class BrickGrid : MonoBehaviour
             brick.name = $"Brick_{layer}";
             brick.ApplySize(size);
             brick.Initialize(layerHitPoints[layer], palette);
+            brick.XpPerHp = Mathf.Pow(hpMultiplier, -xpScalingExponent * HpScaleTier);
             stack.AddBrick(brick);
             brick.Destroyed += HandleBrickDestroyed;
             brick.Hit += HandleBrickHit;
