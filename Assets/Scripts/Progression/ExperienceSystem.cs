@@ -22,6 +22,10 @@ public class ExperienceSystem : MonoBehaviour
     [Tooltip("Clearing every brick grants this share of the XP needed for the current level (0.5 = 50%).")]
     [SerializeField, Range(0f, 2f)] private float clearBonus = 0.5f;
 
+    [Header("XP Orbs")]
+    [Tooltip("XP orbs leave the ball if one is within this distance of the brick that was hit, otherwise they leave the brick.")]
+    [SerializeField, Min(0f)] private float orbOriginRange = 1.5f;
+
     [Header("Debug")]
     [SerializeField] private bool logLevelUps = true;
     [SerializeField] private bool showDebugOverlay = true;
@@ -36,6 +40,8 @@ public class ExperienceSystem : MonoBehaviour
     private float xpMultiplier = 1f;
     private float xpRemainder;
     private Vector3 lastHitPosition;
+    private int pendingXp;         // XP earned this frame, waiting to be sent as merged orbs
+    private Vector3 pendingBrick;  // first brick hit this frame
 
     /// <summary>Optional: carries XP visually from the brick to the bar before it is added.</summary>
     public IXpVisuals XpVisuals { get; set; }
@@ -96,8 +102,42 @@ public class ExperienceSystem : MonoBehaviour
         if (amount <= 0) return;
         xpRemainder -= amount;
 
-        if (XpVisuals != null) XpVisuals.Deliver(brick.transform.position, amount, AddXp); // each orb adds its own share
+        if (XpVisuals == null)
+        {
+            AddXp(amount);
+            return;
+        }
+
+        // Everything earned by one ball hit (the hit itself plus splash, chain and cleave damage in the same frame)
+        // is merged into a single delivery, sent in LateUpdate. It starts from the ball that made the hit.
+        if (pendingXp == 0) pendingBrick = brick.transform.position;
+        pendingXp += amount;
+    }
+
+    private void LateUpdate()
+    {
+        if (pendingXp <= 0) return;
+
+        int amount = pendingXp;
+        pendingXp = 0;
+        if (XpVisuals != null) XpVisuals.Deliver(FindOrbOrigin(pendingBrick), amount, AddXp); // each orb adds its own share
         else AddXp(amount);
+    }
+
+    // The orbs leave the ball closest to the first brick hit this frame (it is touching it), or the brick if no ball is near.
+    private Vector3 FindOrbOrigin(Vector3 brickPosition)
+    {
+        Vector3 best = brickPosition;
+        float bestSqr = orbOriginRange * orbOriginRange;
+        var balls = BallController.Active;
+        for (int i = 0; i < balls.Count; i++)
+        {
+            float sqr = (balls[i].transform.position - brickPosition).sqrMagnitude;
+            if (sqr >= bestSqr) continue;
+            bestSqr = sqr;
+            best = balls[i].transform.position;
+        }
+        return best;
     }
 
     /// <summary>Adds XP and applies any level-ups. Also usable by bonuses or perks.</summary>
