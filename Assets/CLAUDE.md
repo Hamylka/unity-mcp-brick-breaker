@@ -130,7 +130,7 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   1. ~~Soft warning on HP scale-up~~ done, see the next entry.
   2. Playtest and tune the scaling (rows per proc, multiplier).
   3. Dedicated sounds and visual effects for the bonus items (with Opus).
-  5. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
+  6. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
 
 ### [2026-10-24] - HP scale-up soft warning (by Claude)
 - **Done:** new `HpScaleNotice` (`Assets/Scripts/UI`): when `BrickGrid.HpScaled` fires, a "DIFFICULTY INCREASED!" line (pixel size 5, hot amber) pops in at ~84% of the screen height (just under the XP bar, tuned by hand), holds 1.8 s, fades out while drifting up. It runs on unscaled time (plays during the level-up slow-down), is skipped on game over, and builds itself at startup (no scene setup). Together with the brick recolor pulse it explains why the wall just got harder.
@@ -138,7 +138,7 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 - **Roadmap (in order):**
   1. Playtest and tune the scaling (rows per proc, multiplier) and the notice.
   2. Dedicated sounds and visual effects for the bonus items (with Opus), plus a subtle cue sound for the HP scale-up.
-  5. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
+  6. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
 
 ### [2026-10-24] - Bonus and HP scale-up sounds and effects (by Claude)
 - **Done:** 10 new synthesized sounds (`Sfx` values appended at the end: BonusPickup, BonusExpire, LaserCharge, LaserShot, ShieldUp, ShieldBreak, MultiBallSplit, BallFade, BallPromote, HpScaleUp). The generator now adds any missing `Sfx` to the scene's `SoundManager` with default mixing values (existing entries untouched; save the scene after running it). New `NeonFx` static particle helper (`Burst`, `Ring`, `Sparks`, `Flash`, `Embers`, `Line`). Wired in:
@@ -160,7 +160,7 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   1. Playtest the new sounds, effects, crystals and ball; tune volumes and sizes.
   2. Fix the repetitive card rolls (above).
   3. Playtest and tune the HP scaling (rows per proc, multiplier) and the notice.
-  5. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
+  6. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
 
 ### [2026-10-24] - HUD cleanup and crystal brightness (by Claude)
 - **Done:** the active bonus rings no longer show the seconds left (too tiny to read on a phone, the draining ring is enough); `ActiveBonusHud.ShowSeconds` brings them back. The XP numbers ("12/34") now sit centered inside the XP bar with a dark outline, instead of under it. The user toned the bonus crystals down by hand by 25% on the `BonusItem` prefab: `Core Brightness` 0.45, `Ring Intensity` 2.25, `Halo Intensity` 1.5, `Floor Glow Intensity` 1.2 (`Rim Intensity` unchanged at 5). The code defaults in `BonusItemVisual` still hold the older, brighter values; the prefab is the reference.
@@ -214,6 +214,7 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 - **Roadmap (in order):**
   1. **Show the max level on the power-up cards** (next priority): display the current and maximum stack on a card, like "Lv2/3" (`PowerUpDefinition.MaxStacks` and `PowerUpManager.GetStacks` already exist; unlimited power-ups show only their level).
   2. **Rebalance how the player XP scales** (user feedback: level-ups come too often and feel spammy): slow the level curve (`ExperienceSystem` Base XP / Power, currently 10 and 1.2) and/or the XP gained per brick, then check it against the new power-ups that deal extra damage (splash HP also gives XP).
-  3. Playtest the six power-ups (use `Debug: Trigger Level Up Choice` on `PowerUpManager`) and tune percentages, stack limits and rarities.
-  4. Dedicated sounds and visual effects for the AoE power-ups (with Opus).
-  5. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
+  3. **Rework the XP bubbles (orbs) and color-code them by value** (idea from the user): change how the bubbles behave and give each size of bubble its own color, for example 5 XP = green, 25 XP = blue. The exact colors and thresholds are still to be defined and tested; it goes together with the XP rebalance above (today a hit sends one orb per XP point, max 8).
+  4. Playtest the six power-ups (use `Debug: Trigger Level Up Choice` on `PowerUpManager`) and tune percentages, stack limits and rarities.
+  5. Dedicated sounds and visual effects for the AoE power-ups (with Opus).
+  6. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
