@@ -10,4 +10,6 @@ public class XpBoostEffect : PowerUpEffect
     {
         if (context.Experience != null) context.Experience.AddXpMultiplier(percent);
     }
+
+    public override string Describe(int stacks) => $"XP GAINED +{Mathf.RoundToInt(percent * stacks * 100f)}%";
 }

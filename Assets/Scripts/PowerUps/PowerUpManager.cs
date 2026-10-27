@@ -65,6 +65,9 @@ public class PowerUpManager : MonoBehaviour
         return stacks.TryGetValue(definition, out int count) ? count : 0;
     }
 
+    /// <summary>Every power-up picked this run, with how many times it was taken.</summary>
+    public IReadOnlyDictionary<PowerUpDefinition, int> Owned => stacks;
+
     private void HandleLevelUp(int newLevel)
     {
         pending++;

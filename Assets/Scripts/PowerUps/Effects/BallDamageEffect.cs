@@ -9,4 +9,6 @@ public class BallDamageEffect : PowerUpEffect
     {
         foreach (BallController ball in context.Balls) ball.AddDamage(amount);
     }
+
+    public override string Describe(int stacks) => $"+{amount * stacks} DAMAGE PER HIT";
 }
