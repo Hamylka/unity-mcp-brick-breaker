@@ -141,7 +141,8 @@ public class BrickHpOverlay : MonoBehaviour
         {
             label.hits = hits;
             label.mode = mode;
-            label.text.Text = pips ? PipText(hits) : skull ? "@" : hits.ToString();
+            // Pips count the hits beyond the first (1 pip = 2 hits, 4 pips = 5 hits): one-hit bricks have no label anyway.
+            label.text.Text = pips ? PipText(hits - 1) : skull ? "@" : hits.ToString();
             label.text.Spacing = pips ? 0f : 1f;
             label.text.LineGap = pips ? 0f : 3f;
             label.rect.sizeDelta = new Vector2(400f, 120f);
@@ -170,10 +171,10 @@ public class BrickHpOverlay : MonoBehaviour
     }
 
     // "*" is the pip glyph of the pixel font; full rows of 5 on top.
-    private static string PipText(int hitPoints)
+    private static string PipText(int count)
     {
         var text = new System.Text.StringBuilder();
-        for (int i = 0; i < hitPoints; i++)
+        for (int i = 0; i < count; i++)
         {
             if (i > 0 && i % PipsPerRow == 0) text.Append('\n');
             text.Append('*');
