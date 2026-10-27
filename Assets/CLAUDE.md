@@ -130,7 +130,7 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   1. ~~Soft warning on HP scale-up~~ done, see the next entry.
   2. Playtest and tune the scaling (rows per proc, multiplier).
   3. Dedicated sounds and visual effects for the bonus items (with Opus).
-  4. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
+  5. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
 
 ### [2026-10-24] - HP scale-up soft warning (by Claude)
 - **Done:** new `HpScaleNotice` (`Assets/Scripts/UI`): when `BrickGrid.HpScaled` fires, a "DIFFICULTY INCREASED!" line (pixel size 5, hot amber) pops in at ~84% of the screen height (just under the XP bar, tuned by hand), holds 1.8 s, fades out while drifting up. It runs on unscaled time (plays during the level-up slow-down), is skipped on game over, and builds itself at startup (no scene setup). Together with the brick recolor pulse it explains why the wall just got harder.
@@ -138,7 +138,7 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 - **Roadmap (in order):**
   1. Playtest and tune the scaling (rows per proc, multiplier) and the notice.
   2. Dedicated sounds and visual effects for the bonus items (with Opus), plus a subtle cue sound for the HP scale-up.
-  4. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
+  5. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
 
 ### [2026-10-24] - Bonus and HP scale-up sounds and effects (by Claude)
 - **Done:** 10 new synthesized sounds (`Sfx` values appended at the end: BonusPickup, BonusExpire, LaserCharge, LaserShot, ShieldUp, ShieldBreak, MultiBallSplit, BallFade, BallPromote, HpScaleUp). The generator now adds any missing `Sfx` to the scene's `SoundManager` with default mixing values (existing entries untouched; save the scene after running it). New `NeonFx` static particle helper (`Burst`, `Ring`, `Sparks`, `Flash`, `Embers`, `Line`). Wired in:
@@ -160,7 +160,7 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   1. Playtest the new sounds, effects, crystals and ball; tune volumes and sizes.
   2. Fix the repetitive card rolls (above).
   3. Playtest and tune the HP scaling (rows per proc, multiplier) and the notice.
-  4. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
+  5. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
 
 ### [2026-10-24] - HUD cleanup and crystal brightness (by Claude)
 - **Done:** the active bonus rings no longer show the seconds left (too tiny to read on a phone, the draining ring is enough); `ActiveBonusHud.ShowSeconds` brings them back. The XP numbers ("12/34") now sit centered inside the XP bar with a dark outline, instead of under it. The user toned the bonus crystals down by hand by 25% on the `BonusItem` prefab: `Core Brightness` 0.45, `Ring Intensity` 2.25, `Halo Intensity` 1.5, `Floor Glow Intensity` 1.2 (`Rim Intensity` unchanged at 5). The code defaults in `BonusItemVisual` still hold the older, brighter values; the prefab is the reference.
@@ -207,10 +207,12 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   * **Volatile Bricks** (Epic, max 2): a destroyed brick blasts its 3x3 block for 50% of the ball's hit damage per pick (50 / 100%). Both use the strongest ball in play and the same fraction carry as Shockwave.
   * **Cleave** (Epic, max 3): every 6th hit sweeps its whole row for 150% of the ball's hit damage (every 5th, then 4th with more picks). The new `CleaveMeter` (`Assets/Scripts/UI`, builds itself) shows a segmented bar near the bottom of the screen, one segment per hit needed, the last one pulses before the sweep and the bar flashes when it fires; it only appears once Cleave is picked.
   * **Meltdown** (Legendary, max 1): hit bricks burn 1 HP per second for 3 s; a burning brick that dies sets its neighbours alight.
+    * Fixed after the first playtest: a fresh fire was only added to the burn list after a tick, and ticks only ran with a non-empty list, so the first fire never started. Checked in play mode: a 3 HP brick hit once burns down by itself in 3 s.
   * `BrickGrid` gained `GetLiveBricks`, `BrickWidth` and `CellDepth` (area geometry). Geometry, ranges and burn timing are Inspector fields on `AreaDamage`; amounts and stacks are on each asset.
 - **Open issues:** compiles clean and assets are in the scene pool, but not playtested (balance of the percentages, burn cascades in low-HP walls, sound volume when many bricks are hit at once). Effects reuse existing sounds and simple `NeonFx` particles; dedicated sounds and visuals are still to do (Opus). Card descriptions are short fixed texts (they do not show the current stack value).
 - **Roadmap (in order):**
   1. **Show the max level on the power-up cards** (next priority): display the current and maximum stack on a card, like "Lv2/3" (`PowerUpDefinition.MaxStacks` and `PowerUpManager.GetStacks` already exist; unlimited power-ups show only their level).
-  2. Playtest the six power-ups (use `Debug: Trigger Level Up Choice` on `PowerUpManager`) and tune percentages, stack limits and rarities.
-  3. Dedicated sounds and visual effects for the AoE power-ups (with Opus).
-  4. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).
+  2. **Rebalance how the player XP scales** (user feedback: level-ups come too often and feel spammy): slow the level curve (`ExperienceSystem` Base XP / Power, currently 10 and 1.2) and/or the XP gained per brick, then check it against the new power-ups that deal extra damage (splash HP also gives XP).
+  3. Playtest the six power-ups (use `Debug: Trigger Level Up Choice` on `PowerUpManager`) and tune percentages, stack limits and rarities.
+  4. Dedicated sounds and visual effects for the AoE power-ups (with Opus).
+  5. More bonus item effects (each is a new `BonusEffect` subclass plus a `BonusDefinition` asset).

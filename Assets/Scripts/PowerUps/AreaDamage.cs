@@ -105,6 +105,12 @@ public class AreaDamage : MonoBehaviour
 
     private void Update()
     {
+        // Fresh fires join the list here: they used to be merged only after a tick, so the first one never started.
+        if (newBurns.Count > 0)
+        {
+            burns.AddRange(newBurns);
+            newBurns.Clear();
+        }
         if (burns.Count > 0) TickBurns(Time.deltaTime);
     }
 
