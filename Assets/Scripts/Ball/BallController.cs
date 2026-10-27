@@ -59,7 +59,10 @@ public class BallController : MonoBehaviour
     public bool AutoReset { get; set; } = true;
 
     /// <summary>Hit points removed from a brick per hit.</summary>
-    public int Damage => Mathf.Max(1, damage);
+    public int Damage => Mathf.Max(1, Mathf.RoundToInt(damage * DamageMultiplier));
+
+    /// <summary>Temporary damage factor (wall buffs). 1 = normal.</summary>
+    public float DamageMultiplier { get; set; } = 1f;
 
     private static readonly List<BallController> active = new();
 

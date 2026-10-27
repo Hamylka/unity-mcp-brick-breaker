@@ -43,6 +43,36 @@ public class Wall : BallSurface
     /// <summary>Override in a subclass for custom zone effects (change direction, boost, spawn FX...).</summary>
     protected virtual void OnZoneHit(WallZone zone, BallController ball, Collision collision, float t) { }
 
+    /// <summary>True for side walls (length along Z), the ones buff zones can sit on.</summary>
+    public bool IsSideWall => lengthAxis == LengthAxis.Z;
+
+    /// <summary>Adds a zone at runtime. Call <see cref="RemoveZone"/> outside of a ball hit callback.</summary>
+    public void AddZone(WallZone zone) => zones.Add(zone);
+
+    public void RemoveZone(WallZone zone) => zones.Remove(zone);
+
+    /// <summary>Length of the wall in world units.</summary>
+    public float WorldLength
+    {
+        get
+        {
+            int axis = lengthAxis == LengthAxis.X ? 0 : 2;
+            return Box.size[axis] * Mathf.Abs(transform.lossyScale[axis]);
+        }
+    }
+
+    /// <summary>World point on the wall's center line at normalized position <paramref name="t"/>.</summary>
+    public Vector3 GetWorldPoint(float t)
+    {
+        int axis = lengthAxis == LengthAxis.X ? 0 : 2;
+        Vector3 local = Box.center;
+        local[axis] += (t - 0.5f) * Box.size[axis];
+        return transform.TransformPoint(local);
+    }
+
+    /// <summary>World bounds of the wall's collider.</summary>
+    public Bounds WorldBounds => Box.bounds;
+
     /// <summary>0..1 position of a world point along the wall's length axis.</summary>
     public float GetNormalizedPosition(Vector3 worldPoint)
     {
