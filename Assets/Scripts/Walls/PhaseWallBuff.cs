@@ -11,6 +11,7 @@ public class PhaseWallBuff : WallBuff
     {
         ball.Phasing = true;
         ball.DamageMultiplier = damageMultiplier;
+        if (ball.TryGetComponent(out BallVisual visual)) visual.PhaseColor = color;
     }
 
     public override void Remove(BallController ball)

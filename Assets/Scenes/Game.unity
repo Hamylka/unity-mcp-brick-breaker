@@ -570,6 +570,22 @@ MonoBehaviour:
   coreTrailTime: 0.1
   sparkCount: 7
   sparkSpeed: 4
+  ghostMaterial: {fileID: 0}
+  phaseColor: {r: 0.55, g: 0.4, b: 1, a: 1}
+  phaseFadeIn: 0.12
+  phaseFadeOut: 0.35
+  phaseCoreScale: 0.55
+  shellScale: 1.55
+  shellIntensity: 2.4
+  shellFlicker: 0.45
+  shellFlickerSpeed: 14
+  echoInterval: 0.04
+  echoSize: 0.32
+  echoLifetime: 0.22
+  echoIntensity: 0.9
+  phaseTrailTime: 0.34
+  passKick: 0.35
+  passKickTime: 0.15
 --- !u!1 &75570440
 GameObject:
   m_ObjectHideFlags: 0
@@ -880,6 +896,11 @@ MonoBehaviour:
     volume: 0.45
     pitchJitter: 0
     minInterval: 0.5
+  - id: 30
+    clip: {fileID: 8300000, guid: 25e73f6224831514e8768782390a2b68, type: 3}
+    volume: 0.35
+    pitchJitter: 0.08
+    minInterval: 0.06
 --- !u!4 &106477069
 Transform:
   m_ObjectHideFlags: 0
@@ -945,6 +966,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -1250,7 +1276,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 60
-  field of view: 56.445835
+  field of view: 50.941975
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -1956,6 +1982,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -2073,6 +2104,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -2190,6 +2226,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -2487,6 +2528,8 @@ MonoBehaviour:
   confirmColor: {r: 0.25, g: 0.85, b: 0.45, a: 1}
   rerollColor: {r: 0.3, g: 0.8, b: 0.95, a: 1}
   disabledColor: {r: 0.17, g: 0.2, b: 0.29, a: 1}
+  levelColor: {r: 0.4, g: 1, b: 0.5, a: 1}
+  maxLevelColor: {r: 1, g: 0.8, b: 0.25, a: 1}
   cardWidth: 300
   cardHeight: 560
   cardGap: 28
@@ -2557,6 +2600,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -2674,6 +2722,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -3091,6 +3144,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -3208,6 +3266,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -3374,6 +3437,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -3560,6 +3628,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -3746,6 +3819,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -4165,6 +4243,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -4355,6 +4438,7 @@ MonoBehaviour:
   baseXp: 12
   power: 1.2
   clearBonus: 0.5
+  orbOriginRange: 1.5
   logLevelUps: 1
   showDebugOverlay: 0
 --- !u!4 &1113459637
@@ -4618,6 +4702,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -4910,6 +4999,7 @@ MonoBehaviour:
   baseMaxHp: 5
   rowsPerScaling: 5
   hpMultiplier: 1.75
+  xpScalingExponent: 0.25
   spawnRipple: 0.04
   waveRowDelay: 0.06
   dangerZ: 1.8
@@ -5236,6 +5326,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -5387,6 +5482,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -5573,6 +5673,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -5690,6 +5795,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -5807,6 +5917,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -5918,7 +6033,6 @@ MonoBehaviour:
   clearColor: {r: 0.35, g: 0.95, b: 1, a: 1}
   clearOutlineColor: {r: 0.03, g: 0.08, b: 0.25, a: 1}
   orbTravelTime: 0.7
-  maxOrbsPerHit: 8
   orbStagger: 0.05
   particleAmount: 1
 --- !u!4 &1827069033
@@ -6214,6 +6328,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -6331,6 +6450,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05

@@ -46,6 +46,8 @@ public class BallController : MonoBehaviour
     public event Action<BallController> BallLost;
     /// <summary>Raised after every bounce, once the final direction is set.</summary>
     public event Action<BallController, Collision> Bounced;
+    /// <summary>Raised when a phasing ball enters a brick stack (once per pass, before the hit lands).</summary>
+    public event Action<BallController, BrickStack> PhasedThrough;
 
     public Vector3 Position => body.position;
     public Vector3 Direction { get; private set; } = Vector3.forward;
@@ -230,6 +232,7 @@ public class BallController : MonoBehaviour
 
             if (phaseIgnored.Add(other)) Physics.IgnoreCollision(sphere, other, true);
             if (!phaseInside.Add(other)) continue;
+            PhasedThrough?.Invoke(this, stack);
 
             // Unrounded damage with the fraction carried on the brick, so a halved 1-damage ball still
             // removes an HP every second brick it passes through.
