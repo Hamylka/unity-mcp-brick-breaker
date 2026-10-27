@@ -35,6 +35,7 @@ public static class RetroSfxGenerator
         { Sfx.BallFade, (0.3f, 0.05f, 0.15f) },
         { Sfx.BallPromote, (0.6f, 0f, 0.2f) },
         { Sfx.HpScaleUp, (0.45f, 0f, 0.5f) },
+        { Sfx.PhasePass, (0.35f, 0.08f, 0.06f) },
     };
 
     [MenuItem("Tools/Brick Breaker/Generate Sound Effects")]
@@ -135,6 +136,13 @@ public static class RetroSfxGenerator
                                 (0.18f, Tone(0.45f, Gs3, Gs3 * 0.97f, Wave.Square, 0.35f, decay: 0.25f, vibratoHz: 6f, vibratoDepth: 0.02f)),
                                 (0.18f, Tone(0.45f, Gs2, Gs2 * 0.97f, Wave.Triangle, 0.5f, decay: 0.25f)),
                                 (0f, Tone(0.6f, 400f, 90f, Wave.Noise, 0.12f, decay: 0.25f))));
+
+        // Wall buffs
+        // Phase pass: the ghost ball slipping through a brick. An airy rising hiss over two detuned, wobbling
+        // falling tones (the slight beating between them sounds hollow, "not quite solid").
+        Save(Sfx.PhasePass, Mix((0f, Tone(0.16f, 1500f, 6000f, Wave.Noise, 0.22f, attack: 0.02f, decay: 0.07f)),
+                                (0f, Tone(0.2f, 1400f, 620f, Wave.Triangle, 0.4f, attack: 0.01f, decay: 0.09f, vibratoHz: 28f, vibratoDepth: 0.04f)),
+                                (0f, Tone(0.2f, 1440f, 640f, Wave.Square, 0.12f, duty: 0.125f, attack: 0.01f, decay: 0.08f))));
 
         AssetDatabase.Refresh();
         RegisterNewSounds();

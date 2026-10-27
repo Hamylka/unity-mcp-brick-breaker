@@ -46,5 +46,8 @@ public enum Sfx
     BallPromote,
 
     // Difficulty
-    HpScaleUp
+    HpScaleUp,
+
+    // Wall buffs
+    PhasePass
 }
