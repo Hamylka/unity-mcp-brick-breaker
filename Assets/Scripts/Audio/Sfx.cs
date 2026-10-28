@@ -71,5 +71,11 @@ public enum Sfx
     PickupMultiBall,
     PickupLaser,
     PickupShield,
-    LaserPowerDown
+    LaserPowerDown,
+
+    // Game over animation
+    BallPoof,
+    WallTremor,
+    BrickBlast,
+    WallCollapse
 }

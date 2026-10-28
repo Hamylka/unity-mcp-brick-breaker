@@ -318,6 +318,21 @@ public class Brick : MonoBehaviour
         enabled = true;
     }
 
+    /// <summary>
+    /// Kills the brick without raising any event or sound: no XP, no bonus drop, no wall-clear. Used by the
+    /// game over animation, which plays its own explosion. The brick shrinks away like a normal break.
+    /// </summary>
+    public void BreakSilently()
+    {
+        if (!IsAlive || shrinking) return;
+        HitPoints = 0;
+        burning = false;
+        pulsePending = false;
+        shrinking = true;
+        shrinkT = 0f;
+        enabled = true;
+    }
+
     /// <summary>Smoothly moves the brick to a new local height (used when the layer below it is destroyed).</summary>
     public void FallTo(float localY, float duration, float delay = 0f)
     {

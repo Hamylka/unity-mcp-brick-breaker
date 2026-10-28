@@ -54,6 +54,11 @@ public static class RetroSfxGenerator
         { Sfx.PickupLaser, (0.5f, 0.02f, 0.05f) },
         { Sfx.PickupShield, (0.5f, 0.02f, 0.05f) },
         { Sfx.LaserPowerDown, (0.45f, 0f, 0.2f) },
+        // Game over: the brick blasts come in a fast chain, so they are rate-limited and sit under the collapse.
+        { Sfx.BallPoof, (0.7f, 0f, 0.2f) },
+        { Sfx.WallTremor, (0.55f, 0f, 0.5f) },
+        { Sfx.BrickBlast, (0.4f, 0.08f, 0.035f) },
+        { Sfx.WallCollapse, (0.85f, 0f, 0.5f) },
     };
 
     [MenuItem("Tools/Brick Breaker/Generate Sound Effects")]
@@ -259,6 +264,27 @@ public static class RetroSfxGenerator
                                      (0.26f, Tone(0.06f, 950f, 340f, Wave.Square, 0.16f, duty: 0.25f, decay: 0.025f)),
                                      (0.44f, Tone(0.02f, 4000f, 4000f, Wave.Noise, 0.3f, decay: 0.006f)),
                                      (0.44f, Tone(0.07f, 130f, 60f, Wave.Triangle, 0.5f, decay: 0.025f))));
+
+        // Game over animation.
+        // Ball poof: a bright pop (rising square blip) into a puff of air and a sinking body, the ball gone in a breath.
+        Save(Sfx.BallPoof, Mix((0f, Tone(0.05f, 900f, 2200f, Wave.Square, 0.35f, duty: 0.25f, decay: 0.02f)),
+                               (0f, Tone(0.35f, 9000f, 900f, Wave.Noise, 0.5f, decay: 0.1f)),
+                               (0.02f, Tone(0.4f, 700f, 70f, Wave.Triangle, 0.7f, decay: 0.14f)),
+                               (0.02f, Tone(0.3f, 350f, 50f, Wave.Square, 0.15f, duty: 0.125f, decay: 0.1f))));
+        // Wall tremor: a low rumble swelling up under a rising warble, the wall about to go.
+        Save(Sfx.WallTremor, Mix((0f, Tone(0.5f, 180f, 500f, Wave.Noise, 0.45f, attack: 0.25f, decay: 0.3f)),
+                                 (0f, Tone(0.5f, 50f, 95f, Wave.Triangle, 0.7f, attack: 0.2f, decay: 0.3f, vibratoHz: 11f, vibratoDepth: 0.08f)),
+                                 (0.1f, Tone(0.4f, 220f, 660f, Wave.Square, 0.12f, duty: 0.25f, attack: 0.2f, decay: 0.2f, vibratoHz: 16f, vibratoDepth: 0.05f))));
+        // Brick blast: one link of the chain. A short crunchy explosion (noise crack, sub thump, square knock);
+        // the code raises its pitch along the chain.
+        Save(Sfx.BrickBlast, Mix((0f, Tone(0.22f, 5000f, 500f, Wave.Noise, 0.6f, decay: 0.06f)),
+                                 (0f, Tone(0.2f, 150f, 40f, Wave.Triangle, 0.8f, decay: 0.07f)),
+                                 (0f, Tone(0.08f, 320f, 120f, Wave.Square, 0.25f, duty: 0.25f, decay: 0.03f))));
+        // Wall collapse: the big one. A deep falling boom, a long noise roar and a crackling tail of debris.
+        Save(Sfx.WallCollapse, Mix((0f, Tone(1.3f, 110f, 28f, Wave.Triangle, 1f, decay: 0.45f)),
+                                   (0f, Tone(0.9f, 230f, 35f, Wave.Saw, 0.2f, decay: 0.3f)),
+                                   (0f, Tone(1.4f, 3500f, 140f, Wave.Noise, 0.7f, decay: 0.4f)),
+                                   (0.15f, Tone(1.1f, 9000f, 2500f, Wave.Noise, 0.12f, decay: 0.3f, vibratoHz: 23f, vibratoDepth: 0.5f))));
 
         AssetDatabase.Refresh();
         RegisterNewSounds();

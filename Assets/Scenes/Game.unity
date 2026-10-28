@@ -1000,6 +1000,26 @@ MonoBehaviour:
     volume: 0.45
     pitchJitter: 0
     minInterval: 0.2
+  - id: 47
+    clip: {fileID: 8300000, guid: c16fb1d8ff486e14b91126b29b30b0f7, type: 3}
+    volume: 0.7
+    pitchJitter: 0
+    minInterval: 0.2
+  - id: 48
+    clip: {fileID: 8300000, guid: ec971ab045cd61e448cb20dc1f957dd6, type: 3}
+    volume: 0.55
+    pitchJitter: 0
+    minInterval: 0.5
+  - id: 49
+    clip: {fileID: 8300000, guid: e55fcb43babca2d4eae31c75a01efb23, type: 3}
+    volume: 0.4
+    pitchJitter: 0.08
+    minInterval: 0.035
+  - id: 50
+    clip: {fileID: 8300000, guid: 9e6c78d2888dae5468f0dc21f5e77298, type: 3}
+    volume: 0.85
+    pitchJitter: 0
+    minInterval: 0.5
 --- !u!4 &106477069
 Transform:
   m_ObjectHideFlags: 0
@@ -1378,7 +1398,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 60
-  field of view: 56.445835
+  field of view: 50.941975
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -1477,6 +1497,10 @@ MonoBehaviour:
   followStrength: 0.38
   smoothTime: 0.25
   maxSideOffset: 1.5
+  maxShakeOffset: 0.3
+  maxShakeRoll: 2
+  shakeDecay: 1.4
+  shakeFrequency: 22
 --- !u!114 &330585549
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1501,6 +1525,7 @@ GameObject:
   m_Component:
   - component: {fileID: 358591253}
   - component: {fileID: 358591252}
+  - component: {fileID: 358591254}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -1525,6 +1550,7 @@ MonoBehaviour:
   experience: {fileID: 1113459636}
   powerUps: {fileID: 1463217166}
   gameOverScreen: {fileID: 1033658656}
+  gameOverAnimation: {fileID: 358591254}
   slowDownTime: 0.7
 --- !u!4 &358591253
 Transform:
@@ -1541,6 +1567,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &358591254
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 358591251}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc176e3a8a35e64429e36c8497239ae5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameOverAnimation
+  hitStopScale: 0.04
+  hitStopTime: 0.18
+  poofColor: {r: 1, g: 0.5, b: 0.15, a: 1}
+  poofTipColor: {r: 1, g: 0.2, b: 0.7, a: 1}
+  poofShake: 0.45
+  tremorTime: 0.45
+  tremorColor: {r: 2.2, g: 0.25, b: 0.3, a: 1}
+  tremorShake: 0.3
+  chainTimePerBrick: 0.025
+  minChainTime: 0.6
+  maxChainTime: 1.7
+  chainCurve: 0.7
+  chainJitter: 0.05
+  fuseTime: 0.1
+  shakePerBrick: 0.07
+  ringEvery: 4
+  collapseColor: {r: 1, g: 0.35, b: 0.75, a: 1}
+  collapseShake: 0.75
+  settleTime: 0.45
 --- !u!1 &365817721
 GameObject:
   m_ObjectHideFlags: 0
@@ -5397,6 +5454,7 @@ MonoBehaviour:
   - 10
   - 4
   - 1
+  passiveDamagePerLevel: 1
   slowDownTime: 0.8
   openDelay: 0.3
 --- !u!4 &1463217167
