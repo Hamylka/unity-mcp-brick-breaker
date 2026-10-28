@@ -6,7 +6,8 @@ using UnityEngine;
 /// Plays the game's sound effects from a small pool of 2D audio sources.
 /// Any script calls <see cref="Play"/> with an <see cref="Sfx"/> id; if no SoundManager is in the scene it does nothing.
 /// Each sound has its own volume, a little random pitch variation (so repeats do not sound robotic)
-/// and an optional minimum interval (so a burst of identical sounds does not pile up).
+/// and an optional minimum interval (so a burst of identical sounds does not pile up). The same sound asked twice
+/// in one frame merges into a single, slightly louder voice (area effects hitting a whole row at once).
 /// Sounds keep playing while the game is paused, so menus and banners are heard.
 /// </summary>
 public class SoundManager : MonoBehaviour
@@ -29,10 +30,23 @@ public class SoundManager : MonoBehaviour
     [SerializeField] private bool muted;
     [Tooltip("How many sounds can play at the same time.")]
     [SerializeField, Min(1)] private int voices = 12;
+    [Tooltip("Mix guard: the same sound asked again in the same frame (an area effect hitting many bricks) does not " +
+             "start another voice; the one already playing gets this much louder per doubling of the count instead.")]
+    [SerializeField, Range(0f, 1f)] private float crowdBoost = 0.25f;
     [SerializeField] private List<Entry> sounds = new();
+
+    // The voice a sound started this frame, so repeats in the same frame merge into it.
+    private struct Crowd
+    {
+        public int Frame;
+        public AudioSource Source;
+        public float BaseVolume;
+        public int Count;
+    }
 
     private readonly Dictionary<Sfx, Entry> lookup = new();
     private readonly Dictionary<Sfx, float> lastPlayed = new();
+    private readonly Dictionary<Sfx, Crowd> crowds = new();
     private AudioSource[] sources;
     private int nextSource;
 
@@ -81,6 +95,16 @@ public class SoundManager : MonoBehaviour
     {
         if (muted || !lookup.TryGetValue(id, out Entry entry)) return;
 
+        int frame = Time.frameCount;
+        if (crowds.TryGetValue(id, out Crowd crowd) && crowd.Frame == frame && crowd.Source != null && crowd.Source.clip == entry.clip)
+        {
+            // 2 at once = +25%, 4 = +50%, 8 = +75% (with the default boost), never past full volume.
+            crowd.Count++;
+            crowd.Source.volume = Mathf.Min(1f, crowd.BaseVolume * (1f + crowdBoost * Mathf.Log(crowd.Count, 2f)));
+            crowds[id] = crowd;
+            return;
+        }
+
         float now = Time.unscaledTime;
         if (entry.minInterval > 0f && lastPlayed.TryGetValue(id, out float last) && now - last < entry.minInterval) return;
         lastPlayed[id] = now;
@@ -90,6 +114,7 @@ public class SoundManager : MonoBehaviour
         source.volume = entry.volume * volumeScale * masterVolume;
         source.pitch = pitch * (1f + UnityEngine.Random.Range(-entry.pitchJitter, entry.pitchJitter));
         source.Play();
+        crowds[id] = new Crowd { Frame = frame, Source = source, BaseVolume = source.volume, Count = 1 };
     }
 
     // A free source if there is one, otherwise the next one in turn (the oldest sound is cut).

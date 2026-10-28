@@ -584,6 +584,8 @@ MonoBehaviour:
   echoLifetime: 0.22
   echoIntensity: 0.9
   phaseTrailTime: 0.34
+  phaseTrailBrightness: 1.3
+  ghostSaturation: 0.8
   passKick: 0.35
   passKickTime: 0.15
 --- !u!1 &75570440
@@ -745,6 +747,7 @@ MonoBehaviour:
   masterVolume: 0.8
   muted: 0
   voices: 12
+  crowdBoost: 0.25
   sounds:
   - id: 0
     clip: {fileID: 8300000, guid: 90c8e814d3526f74795a44ead05f1860, type: 3}
@@ -901,6 +904,41 @@ MonoBehaviour:
     volume: 0.35
     pitchJitter: 0.08
     minInterval: 0.06
+  - id: 31
+    clip: {fileID: 8300000, guid: 412dd271f12b77848adde2cab1e31f56, type: 3}
+    volume: 0.35
+    pitchJitter: 0.06
+    minInterval: 0.04
+  - id: 32
+    clip: {fileID: 8300000, guid: f85cd994217a1584d84ccd2ed690e1ae, type: 3}
+    volume: 0.3
+    pitchJitter: 0.06
+    minInterval: 0.05
+  - id: 33
+    clip: {fileID: 8300000, guid: 0d66e6f6da78d3740a99a293a8de8eb7, type: 3}
+    volume: 0.3
+    pitchJitter: 0.08
+    minInterval: 0.06
+  - id: 34
+    clip: {fileID: 8300000, guid: 87d4e6c42000eb145aa3c65cf4b92fde, type: 3}
+    volume: 0.55
+    pitchJitter: 0.05
+    minInterval: 0.05
+  - id: 35
+    clip: {fileID: 8300000, guid: 9e95d372076fafc43834053ff41ed5ae, type: 3}
+    volume: 0.5
+    pitchJitter: 0.03
+    minInterval: 0.1
+  - id: 36
+    clip: {fileID: 8300000, guid: 571761276ae3538429adcdf2d0a64014, type: 3}
+    volume: 0.3
+    pitchJitter: 0.08
+    minInterval: 0.12
+  - id: 37
+    clip: {fileID: 8300000, guid: 062012edeb7c24c478a7dcaa64863ed4, type: 3}
+    volume: 0.22
+    pitchJitter: 0.1
+    minInterval: 0.07
 --- !u!4 &106477069
 Transform:
   m_ObjectHideFlags: 0
@@ -981,6 +1019,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &149156449
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1276,7 +1317,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 60
-  field of view: 50.941975
+  field of view: 56.445835
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -1997,6 +2038,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &495051921
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2119,6 +2163,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &502015790
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2241,6 +2288,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &519610158
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2615,6 +2665,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &646673903
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2737,6 +2790,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &679566964
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3159,6 +3215,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &786484271
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3281,6 +3340,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &799370084
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3452,6 +3514,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &905355207
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3643,6 +3708,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &968705954
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3834,6 +3902,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &997073579
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4258,6 +4329,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &1069399620
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4717,6 +4791,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &1207203049
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5341,6 +5418,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &1490082932
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5497,6 +5577,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &1592379365
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5688,6 +5771,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &1678567299
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5810,6 +5896,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &1785543932
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5932,6 +6021,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &1826685354
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -6343,6 +6435,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &1945355546
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -6465,6 +6560,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &1987465570
 MeshRenderer:
   m_ObjectHideFlags: 0
