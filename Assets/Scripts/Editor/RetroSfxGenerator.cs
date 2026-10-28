@@ -49,6 +49,11 @@ public static class RetroSfxGenerator
         { Sfx.ZoneExpire, (0.4f, 0f, 0.3f) },
         { Sfx.BuffFade, (0.5f, 0f, 0.2f) },
         { Sfx.PowerHit, (0.4f, 0.06f, 0.04f) },
+        // Pickups play in the same frame as the effect's own sound (split, charge, shield up): a notch under it.
+        { Sfx.PickupMultiBall, (0.5f, 0.02f, 0.05f) },
+        { Sfx.PickupLaser, (0.5f, 0.02f, 0.05f) },
+        { Sfx.PickupShield, (0.5f, 0.02f, 0.05f) },
+        { Sfx.LaserPowerDown, (0.45f, 0f, 0.2f) },
     };
 
     [MenuItem("Tools/Brick Breaker/Generate Sound Effects")]
@@ -108,7 +113,7 @@ public static class RetroSfxGenerator
         Save(Sfx.BonusPickup, Mix((0f, Arp(new[] { G5, C6, E6, G6 }, 0.04f, Wave.Square, 0.45f, 0.25f)),
                                   (0.16f, Tone(0.28f, C7, C7, Wave.Triangle, 0.4f, decay: 0.15f, vibratoHz: 11f, vibratoDepth: 0.02f)),
                                   (0f, Tone(0.22f, 4000f, 9000f, Wave.Noise, 0.12f, decay: 0.08f))));
-        // Expire (laser running out): the pickup's mirror, a short falling "power down".
+        // Expire: the generic pickup's mirror, a short falling "power down" (the laser now has its own, below).
         Save(Sfx.BonusExpire, Mix((0f, Arp(new[] { G5, D5, G4 }, 0.06f, Wave.Triangle, 0.5f)),
                                   (0f, Tone(0.25f, 520f, 140f, Wave.Square, 0.25f, duty: 0.125f, decay: 0.12f))));
         // Laser charge: a warbling saw sweeping up, the cannon powering on.
@@ -219,6 +224,41 @@ public static class RetroSfxGenerator
         Save(Sfx.PowerHit, Mix((0f, Tone(0.12f, 160f, 50f, Wave.Triangle, 1f, decay: 0.05f)),
                                (0f, Tone(0.08f, 3000f, 800f, Wave.Noise, 0.45f, decay: 0.03f)),
                                (0f, Tone(0.06f, 440f, 330f, Wave.Square, 0.3f, duty: 0.25f, decay: 0.03f))));
+
+        // Bonus pickups, one per bonus. They share the old chime's sparkle of air (a family "you caught it" cue),
+        // then each has its own character. They play together with the effect's own sound, so each one is
+        // short and stays clear of it: the effect sound carries the rest.
+        // Multi-Ball: a rubbery "boing" (a wobbling rising triangle) under two quick ball-on-ball clacks, a bouncy
+        // toy feel; the split's three rising blips land right on top of it.
+        Save(Sfx.PickupMultiBall, Mix((0f, Tone(0.03f, 1400f, 900f, Wave.Square, 0.4f, decay: 0.012f)),
+                                      (0f, Tone(0.02f, 5000f, 5000f, Wave.Noise, 0.3f, decay: 0.008f)),
+                                      (0.05f, Tone(0.03f, 1700f, 1100f, Wave.Square, 0.35f, decay: 0.012f)),
+                                      (0.05f, Tone(0.02f, 6000f, 6000f, Wave.Noise, 0.25f, decay: 0.008f)),
+                                      (0.02f, Tone(0.3f, 220f, 520f, Wave.Triangle, 0.6f, decay: 0.14f, vibratoHz: 18f, vibratoDepth: 0.12f)),
+                                      (0f, Tone(0.2f, 4000f, 9000f, Wave.Noise, 0.1f, decay: 0.07f))));
+        // Laser: a weapon locking in. A mechanical clack (noise snap over a low square knock), then two rising
+        // targeting beeps. Alone (a laser refresh, no charge-up) it still reads as "reloaded".
+        Save(Sfx.PickupLaser, Mix((0f, Tone(0.05f, 3500f, 900f, Wave.Noise, 0.45f, decay: 0.015f)),
+                                  (0f, Tone(0.06f, 190f, 110f, Wave.Square, 0.4f, duty: 0.25f, decay: 0.025f)),
+                                  (0.06f, Tone(0.05f, E6, E6, Wave.Square, 0.3f, duty: 0.125f, decay: 0.03f)),
+                                  (0.11f, Tone(0.1f, B6, B6, Wave.Square, 0.3f, duty: 0.125f, decay: 0.05f)),
+                                  (0f, Tone(0.2f, 4000f, 9000f, Wave.Noise, 0.1f, decay: 0.07f))));
+        // Shield: a struck glass chime, two strikes (E6 then C7) with a faint detuned partial so they shimmer,
+        // over a soft low "whum" of the barrier. Same key as the shield hum's C-G fifth, so they blend into C major.
+        Save(Sfx.PickupShield, Mix((0f, Tone(0.4f, E6, E6, Wave.Triangle, 0.45f, decay: 0.12f, vibratoHz: 12f, vibratoDepth: 0.008f)),
+                                   (0f, Tone(0.3f, E6 * 1.007f, E6 * 1.007f, Wave.Square, 0.08f, duty: 0.125f, decay: 0.08f)),
+                                   (0.06f, Tone(0.45f, C7, C7, Wave.Triangle, 0.35f, decay: 0.14f, vibratoHz: 12f, vibratoDepth: 0.008f)),
+                                   (0.06f, Tone(0.3f, C7 * 2.32f, C7 * 2.32f, Wave.Triangle, 0.06f, decay: 0.05f)),
+                                   (0f, Tone(0.2f, 110f, 160f, Wave.Triangle, 0.35f, attack: 0.02f, decay: 0.08f)),
+                                   (0f, Tone(0.2f, 4000f, 9000f, Wave.Noise, 0.1f, decay: 0.07f))));
+        // Laser power-down: the charge-up in reverse. A warbling saw sinking away, the cannon sputtering out
+        // two weak "pews", then a dry click as it goes dead.
+        Save(Sfx.LaserPowerDown, Mix((0f, Tone(0.5f, 1500f, 140f, Wave.Saw, 0.35f, decay: 0.3f, vibratoHz: 14f, vibratoDepth: 0.07f)),
+                                     (0f, Tone(0.5f, 750f, 70f, Wave.Square, 0.2f, duty: 0.25f, decay: 0.3f)),
+                                     (0.13f, Tone(0.07f, 1300f, 420f, Wave.Square, 0.25f, duty: 0.25f, decay: 0.03f)),
+                                     (0.26f, Tone(0.06f, 950f, 340f, Wave.Square, 0.16f, duty: 0.25f, decay: 0.025f)),
+                                     (0.44f, Tone(0.02f, 4000f, 4000f, Wave.Noise, 0.3f, decay: 0.006f)),
+                                     (0.44f, Tone(0.07f, 130f, 60f, Wave.Triangle, 0.5f, decay: 0.025f))));
 
         AssetDatabase.Refresh();
         RegisterNewSounds();

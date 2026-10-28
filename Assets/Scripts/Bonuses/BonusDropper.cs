@@ -65,9 +65,9 @@ public class BonusDropper : MonoBehaviour
     {
         BonusDefinition definition = item.Definition;
 
-        // Shared pickup cue; each effect then adds its own sound on top (shield hum, laser charge...).
+        // The bonus's own pickup cue; each effect then adds its own sound on top (shield hum, laser charge...).
         Vector3 at = item.transform.position;
-        SoundManager.Play(Sfx.BonusPickup);
+        SoundManager.Play(definition.PickupSound);
         NeonFx.Flash(at, definition.Color, 0.8f, 0.14f);
         NeonFx.Ring(at, definition.Color, 32, 6f);
         NeonFx.Burst(at, Color.Lerp(definition.Color, Color.white, 0.4f), 16, 3f, 0.08f, 0.4f);
