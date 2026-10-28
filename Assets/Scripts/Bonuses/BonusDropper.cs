@@ -21,6 +21,9 @@ public class BonusDropper : MonoBehaviour
     /// <summary>Raised after a bonus was caught and its effect applied.</summary>
     public event Action<BonusDefinition, PaddleController> BonusCollected;
 
+    /// <summary>Raised when a destroyed brick drops a bonus item (run profiler).</summary>
+    public event Action<BonusDefinition> BonusDropped;
+
     private void OnEnable()
     {
         if (grid != null) grid.BrickDestroyed += HandleBrickDestroyed;
@@ -44,6 +47,7 @@ public class BonusDropper : MonoBehaviour
         BonusItem item = Instantiate(itemPrefab, position, Quaternion.identity);
         item.Initialize(definition);
         item.Collected += HandleItemCollected;
+        BonusDropped?.Invoke(definition);
     }
 
     /// <summary>Spawns one item of every bonus in a row near the back of the field, to test them without waiting for drops.</summary>

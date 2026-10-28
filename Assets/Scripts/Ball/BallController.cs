@@ -242,6 +242,7 @@ public class BallController : MonoBehaviour
             int whole = Mathf.FloorToInt(bottom.DamageCarry + 0.001f);
             if (whole <= 0) continue;
             bottom.DamageCarry = Mathf.Max(0f, bottom.DamageCarry - whole);
+            using var tag = DamageTag.Begin(DamageSource.Phase);
             stack.TakeDamage(whole);
         }
     }

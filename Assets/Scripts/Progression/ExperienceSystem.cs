@@ -49,6 +49,8 @@ public class ExperienceSystem : MonoBehaviour
     /// <summary>Raises the XP gained from bricks (upgrades). 0.2 = +20%.</summary>
     public void AddXpMultiplier(float amount) => xpMultiplier += amount;
 
+    public int BaseXp => baseXp;
+    public float Power => power;
     public int Level { get; private set; } = 1;
     public int CurrentXp { get; private set; }
     public int TotalXp { get; private set; }

@@ -92,7 +92,11 @@ public class LaserCannon : MonoBehaviour
             target = hit.collider.GetComponentInParent<BrickStack>();
         }
         end = origin + Vector3.forward * nearest;
-        if (target != null) target.TakeDamage(CurrentDamage());
+        if (target != null)
+        {
+            using var tag = DamageTag.Begin(DamageSource.Laser);
+            target.TakeDamage(CurrentDamage());
+        }
 
         bolt.SetPosition(0, origin);
         bolt.SetPosition(1, end);
