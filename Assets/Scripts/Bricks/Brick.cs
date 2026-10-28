@@ -55,6 +55,14 @@ public class Brick : MonoBehaviour
     [Tooltip("Seconds for the pop-in animation of a freshly spawned brick.")]
     [SerializeField, Min(0.01f)] private float spawnTime = 0.3f;
 
+    [Header("Area Effects")]
+    [Tooltip("Fire color added on top of a burning brick (Meltdown).")]
+    [SerializeField, ColorUsage(false, true)] private Color burnTint = new(1f, 0.3f, 0.08f);
+    [Tooltip("Strength of the flickering fire glow on a burning brick. Above 1 the bloom picks it up.")]
+    [SerializeField, Min(0f)] private float burnGlow = 2.2f;
+    [Tooltip("Seconds for the fire glow to come in and die out.")]
+    [SerializeField, Min(0.01f)] private float burnFadeTime = 0.25f;
+
     /// <summary>Brick, hit points actually removed (never more than it had left). Raised on every hit.</summary>
     public event Action<Brick, int> Hit;
     /// <summary>Brick, remaining hit points. Raised on every hit that does not destroy the brick.</summary>
@@ -139,6 +147,24 @@ public class Brick : MonoBehaviour
     private float moveDuration = 0.2f;
     private float fromY;
     private float toY;
+
+    private bool pulsePending;
+    private float pulseDelay;
+    private Color pulseColor;
+    private float pulseTime;
+    private bool burning;
+    private float burnHeat;
+
+    /// <summary>On fire (Meltdown): the brick flickers with a fire glow until it is set back to false.</summary>
+    public bool Burning
+    {
+        get => burning;
+        set
+        {
+            burning = value && IsAlive;
+            if (burning) enabled = true;
+        }
+    }
 
     private void Awake()
     {
@@ -232,6 +258,27 @@ public class Brick : MonoBehaviour
         StartColorFade(shownColor, shownToughness, colorFadeTime);
         punchT = 0f;
         NeonFx.Embers(transform.position, targetColor, 2, 0.06f, 0.6f);
+    }
+
+    /// <summary>
+    /// Lights the whole brick up in a color (HDR is fine) with a small punch, then fades back to its HP color.
+    /// Area effects call it on every brick they reach, even when the damage has not added up to a whole HP yet,
+    /// so their reach reads at the pixelated resolution. A delay lets a sweep travel along a row.
+    /// </summary>
+    public void Pulse(Color color, float duration = 0.22f, float delay = 0f)
+    {
+        if (!IsAlive || shrinking) return;
+        if (delay > 0f)
+        {
+            pulsePending = true;
+            pulseDelay = delay;
+            pulseColor = color;
+            pulseTime = duration;
+            enabled = true;
+            return;
+        }
+        StartColorFade(color, Mathf.Max(shownToughness, 1f), duration);
+        punchT = 0f;
     }
 
     /// <summary>Starts hidden (scale 0) and pops in after a delay, with a small overshoot.</summary>
@@ -339,11 +386,28 @@ public class Brick : MonoBehaviour
             }
         }
 
+        if (pulsePending)
+        {
+            pulseDelay -= dt;
+            if (pulseDelay <= 0f)
+            {
+                pulsePending = false;
+                Pulse(pulseColor, pulseTime);
+            }
+        }
+
+        bool fireChanged = burning || burnHeat > 0f;
+        if (fireChanged) burnHeat = Mathf.MoveTowards(burnHeat, burning ? 1f : 0f, dt / burnFadeTime);
+
         if (colorT < 1f)
         {
             colorT = Mathf.Min(1f, colorT + dt / Mathf.Max(colorTime, 0.0001f));
             float k = 1f - (1f - colorT) * (1f - colorT); // ease-out: the flash drops fast, then settles
             ApplyColor(Color.Lerp(fromColor, targetColor, k), Mathf.Lerp(fromToughness, targetToughness, k));
+        }
+        else if (fireChanged)
+        {
+            ApplyColor(shownColor, shownToughness); // re-applied every frame for the flicker
         }
 
         float punch = 0f;
@@ -366,7 +430,7 @@ public class Brick : MonoBehaviour
         scale.z *= 1f + landSquash * 0.5f * land;
         transform.localScale = scale;
 
-        if (!moving && !spawning && colorT >= 1f && punchT >= 1f && landT >= 1f)
+        if (!moving && !spawning && colorT >= 1f && punchT >= 1f && landT >= 1f && !pulsePending && !burning && burnHeat <= 0f)
         {
             transform.localScale = baseScale;
             enabled = false;
@@ -382,10 +446,19 @@ public class Brick : MonoBehaviour
         block ??= new MaterialPropertyBlock();
         targetRenderer.GetPropertyBlock(block);
         Color body = color * (bodyBrightness * Mathf.Lerp(bodyByToughness.x, bodyByToughness.y, toughness));
+        float glow = glowIntensity * Mathf.Lerp(glowByToughness.x, glowByToughness.y, toughness);
+        Color emission = color * glow; // HDR glow in the HP color
+        if (burnHeat > 0f)
+        {
+            // Fire on top of the HP color: per-brick noise so a burning wall does not flicker in sync.
+            Vector3 p = transform.position;
+            float flicker = 0.55f + 0.45f * Mathf.PerlinNoise(Time.time * 9f, p.x * 3.1f + p.z * 1.7f);
+            emission += burnTint * (burnGlow * burnHeat * flicker);
+            body = Color.Lerp(body, burnTint * 0.5f, 0.4f * burnHeat * flicker);
+        }
         body.a = 1f;
         block.SetColor(BaseColorId, body);
-        float glow = glowIntensity * Mathf.Lerp(glowByToughness.x, glowByToughness.y, toughness);
-        block.SetColor(EmissionColorId, color * glow); // HDR glow in the HP color
+        block.SetColor(EmissionColorId, emission);
         targetRenderer.SetPropertyBlock(block);
     }
 }

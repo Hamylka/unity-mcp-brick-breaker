@@ -36,6 +36,14 @@ public static class RetroSfxGenerator
         { Sfx.BallPromote, (0.6f, 0f, 0.2f) },
         { Sfx.HpScaleUp, (0.45f, 0f, 0.5f) },
         { Sfx.PhasePass, (0.35f, 0.08f, 0.06f) },
+        // Shockwave, Piercing and Chain fire on every ball hit: kept soft, under the brick hit itself.
+        { Sfx.Shockwave, (0.35f, 0.06f, 0.04f) },
+        { Sfx.PierceZip, (0.3f, 0.06f, 0.05f) },
+        { Sfx.ChainZap, (0.3f, 0.08f, 0.06f) },
+        { Sfx.VolatileBlast, (0.55f, 0.05f, 0.05f) },
+        { Sfx.CleaveSweep, (0.5f, 0.03f, 0.1f) },
+        { Sfx.BurnIgnite, (0.3f, 0.08f, 0.12f) },
+        { Sfx.BurnTick, (0.22f, 0.1f, 0.07f) },
     };
 
     [MenuItem("Tools/Brick Breaker/Generate Sound Effects")]
@@ -143,6 +151,39 @@ public static class RetroSfxGenerator
         Save(Sfx.PhasePass, Mix((0f, Tone(0.16f, 1500f, 6000f, Wave.Noise, 0.22f, attack: 0.02f, decay: 0.07f)),
                                 (0f, Tone(0.2f, 1400f, 620f, Wave.Triangle, 0.4f, attack: 0.01f, decay: 0.09f, vibratoHz: 28f, vibratoDepth: 0.04f)),
                                 (0f, Tone(0.2f, 1440f, 640f, Wave.Square, 0.12f, duty: 0.125f, attack: 0.01f, decay: 0.08f))));
+
+        // Area power-ups
+        // Shockwave: a soft low "whomp" with a puff of noise, felt more than heard (it plays on every hit).
+        Save(Sfx.Shockwave, Mix((0f, Tone(0.18f, 180f, 55f, Wave.Triangle, 0.9f, decay: 0.06f)),
+                                (0f, Tone(0.12f, 2500f, 400f, Wave.Noise, 0.25f, decay: 0.04f)),
+                                (0.01f, Tone(0.14f, 360f, 120f, Wave.Square, 0.15f, duty: 0.25f, decay: 0.05f))));
+        // Piercing: a fast rising thin zip, the shot drilling through, with a little glint at the end.
+        Save(Sfx.PierceZip, Mix((0f, Tone(0.09f, 900f, 3200f, Wave.Square, 0.4f, duty: 0.125f, decay: 0.05f)),
+                                (0f, Tone(0.07f, 4000f, 9000f, Wave.Noise, 0.15f, decay: 0.03f)),
+                                (0.03f, Tone(0.08f, 1800f, 2600f, Wave.Triangle, 0.25f, decay: 0.04f))));
+        // Chain Lightning: a buzzing falling square with heavy vibrato, cut by three electric crackles.
+        Save(Sfx.ChainZap, Mix((0f, Tone(0.16f, 2200f, 900f, Wave.Square, 0.3f, duty: 0.1f, decay: 0.07f, vibratoHz: 60f, vibratoDepth: 0.3f)),
+                               (0f, Tone(0.03f, 8000f, 8000f, Wave.Noise, 0.4f, decay: 0.01f)),
+                               (0.04f, Tone(0.03f, 6000f, 6000f, Wave.Noise, 0.3f, decay: 0.01f)),
+                               (0.085f, Tone(0.03f, 7000f, 7000f, Wave.Noise, 0.25f, decay: 0.01f))));
+        // Volatile: a chunky 8-bit boom (falling noise over a deep sub drop), with a crackling tail.
+        Save(Sfx.VolatileBlast, Mix((0f, Tone(0.45f, 5000f, 150f, Wave.Noise, 0.7f, decay: 0.15f)),
+                                    (0f, Tone(0.4f, 110f, 35f, Wave.Triangle, 1f, decay: 0.14f)),
+                                    (0f, Tone(0.12f, 300f, 80f, Wave.Square, 0.3f, decay: 0.04f)),
+                                    (0.06f, Tone(0.3f, 1800f, 300f, Wave.Noise, 0.25f, decay: 0.1f))));
+        // Cleave: a rising whoosh and saw slice, then a metallic "shing" (two detuned high tones).
+        Save(Sfx.CleaveSweep, Mix((0f, Tone(0.28f, 600f, 7000f, Wave.Noise, 0.35f, attack: 0.06f, decay: 0.1f)),
+                                  (0.04f, Tone(0.2f, 350f, 1400f, Wave.Saw, 0.3f, decay: 0.07f)),
+                                  (0.08f, Tone(0.22f, 2637f, 2637f, Wave.Square, 0.15f, duty: 0.25f, decay: 0.08f)),
+                                  (0.08f, Tone(0.22f, 2700f, 2700f, Wave.Triangle, 0.2f, decay: 0.09f))));
+        // Meltdown ignite: a "fwoomp", rising noise over a low swell, like a flame catching.
+        Save(Sfx.BurnIgnite, Mix((0f, Tone(0.3f, 300f, 2200f, Wave.Noise, 0.5f, attack: 0.05f, decay: 0.1f)),
+                                 (0f, Tone(0.25f, 90f, 160f, Wave.Triangle, 0.5f, attack: 0.03f, decay: 0.09f))));
+        // Meltdown tick: three tiny crackling pops over a low rumble.
+        Save(Sfx.BurnTick, Mix((0f, Tone(0.1f, 200f, 150f, Wave.Noise, 0.2f, decay: 0.04f)),
+                               (0f, Tone(0.025f, 5000f, 5000f, Wave.Noise, 0.5f, decay: 0.008f)),
+                               (0.03f, Tone(0.02f, 3000f, 3000f, Wave.Noise, 0.4f, decay: 0.007f)),
+                               (0.07f, Tone(0.03f, 4200f, 4200f, Wave.Noise, 0.35f, decay: 0.01f))));
 
         AssetDatabase.Refresh();
         RegisterNewSounds();

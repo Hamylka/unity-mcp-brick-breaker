@@ -49,5 +49,14 @@ public enum Sfx
     HpScaleUp,
 
     // Wall buffs
-    PhasePass
+    PhasePass,
+
+    // Area power-ups
+    Shockwave,
+    PierceZip,
+    ChainZap,
+    VolatileBlast,
+    CleaveSweep,
+    BurnIgnite,
+    BurnTick
 }

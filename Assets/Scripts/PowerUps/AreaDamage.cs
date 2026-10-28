@@ -17,6 +17,9 @@ public class AreaDamage : MonoBehaviour
     private static readonly Color CleaveColor = new(0.8f, 1f, 1f);
     private static readonly Color BurnColor = new(1f, 0.3f, 0.08f);
 
+    // Seconds for the Cleave light to travel one brick along the row.
+    private const float CleaveWaveDelay = 0.035f;
+
     [Header("Geometry (in brick sizes)")]
     [Tooltip("Reach of Shockwave and Meltdown spread: 1 = the four direct neighbours.")]
     [SerializeField, Min(0.5f)] private float neighbourRadius = 1.15f;
@@ -164,11 +167,14 @@ public class AreaDamage : MonoBehaviour
         Collect(source.transform.position, neighbourRadius, source);
         foreach (Brick neighbour in targets)
         {
-            // Every neighbour sparks on every hit, even when the fraction has not yet added up to a whole HP.
+            // Every neighbour jolts and sparks on every hit, even when the fraction has not yet added up to a whole HP.
+            neighbour.Pulse(ShockColor * 1.4f, 0.2f, 0.03f);
             NeonFx.Burst(neighbour.transform.position, ShockColor, 3, 1.5f, 0.06f, 0.25f);
             DealFraction(neighbour, dealt * splashPercent);
         }
-        if (targets.Count > 0) NeonFx.Ring(source.transform.position, ShockColor, 14, 2.5f, 0.07f, 0.25f);
+        if (targets.Count == 0) return;
+        NeonFx.Ring(source.transform.position, ShockColor, 18, 3f, 0.08f, 0.25f);
+        SoundManager.Play(Sfx.Shockwave, Random.Range(0.95f, 1.05f));
     }
 
     // Piercing Ball: the same shot carries on into the next bricks behind, in the same column.
@@ -188,14 +194,21 @@ public class AreaDamage : MonoBehaviour
         }
         targets.Sort((a, b) => a.transform.position.z.CompareTo(b.transform.position.z));
 
-        Vector3 previous = origin;
-        for (int i = 0; i < targets.Count && i < pierceDepth; i++)
+        int count = Mathf.Min(targets.Count, pierceDepth);
+        if (count == 0) return;
+
+        // One straight gold beam from the hit brick to the last one pierced, each pierced brick lighting up in turn.
+        Vector3 end = targets[count - 1].transform.position;
+        ChainBolt.Spawn(origin, end, PierceColor * 1.6f, 0.015f, 0.18f, 0.16f);
+        NeonFx.Line(origin, end, Vector3.forward, PierceColor, 6 * count, 1.5f, 0.06f, 0.25f);
+        for (int i = 0; i < count; i++)
         {
-            Vector3 position = targets[i].transform.position;
-            NeonFx.Line(previous, position, Vector3.forward, PierceColor, 8, 2f, 0.07f, 0.3f);
-            previous = position;
-            targets[i].TakeHit(damage);
+            Brick target = targets[i];
+            target.Pulse(PierceColor * 1.5f, 0.2f, 0.03f * (i + 1));
+            NeonFx.Flash(target.transform.position, PierceColor, 0.45f, 0.1f);
+            target.TakeHit(damage);
         }
+        SoundManager.Play(Sfx.PierceZip, 1f + 0.06f * (count - 1));
     }
 
     // Cleave: a sweep along the whole row of the brick that was hit.
@@ -205,26 +218,56 @@ public class AreaDamage : MonoBehaviour
         float rowZ = source.transform.position.z;
         float halfDepth = grid.CellDepth * 0.5f;
 
+        Vector3 origin = source.transform.position;
         float damage = HitDamage() * cleaveDamagePercent;
+        float leftX = origin.x, rightX = origin.x;
         int swept = 0;
         foreach (Brick candidate in live)
         {
             if (candidate == source || Mathf.Abs(candidate.transform.position.z - rowZ) > halfDepth) continue;
             swept++;
-            NeonFx.Sparks(candidate.transform.position, Vector3.up, CleaveColor, 4, 3f, 40f, 0.07f, 0.25f);
+            Vector3 p = candidate.transform.position;
+            leftX = Mathf.Min(leftX, p.x);
+            rightX = Mathf.Max(rightX, p.x);
+
+            // The damage lands now (XP stays in this frame); the light runs outward from the hit brick like a blade.
+            float bricksAway = Mathf.Abs(p.x - origin.x) / grid.BrickWidth;
+            candidate.Pulse(CleaveColor * 2f, 0.25f, bricksAway * CleaveWaveDelay);
+            NeonFx.Sparks(p, Vector3.up, CleaveColor, 3, 3f, 40f, 0.07f, 0.25f);
             DealFraction(candidate, damage);
         }
-        if (swept > 0) NeonFx.Flash(source.transform.position, CleaveColor, 0.7f, 0.15f);
+        if (swept == 0) return;
+
+        // Two blades out of the hit brick to both row ends, a flash and sparks thrown sideways along the row.
+        float halfWidth = grid.BrickWidth * 0.5f;
+        Vector3 left = new(leftX - halfWidth, origin.y, origin.z);
+        Vector3 right = new(rightX + halfWidth, origin.y, origin.z);
+        if (leftX < origin.x) ChainBolt.Spawn(origin, left, CleaveColor * 1.8f, 0.02f, 0.25f, 0.22f);
+        if (rightX > origin.x) ChainBolt.Spawn(origin, right, CleaveColor * 1.8f, 0.02f, 0.25f, 0.22f);
+        NeonFx.Line(left, right, Vector3.up, CleaveColor, 10 + swept * 4, 2.5f, 0.07f, 0.3f);
+        NeonFx.Flash(origin, Color.white, 0.9f, 0.15f);
+        SoundManager.Play(Sfx.CleaveSweep);
     }
 
     // Volatile Bricks: a destroyed brick blows up its 3x3 block.
     private void Blast(Vector3 origin)
     {
         Collect(origin, blastRadius, null);
-        NeonFx.Ring(origin, BlastColor, 24, 4f, 0.1f, 0.35f);
-        NeonFx.Burst(origin, BlastColor, 14, 3f, 0.1f, 0.4f);
+        // White-hot core, orange fireball, a shockwave ring and embers that hang in the air.
+        NeonFx.Flash(origin, Color.white * 1.5f, 1.1f, 0.1f);
+        NeonFx.Flash(origin, BlastColor * 1.5f, 1.8f, 0.22f);
+        NeonFx.Ring(origin, BlastColor, 32, 5f, 0.11f, 0.35f);
+        NeonFx.Burst(origin, BlastColor, 20, 3.5f, 0.1f, 0.45f);
+        NeonFx.Embers(origin, BurnColor, 6, 0.08f, 0.9f);
+        SoundManager.Play(Sfx.VolatileBlast, Random.Range(0.95f, 1.05f));
+
         float damage = HitDamage() * blastPercent;
-        foreach (Brick neighbour in targets) DealFraction(neighbour, damage);
+        foreach (Brick neighbour in targets)
+        {
+            float bricksAway = (neighbour.transform.position - origin).magnitude / grid.BrickWidth;
+            neighbour.Pulse(BlastColor * 1.8f, 0.3f, 0.02f + bricksAway * 0.03f); // the blast reaches the far corners last
+            DealFraction(neighbour, damage);
+        }
     }
 
     // Chain Lightning: every time a brick is hit, an arc leaps from it to each of the 'chainJumps' nearest bricks
@@ -245,12 +288,15 @@ public class AreaDamage : MonoBehaviour
             visited.Add(next);
             Vector3 to = next.transform.position;
             ChainBolt.Spawn(from, to, ChainColor);
+            next.Pulse(ChainColor * 1.8f, 0.18f);
             NeonFx.Flash(to, ChainColor, 0.5f, 0.12f);
             NeonFx.Sparks(to, Vector3.up, ChainColor, 5, 3f, 60f, 0.07f, 0.25f);
             DealFraction(next, damage);
             anyArc = true;
         }
-        if (anyArc) SoundManager.Play(Sfx.LaserShot, Random.Range(1.5f, 1.8f));
+        if (!anyArc) return;
+        NeonFx.Flash(from, Color.Lerp(ChainColor, Color.white, 0.5f), 0.4f, 0.08f); // the spark the arcs leave from
+        SoundManager.Play(Sfx.ChainZap);
     }
 
     private Brick NearestUnvisited(Vector3 from)
@@ -282,15 +328,22 @@ public class AreaDamage : MonoBehaviour
             if (pending.Brick == brick) return;
 
         newBurns.Add(new Burn { Brick = brick, TicksLeft = burnTicks, Timer = burnTickInterval });
-        NeonFx.Embers(brick.transform.position, BurnColor, 3, 0.08f, 0.7f);
+        brick.Burning = true;
+        brick.Pulse(BurnColor * 2f, 0.25f);
+        NeonFx.Flash(brick.transform.position, BurnColor, 0.6f, 0.15f);
+        NeonFx.Embers(brick.transform.position, BurnColor, 4, 0.08f, 0.7f);
+        SoundManager.Play(Sfx.BurnIgnite, Random.Range(0.95f, 1.1f));
     }
 
     private void SpreadBurn(Brick dead)
     {
         burns.RemoveAll(b => b.Brick == dead);
         Collect(dead.transform.position, neighbourRadius, dead);
+        Vector3 at = dead.transform.position;
+        NeonFx.Burst(at, BurnColor, 12, 2.5f, 0.09f, 0.45f);
+        NeonFx.Ring(at, BurnColor, 14, 2.5f, 0.08f, 0.3f);
         foreach (Brick neighbour in targets) Ignite(neighbour);
-        NeonFx.Burst(dead.transform.position, BurnColor, 8, 2f, 0.09f, 0.4f);
+        if (targets.Count > 0) SoundManager.Play(Sfx.BurnIgnite, 0.8f); // lower: the fire jumping on
     }
 
     private void TickBurns(float dt)
@@ -312,11 +365,19 @@ public class AreaDamage : MonoBehaviour
                 burn.Timer += burnTickInterval;
                 burn.TicksLeft--;
 
-                NeonFx.Embers(burn.Brick.transform.position, BurnColor, 2, 0.07f, 0.6f);
+                NeonFx.Embers(burn.Brick.transform.position, BurnColor, 3, 0.07f, 0.6f);
+                SoundManager.Play(Sfx.BurnTick);
                 DealFraction(burn.Brick, burn.Brick.MaxHitPoints * burnPercentMaxHp);
 
-                if (!burn.Brick.IsAlive) SpreadBurn(burn.Brick);
-                else if (burn.TicksLeft <= 0) burns.RemoveAt(i);
+                if (!burn.Brick.IsAlive)
+                {
+                    SpreadBurn(burn.Brick);
+                }
+                else if (burn.TicksLeft <= 0)
+                {
+                    burn.Brick.Burning = false;
+                    burns.RemoveAt(i);
+                }
             }
         }
         finally
