@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c82a0e9d5511613479c6682427c1b0a3, type: 3}
   m_Name: MeteorBallEffect
   m_EditorClassIdentifier: Assembly-CSharp::DamagePerLevelEffect
-  amount: 3
+  amount: 2
