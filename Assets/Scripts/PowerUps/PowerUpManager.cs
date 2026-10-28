@@ -47,6 +47,9 @@ public class PowerUpManager : MonoBehaviour
     /// <summary>Raised after a power-up was applied: the power-up and how many times it has now been taken.</summary>
     public event Action<PowerUpDefinition, int> PowerUpChosen;
 
+    /// <summary>Raised when cards are shown: the cards, and whether this is a reroll of the previous ones (run profiler).</summary>
+    public event Action<IReadOnlyList<PowerUpDefinition>, bool> Offered;
+
     private readonly Dictionary<PowerUpDefinition, int> stacks = new();
     private int pending;
     private readonly Queue<int> pendingDamage = new(); // damage gain of each level-up still waiting for its pick
@@ -112,7 +115,13 @@ public class PowerUpManager : MonoBehaviour
             if (choices.Count > 0)
             {
                 bool closed = false;
-                screen.Show(choices, GetStacks, Apply, () => closed = true, RerollCount, () => Roll(ChoiceCount));
+                Offered?.Invoke(choices, false);
+                screen.Show(choices, GetStacks, Apply, () => closed = true, RerollCount, () =>
+                {
+                    List<PowerUpDefinition> rerolled = Roll(ChoiceCount);
+                    Offered?.Invoke(rerolled, true);
+                    return rerolled;
+                });
                 while (!closed) yield return null;
             }
 

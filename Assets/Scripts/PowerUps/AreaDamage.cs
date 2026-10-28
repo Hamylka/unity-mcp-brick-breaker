@@ -164,6 +164,7 @@ public class AreaDamage : MonoBehaviour
     // (DamageCarry), so even 25% of a 1-damage ball removes an HP after a few hits.
     private void Splash(Brick source, int dealt)
     {
+        using var tag = DamageTag.Begin(DamageSource.Shockwave);
         Collect(source.transform.position, neighbourRadius, source);
         foreach (Brick neighbour in targets)
         {
@@ -180,6 +181,7 @@ public class AreaDamage : MonoBehaviour
     // Piercing Ball: the same shot carries on into the next bricks behind, in the same column.
     private void Pierce(Brick source, int damage)
     {
+        using var tag = DamageTag.Begin(DamageSource.Piercing);
         grid.GetLiveBricks(live);
         Vector3 origin = source.transform.position;
         float halfWidth = grid.BrickWidth * 0.5f;
@@ -214,6 +216,7 @@ public class AreaDamage : MonoBehaviour
     // Cleave: a sweep along the whole row of the brick that was hit.
     private void Cleave(Brick source)
     {
+        using var tag = DamageTag.Begin(DamageSource.Cleave);
         grid.GetLiveBricks(live);
         float rowZ = source.transform.position.z;
         float halfDepth = grid.CellDepth * 0.5f;
@@ -252,6 +255,7 @@ public class AreaDamage : MonoBehaviour
     // Volatile Bricks: a destroyed brick blows up its 3x3 block.
     private void Blast(Vector3 origin)
     {
+        using var tag = DamageTag.Begin(DamageSource.Volatile);
         Collect(origin, blastRadius, null);
         // White-hot core, orange fireball, a shockwave ring and embers that hang in the air.
         NeonFx.Flash(origin, Color.white * 1.5f, 1.1f, 0.1f);
@@ -274,6 +278,7 @@ public class AreaDamage : MonoBehaviour
     // in range, dealing a share of the ball's current damage (fractions carry per brick like the other effects).
     private void Chain(Brick source)
     {
+        using var tag = DamageTag.Begin(DamageSource.Chain);
         Vector3 from = source.transform.position;
         visited.Clear();
         visited.Add(source);
@@ -348,6 +353,7 @@ public class AreaDamage : MonoBehaviour
 
     private void TickBurns(float dt)
     {
+        using var tag = DamageTag.Begin(DamageSource.Meltdown);
         applying = true;
         try
         {

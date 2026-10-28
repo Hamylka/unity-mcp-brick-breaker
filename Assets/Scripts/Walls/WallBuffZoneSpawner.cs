@@ -25,6 +25,7 @@ public class WallBuffZoneSpawner : MonoBehaviour
     private State state = State.Cooldown;
     private float timer;
     private WallBuffZone zone;
+    private string zoneBuff = "";
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     private static void Bootstrap()
@@ -76,8 +77,11 @@ public class WallBuffZoneSpawner : MonoBehaviour
     private void SpawnZone()
     {
         Wall wall = walls[Random.Range(0, walls.Count)];
-        zone = WallBuffZone.Create(wall, PickBuff(), Random.Range(minT, maxT), zoneLength, zoneLifetime);
+        WallBuff buff = PickBuff();
+        zone = WallBuffZone.Create(wall, buff, Random.Range(minT, maxT), zoneLength, zoneLifetime);
         zone.Ended += HandleZoneEnded;
+        zoneBuff = buff.label;
+        RunProfiler.Log("zone_spawn", zoneBuff);
         state = State.ZoneUp;
     }
 
@@ -85,6 +89,7 @@ public class WallBuffZoneSpawner : MonoBehaviour
     {
         ended.Ended -= HandleZoneEnded;
         zone = null;
+        RunProfiler.Log(tookBuff ? "zone_taken" : "zone_missed", zoneBuff);
         // The aura is added in the same frame the zone ends, so AnyActive is already true here.
         if (tookBuff) state = State.BuffRunning;
         else Restart();
