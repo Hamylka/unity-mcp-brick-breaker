@@ -5,7 +5,8 @@ using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Owns the run: tracks a few stats and ends the run when the ball is lost or the wall reaches the lose line.
-/// On game over the game slows to a full stop, then the Game Over screen opens; Restart reloads the scene.
+/// On game over the <see cref="GameOverAnimation"/> plays (ball poof, the wall blowing up in a chain), then the game
+/// slows to a full stop and the Game Over screen opens; Restart reloads the scene.
 /// </summary>
 public class GameManager : MonoBehaviour
 {
@@ -23,6 +24,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] private ExperienceSystem experience;
     [SerializeField] private PowerUpManager powerUps;
     [SerializeField] private GameOverScreen gameOverScreen;
+    [Tooltip("Optional: added at startup if missing.")]
+    [SerializeField] private GameOverAnimation gameOverAnimation;
 
     [Header("Game Over")]
     [Tooltip("Seconds the game takes to slow down to a full stop before the Game Over screen opens.")]
@@ -45,6 +48,9 @@ public class GameManager : MonoBehaviour
 
         // A lost ball ends the run instead of going back to the paddle.
         if (ball != null) ball.AutoReset = false;
+
+        if (gameOverAnimation == null && !TryGetComponent(out gameOverAnimation))
+            gameOverAnimation = gameObject.AddComponent<GameOverAnimation>();
     }
 
     private void OnEnable()
@@ -119,7 +125,6 @@ public class GameManager : MonoBehaviour
         if (grid != null) grid.AdvanceEnabled = false;
 
         if (reason == LoseReason.BallLost) SoundManager.Play(Sfx.BallLost);
-        SoundManager.Play(Sfx.GameOver);
 
         GameOver?.Invoke(reason);
         StartCoroutine(GameOverSequence(reason));
@@ -128,8 +133,15 @@ public class GameManager : MonoBehaviour
     [ContextMenu("Debug: End Run")]
     private void DebugEndRun() => EndRun(LoseReason.BallLost);
 
+    [ContextMenu("Debug: End Run (Wall Reached)")]
+    private void DebugEndRunWall() => EndRun(LoseReason.WallReached);
+
     private IEnumerator GameOverSequence(LoseReason reason)
     {
+        if (gameOverAnimation != null) yield return gameOverAnimation.Play(reason, ball, grid);
+
+        // The sting plays as the game winds down, after the wall's collapse.
+        SoundManager.Play(Sfx.GameOver);
         float startScale = Time.timeScale > 0f ? Time.timeScale : 1f;
         float elapsed = 0f;
         while (elapsed < slowDownTime)
