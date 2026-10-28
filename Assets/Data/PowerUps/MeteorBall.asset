@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: MeteorBall
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Meteor Ball
-  description: +3 damage per hit
+  description: +3 base damage on every level-up
   rarity: 4
   icon: '...#...
 
