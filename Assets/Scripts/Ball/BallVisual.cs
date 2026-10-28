@@ -9,6 +9,10 @@ using UnityEngine;
 /// While the ball phases through bricks (<see cref="BallController.Phasing"/>) it turns into a ghost: the core shrinks
 /// and goes pale violet inside a big see-through shell that flickers, the trail, halo and floor light turn violet,
 /// afterimages trail behind it, and every brick it slips through gets a ripple, a flash and a hollow whoosh.
+/// While it deals extra damage (<see cref="BallController.DamageMultiplier"/> above 1, the 2x damage wall buff) it is
+/// powered up: bigger, white-hot in a gold shell, two energy arcs spinning around it, a throbbing gold halo, a wide
+/// gold trail, crackling sparks, and every brick hit lands with a heavy flash, ring and crunch.
+/// In the last seconds of a wall buff (<see cref="BuffTimeLeft"/>) both looks strobe, faster and faster.
 /// </summary>
 [RequireComponent(typeof(BallController))]
 [DisallowMultipleComponent]
@@ -20,6 +24,9 @@ public class BallVisual : MonoBehaviour
     private const string CoreTrailName = "BallCoreTrail";
     private const string ShellName = "BallGhostShell";
     private const string GhostMaterialPath = "FX/M_BallGhost";
+    private const string ArcNameA = "BallPowerArcA";
+    private const string ArcNameB = "BallPowerArcB";
+    private const int ArcSegments = 12;
 
     private static readonly int CoreColorId = Shader.PropertyToID("_CoreColor");
     private static readonly int RimColorId = Shader.PropertyToID("_RimColor");
@@ -85,8 +92,46 @@ public class BallVisual : MonoBehaviour
     [SerializeField, Range(0f, 1f)] private float passKick = 0.35f;
     [SerializeField, Min(0.01f)] private float passKickTime = 0.15f;
 
+    [Header("Power Look (extra damage)")]
+    [Tooltip("Power color; the 2x damage wall buff overrides it with its own color when applied.")]
+    [SerializeField] private Color powerColor = new(1f, 0.75f, 0.1f, 1f);
+    [SerializeField, Min(0.01f)] private float powerFadeIn = 0.15f;
+    [SerializeField, Min(0.01f)] private float powerFadeOut = 0.4f;
+    [Tooltip("Ball size while powered (1 = normal).")]
+    [SerializeField, Range(1f, 2f)] private float powerBodyScale = 1.25f;
+    [Tooltip("Heartbeat of the powered ball (size, halo and arcs throb), in beats per second.")]
+    [SerializeField, Min(0f)] private float throbRate = 2.5f;
+    [Tooltip("Radius of the two spinning energy arcs, in world units.")]
+    [SerializeField, Min(0f)] private float arcRadius = 0.62f;
+    [SerializeField, Min(0f)] private float arcWidth = 0.09f;
+    [Tooltip("Arc length of each of the two arcs, in degrees.")]
+    [SerializeField, Range(20f, 170f)] private float arcSpan = 120f;
+    [SerializeField] private float arcSpin = 600f;
+    [SerializeField, Min(0f)] private float arcIntensity = 4f;
+    [SerializeField, Min(1f)] private float powerHaloScale = 1.5f;
+    [SerializeField, Min(1f)] private float powerTrailWidth = 1.6f;
+    [SerializeField, Min(0f)] private float powerTrailBrightness = 1.2f;
+    [Tooltip("Seconds between two crackling sparks around the powered ball.")]
+    [SerializeField, Min(0.01f)] private float crackleInterval = 0.06f;
+    [Tooltip("Seconds between two tiny lightning arcs jumping off the powered ball.")]
+    [SerializeField, Min(0.05f)] private float boltInterval = 0.3f;
+
+    [Header("Buff Ending")]
+    [Tooltip("The buffed look strobes for this many seconds before the wall buff runs out.")]
+    [SerializeField, Min(0f)] private float warnTime = 2f;
+
     /// <summary>Ghost color (set by the Phase wall buff so the ball, zone and HUD ring match).</summary>
     public Color PhaseColor { get => phaseColor; set => phaseColor = value; }
+
+    /// <summary>Power color (set by the damage wall buff so the ball, zone and HUD ring match).</summary>
+    public Color PowerColor { get => powerColor; set { powerColor = value; BuildPowerGradients(); } }
+
+    // Halo and floor light of the powered ball: the power color pulled toward amber, so the bloom does not wash it
+    // out to lemon yellow.
+    private Color PowerGlow => Color.Lerp(powerColor, new Color(1f, 0.45f, 0.05f), 0.35f);
+
+    /// <summary>Seconds left on the wall buff this ball carries (infinity = none). Set by <see cref="BallBuffAura"/>.</summary>
+    public float BuffTimeLeft { get; set; } = float.PositiveInfinity;
 
     private BallController ball;
     private Transform body;
@@ -114,6 +159,16 @@ public class BallVisual : MonoBehaviour
     private float kickT = 1f;
     private bool wasPhasing;
     private Color ghostHue; // phaseColor pushed to a strong saturation, used for everything that glows
+    private Gradient outerPower, corePower;
+    private LineRenderer arcA, arcB;
+    private float powerBlend;
+    private float trailPower = -1f;
+    private bool wasPowered;
+    private float arcAngle;
+    private float arcKick;     // 1 right after a powered brick hit, eases back to 0
+    private float nextCrackle;
+    private float nextBolt;
+    private float warn = 1f;   // brightness factor of the buffed look (strobes before the buff ends)
 
     private void Awake()
     {
@@ -122,7 +177,35 @@ public class BallVisual : MonoBehaviour
         halo = FindOrCreateQuad(HaloName, haloSize);
         floorGlow = FindOrCreateQuad(FloorName, floorGlowSize);
         BuildShell();
+        arcA = FindOrCreateArc(ArcNameA);
+        arcB = FindOrCreateArc(ArcNameB);
         StyleTrails();
+    }
+
+    /// <summary>One of the two energy arcs spinning around the powered ball (world-space line, hidden until needed).</summary>
+    private LineRenderer FindOrCreateArc(string childName)
+    {
+        Transform existing = transform.Find(childName);
+        LineRenderer line = existing != null ? existing.GetComponent<LineRenderer>() : null;
+        if (line == null)
+        {
+            var go = new GameObject(childName);
+            go.transform.SetParent(transform, false);
+            line = go.AddComponent<LineRenderer>();
+            line.sharedMaterial = NeonGlow.LineMaterial;
+            line.useWorldSpace = true;
+            line.positionCount = ArcSegments + 1;
+            line.numCapVertices = 2;
+            line.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            line.receiveShadows = false;
+            // Bright head, fading tail: reads as spinning.
+            var fade = new Gradient();
+            fade.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 1f) });
+            line.colorGradient = fade;
+        }
+        line.enabled = false;
+        return line;
     }
 
     private void OnEnable()
@@ -242,6 +325,23 @@ public class BallVisual : MonoBehaviour
         NeonGlow.SetColor(core, NeonGlow.Hdr(Color.white, trailBrightness * 1.3f));
         coreTrail = core;
         BuildPhaseGradients();
+        BuildPowerGradients();
+    }
+
+    /// <summary>
+    /// Powered versions of the two trails, same key layout as the normal ones: white-hot head, the power color,
+    /// then a deep red-orange fade, fully opaque (heavy, solid).
+    /// </summary>
+    private void BuildPowerGradients()
+    {
+        Color deep = Color.Lerp(powerColor, new Color(1f, 0.1f, 0.05f), 0.6f);
+        outerPower = MakeGradient(
+            new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(PowerGlow, 0.25f), new GradientColorKey(deep, 1f) },
+            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0.95f, 0.3f), new GradientAlphaKey(0f, 1f) });
+        corePower = MakeGradient(
+            new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.Lerp(Color.white, powerColor, 0.5f), 1f) },
+            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0f, 1f) });
+        trailPower = -1f; // force a refresh
     }
 
     /// <summary>
@@ -282,6 +382,18 @@ public class BallVisual : MonoBehaviour
         Color flash = Color.Lerp(new Color(1f, 0.85f, 0.6f), Color.Lerp(Color.white, ghostHue, 0.4f), phaseBlend);
         NeonFx.Sparks(point, normal, Color.Lerp(glowColor, ghostHue, phaseBlend), sparkCount, sparkSpeed, 70f, 0.07f, 0.22f);
         NeonFx.Flash(point, flash, 0.35f, 0.07f);
+
+        // Powered ball hitting a brick: a heavy impact so the extra damage is felt.
+        if (powerBlend > 0.5f && collision.collider.GetComponentInParent<BrickStack>() != null)
+        {
+            Color hot = NeonGlow.Hdr(powerColor, 2f);
+            NeonFx.Flash(point, NeonGlow.Hdr(Color.Lerp(Color.white, powerColor, 0.3f), 2f), 0.9f, 0.1f);
+            NeonFx.Ring(point, hot, 18, 3.5f, 0.08f, 0.25f);
+            NeonFx.Sparks(point, normal, hot, sparkCount + 6, sparkSpeed * 1.6f, 55f, 0.08f, 0.3f);
+            squashT = 0f;
+            arcKick = 1f;
+            SoundManager.Play(Sfx.PowerHit, Random.Range(0.95f, 1.05f));
+        }
     }
 
     /// <summary>
@@ -326,10 +438,16 @@ public class BallVisual : MonoBehaviour
         }
         float along = 1f + stretch;
         float across = 1f / Mathf.Sqrt(along); // keeps the volume, so it reads as squash rather than resize
-        float coreScale = Mathf.Lerp(1f, phaseCoreScale, UpdatePhaseBlend(dt));
+        UpdateWarning();
+        float power = UpdatePowerBlend(dt);
+        // Heartbeat: a short sharp beat, then rest.
+        float throb = Mathf.Pow(0.5f + 0.5f * Mathf.Sin(time * throbRate * 2f * Mathf.PI), 6f) * power;
+        float powerScale = Mathf.Lerp(1f, powerBodyScale, power) * (1f + 0.07f * throb);
+        float coreScale = Mathf.Lerp(1f, phaseCoreScale, UpdatePhaseBlend(dt)) * powerScale;
         body.rotation = axis;
         body.localScale = new Vector3(across, across, along) * coreScale;
         UpdateGhost(dt, axis, stretch, flying);
+        UpdatePower(dt, throb);
 
         // Faster than at the start (boosts, speed upgrades) = brighter glow. Waiting on the paddle = gentle breathing.
         float speedGlow = flying ? Mathf.Clamp(ball.CurrentSpeed / referenceSpeed, 1f, 2f) : 1f;
@@ -337,9 +455,14 @@ public class BallVisual : MonoBehaviour
         float intensity = speedGlow * breathe;
 
         // While phasing the halo turns violet and swells and breathes a little (a soft aura around the ghost).
-        Color glow = Color.Lerp(glowColor, ghostHue, phaseBlend);
-        float haloScale = haloSize * Mathf.Lerp(1f, 1.3f + 0.15f * Mathf.Sin(phaseTime * 9f), phaseBlend);
-        halo.transform.localScale = Vector3.one * (haloScale / Mathf.Max(0.0001f, transform.lossyScale.x));
+        // While powered it turns gold, grows and throbs with the heartbeat.
+        Color glow = Color.Lerp(Color.Lerp(glowColor, PowerGlow, power), ghostHue, phaseBlend);
+        intensity *= Mathf.Lerp(1f, (1.15f + 0.6f * throb) * warn, power);
+        float haloScale = haloSize * Mathf.Lerp(1f, 1.3f + 0.15f * Mathf.Sin(phaseTime * 9f), phaseBlend)
+                          * Mathf.Lerp(1f, powerHaloScale * (1f + 0.15f * throb), power);
+        float inverseScale = 1f / Mathf.Max(0.0001f, transform.lossyScale.x);
+        halo.transform.localScale = Vector3.one * (haloScale * inverseScale);
+        floorGlow.transform.localScale = Vector3.one * (floorGlowSize * Mathf.Lerp(1f, 1.4f, power) * inverseScale);
 
         if (viewCamera == null) viewCamera = Camera.main;
         if (viewCamera != null) halo.transform.rotation = viewCamera.transform.rotation;
@@ -347,6 +470,85 @@ public class BallVisual : MonoBehaviour
 
         floorGlow.transform.SetPositionAndRotation(new Vector3(position.x, floorY, position.z), Quaternion.Euler(90f, 0f, 0f));
         NeonGlow.SetColor(floorGlow, NeonGlow.Hdr(glow, floorGlowIntensity * intensity));
+    }
+
+    /// <summary>Strobes the buffed look in the last seconds of a wall buff, faster and faster.</summary>
+    private void UpdateWarning()
+    {
+        float left = BuffTimeLeft;
+        if (left >= warnTime || warnTime <= 0f) { warn = 1f; return; }
+        float urgency = 1f - Mathf.Clamp01(left / warnTime);
+        float rate = Mathf.Lerp(4f, 11f, urgency); // blinks per second
+        warn = Mathf.Repeat(time * rate, 1f) < 0.6f ? 1f : 0.3f;
+    }
+
+    /// <summary>Eases the power look in and out; a burst when it starts.</summary>
+    private float UpdatePowerBlend(float dt)
+    {
+        bool powered = ball.DamageMultiplier > 1.01f;
+        if (powered && !wasPowered)
+        {
+            Vector3 position = ball.Position;
+            NeonFx.Ring(position, NeonGlow.Hdr(powerColor, 1.8f), 22, 3.5f, 0.08f, 0.3f);
+            NeonFx.Flash(position, NeonGlow.Hdr(Color.Lerp(Color.white, powerColor, 0.3f), 1.8f), 0.9f, 0.12f);
+            NeonFx.Sparks(position, Vector3.up, NeonGlow.Hdr(powerColor, 1.5f), 10, 4f, 50f, 0.07f, 0.3f);
+            arcKick = 1f;
+        }
+        wasPowered = powered;
+
+        float rate = dt / (powered ? powerFadeIn : powerFadeOut);
+        powerBlend = Mathf.MoveTowards(powerBlend, powered ? 1f : 0f, rate);
+        return Mathf.SmoothStep(0f, 1f, powerBlend);
+    }
+
+    /// <summary>The two spinning energy arcs, crackling sparks and tiny lightning arcs of the powered ball.</summary>
+    private void UpdatePower(float dt, float throb)
+    {
+        float power = Mathf.SmoothStep(0f, 1f, powerBlend);
+        bool show = power > 0.001f && arcA != null && arcB != null;
+        if (arcA != null) arcA.enabled = show;
+        if (arcB != null) arcB.enabled = show;
+        if (!show) return;
+
+        arcKick = Mathf.MoveTowards(arcKick, 0f, dt / 0.25f);
+        arcAngle += arcSpin * dt * (1f + 1.5f * arcKick);
+        float radius = arcRadius * Mathf.Lerp(0.5f, 1f, power) * (1f + 0.12f * throb + 0.35f * arcKick * arcKick);
+        Color color = NeonGlow.Hdr(Color.Lerp(powerColor, Color.white, 0.25f * throb + 0.5f * arcKick), arcIntensity * power * warn);
+        DrawArc(arcA, arcAngle, radius, color);
+        DrawArc(arcB, arcAngle + 180f, radius, color);
+
+        if (!wasPowered || !ball.IsFlying || Time.timeScale <= 0f) return;
+        Vector3 position = ball.Position;
+        if (Time.time >= nextCrackle)
+        {
+            nextCrackle = Time.time + crackleInterval;
+            Vector3 direction = RandomFlatDirection();
+            NeonFx.Sparks(position + direction * radius * 0.8f, direction, NeonGlow.Hdr(powerColor, 1.6f), 2, 2.5f, 30f, 0.05f, 0.15f);
+        }
+        if (Time.time >= nextBolt)
+        {
+            nextBolt = Time.time + boltInterval * Random.Range(0.6f, 1.4f);
+            ChainBolt.Spawn(position, position + RandomFlatDirection() * radius * 1.7f,
+                NeonGlow.Hdr(Color.Lerp(powerColor, Color.white, 0.4f), 2f), 0.08f, 0.1f, 0.05f);
+        }
+    }
+
+    private void DrawArc(LineRenderer line, float startDegrees, float radius, Color color)
+    {
+        Vector3 center = transform.position;
+        for (int i = 0; i <= ArcSegments; i++)
+        {
+            float angle = (startDegrees + arcSpan * i / ArcSegments) * Mathf.Deg2Rad;
+            line.SetPosition(i, center + new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius);
+        }
+        line.widthMultiplier = arcWidth;
+        NeonGlow.SetColor(line, color);
+    }
+
+    private static Vector3 RandomFlatDirection()
+    {
+        float angle = Random.value * Mathf.PI * 2f;
+        return new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
     }
 
     /// <summary>Eases the ghost look in and out (quick in, slower out so the end of the buff is felt).</summary>
@@ -374,12 +576,16 @@ public class BallVisual : MonoBehaviour
         phaseTime += dt;
         float blend = Mathf.SmoothStep(0f, 1f, phaseBlend);
 
-        // Core: pale violet instead of orange. Cleared at 0 so the ball keeps its plain material (and batching).
-        if (blend > 0f)
+        // Core: white-hot in a gold rim while powered, pale violet while phasing.
+        // Cleared at 0 so the ball keeps its plain material (and batching).
+        float power = Mathf.SmoothStep(0f, 1f, powerBlend);
+        if (blend > 0f || power > 0f)
         {
             Color pale = Color.Lerp(Color.white, ghostHue, 0.5f);
-            bodyBlock.SetColor(CoreColorId, Color.Lerp(baseCoreColor, NeonGlow.Hdr(pale, 1.4f), blend));
-            bodyBlock.SetColor(RimColorId, Color.Lerp(baseRimColor, NeonGlow.Hdr(ghostHue, 2f), blend));
+            Color coreColor = Color.Lerp(baseCoreColor, NeonGlow.Hdr(Color.Lerp(Color.white, powerColor, 0.5f), 1.5f * (0.6f + 0.4f * warn)), power);
+            Color rimColor = Color.Lerp(baseRimColor, NeonGlow.Hdr(powerColor, 3.5f * (0.5f + 0.5f * warn)), power);
+            bodyBlock.SetColor(CoreColorId, Color.Lerp(coreColor, NeonGlow.Hdr(pale, 1.4f), blend));
+            bodyBlock.SetColor(RimColorId, Color.Lerp(rimColor, NeonGlow.Hdr(ghostHue, 2f), blend));
             bodyRenderer.SetPropertyBlock(bodyBlock);
         }
         else
@@ -403,25 +609,29 @@ public class BallVisual : MonoBehaviour
                 shell.transform.localScale = new Vector3(across, across, along) * size;
 
                 float noise = Mathf.PerlinNoise(phaseTime * shellFlickerSpeed, 0.37f) * 2f - 1f;
-                float brightness = shellIntensity * blend * (1f + shellFlicker * noise) * (1f + kick * 2f);
+                float brightness = shellIntensity * blend * (1f + shellFlicker * noise) * (1f + kick * 2f) * warn;
                 shellBlock.SetColor(GhostColorId, NeonGlow.Hdr(ghostHue, Mathf.Max(0f, brightness)));
                 shell.SetPropertyBlock(shellBlock);
             }
         }
 
-        // Trails: blend toward the ghost gradients (rebuilt only while the blend moves).
-        bool settled = blend == 0f || blend == 1f;
-        if (outerTrail != null && (Mathf.Abs(blend - trailBlend) > 0.02f || (settled && blend != trailBlend)))
+        // Trails: blend toward the power, then the ghost gradients (rebuilt only while a blend moves).
+        bool settled = (blend == 0f || blend == 1f) && (power == 0f || power == 1f);
+        bool moved = Mathf.Abs(blend - trailBlend) > 0.02f || Mathf.Abs(power - trailPower) > 0.02f;
+        if (outerTrail != null && (moved || (settled && (blend != trailBlend || power != trailPower))))
         {
             trailBlend = blend;
-            outerTrail.colorGradient = LerpGradient(outerNormal, outerPhase, blend);
-            outerTrail.time = Mathf.Lerp(trailTime, phaseTrailTime, blend);
-            outerTrail.widthMultiplier = outerWidth * Mathf.Lerp(1f, 1.2f, blend);
-            NeonGlow.SetColor(outerTrail, NeonGlow.Hdr(Color.white, Mathf.Lerp(trailBrightness, phaseTrailBrightness, blend)));
+            trailPower = power;
+            float brightness = Mathf.Lerp(Mathf.Lerp(trailBrightness, powerTrailBrightness, power), phaseTrailBrightness, blend);
+            outerTrail.colorGradient = LerpGradient(LerpGradient(outerNormal, outerPower, power), outerPhase, blend);
+            outerTrail.time = Mathf.Lerp(Mathf.Lerp(trailTime, trailTime * 1.15f, power), phaseTrailTime, blend);
+            outerTrail.widthMultiplier = outerWidth * Mathf.Lerp(1f, powerTrailWidth, power) * Mathf.Lerp(1f, 1.2f, blend);
+            NeonGlow.SetColor(outerTrail, NeonGlow.Hdr(Color.white, brightness));
             if (coreTrail != null)
             {
-                coreTrail.colorGradient = LerpGradient(coreNormal, corePhase, blend);
-                NeonGlow.SetColor(coreTrail, NeonGlow.Hdr(Color.white, Mathf.Lerp(trailBrightness * 1.3f, phaseTrailBrightness * 1.3f, blend)));
+                coreTrail.colorGradient = LerpGradient(LerpGradient(coreNormal, corePower, power), corePhase, blend);
+                coreTrail.widthMultiplier = outerWidth * coreTrailWidth * Mathf.Lerp(1f, powerTrailWidth, power);
+                NeonGlow.SetColor(coreTrail, NeonGlow.Hdr(Color.white, brightness * 1.3f));
             }
         }
 

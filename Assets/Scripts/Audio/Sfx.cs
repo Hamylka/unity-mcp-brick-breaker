@@ -58,5 +58,12 @@ public enum Sfx
     VolatileBlast,
     CleaveSweep,
     BurnIgnite,
-    BurnTick
+    BurnTick,
+
+    // Wall buff zones and buffed ball
+    ZoneSpawn,
+    ZoneTake,
+    ZoneExpire,
+    BuffFade,
+    PowerHit
 }

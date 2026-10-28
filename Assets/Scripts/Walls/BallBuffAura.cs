@@ -1,8 +1,9 @@
 using UnityEngine;
 
 /// <summary>
-/// Runs a <see cref="WallBuff"/> on a ball: applies it, shows embers around the ball and a ring in the
-/// active bonus HUD, then removes it when the time is up. Adding the same buff again refreshes the timer.
+/// Runs a <see cref="WallBuff"/> on a ball: applies it, shows a ring in the active bonus HUD, then removes it when the
+/// time is up. Adding the same buff again refreshes the timer. The ball's own look (<see cref="BallVisual"/>) shows
+/// the buff and is told how long is left so it can flicker before the end; a ball without one gets embers instead.
 /// </summary>
 [DisallowMultipleComponent]
 public class BallBuffAura : MonoBehaviour
@@ -16,6 +17,7 @@ public class BallBuffAura : MonoBehaviour
     public static bool AnyActive => liveCount > 0;
 
     private BallController ball;
+    private BallVisual visual;
     private WallBuff buff;
     private float remaining;
     private float nextEmber;
@@ -38,6 +40,7 @@ public class BallBuffAura : MonoBehaviour
         else if (buff == null) liveCount++;
 
         ball = target;
+        visual = target.GetComponent<BallVisual>();
         buff = newBuff;
         remaining = newBuff.duration;
         hudId = "wallbuff#" + nextId++;
@@ -54,7 +57,11 @@ public class BallBuffAura : MonoBehaviour
 
         ActiveBonusTracker.Report(hudId, buff.label, buff.label, buff.color, remaining, buff.duration);
 
-        if (Time.time >= nextEmber && Time.timeScale > 0f)
+        if (visual != null)
+        {
+            visual.BuffTimeLeft = remaining;
+        }
+        else if (Time.time >= nextEmber && Time.timeScale > 0f)
         {
             nextEmber = Time.time + EmberInterval;
             NeonFx.Embers(ball.Position + Vector3.up * 0.1f, buff.color, 1, 0.08f, 0.45f);
@@ -66,10 +73,16 @@ public class BallBuffAura : MonoBehaviour
         if (buff == null) return;
         liveCount--;
         if (ball != null) buff.Remove(ball);
+        if (visual != null) visual.BuffTimeLeft = float.PositiveInfinity;
 
         // No effects while the scene is closing (they would spawn objects during teardown).
         if (!gameObject.scene.isLoaded) return;
-        if (ball != null) NeonFx.Burst(ball.Position, buff.color, 10, 2f, 0.08f, 0.3f);
-        SoundManager.Play(Sfx.BonusExpire, 1f, 0.6f);
+        if (ball != null)
+        {
+            // The power leaving the ball: a burst and a ring that falls away from it.
+            NeonFx.Burst(ball.Position, buff.color, 14, 2f, 0.08f, 0.35f);
+            NeonFx.Ring(ball.Position, NeonGlow.Hdr(buff.color, 1.3f), 18, 2.2f, 0.07f, 0.3f);
+        }
+        SoundManager.Play(Sfx.BuffFade);
     }
 }
