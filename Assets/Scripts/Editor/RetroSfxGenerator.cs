@@ -44,6 +44,11 @@ public static class RetroSfxGenerator
         { Sfx.CleaveSweep, (0.5f, 0.03f, 0.1f) },
         { Sfx.BurnIgnite, (0.3f, 0.08f, 0.12f) },
         { Sfx.BurnTick, (0.22f, 0.1f, 0.07f) },
+        { Sfx.ZoneSpawn, (0.5f, 0f, 0.3f) },
+        { Sfx.ZoneTake, (0.6f, 0f, 0.2f) },
+        { Sfx.ZoneExpire, (0.4f, 0f, 0.3f) },
+        { Sfx.BuffFade, (0.5f, 0f, 0.2f) },
+        { Sfx.PowerHit, (0.4f, 0.06f, 0.04f) },
     };
 
     [MenuItem("Tools/Brick Breaker/Generate Sound Effects")]
@@ -184,6 +189,36 @@ public static class RetroSfxGenerator
                                (0f, Tone(0.025f, 5000f, 5000f, Wave.Noise, 0.5f, decay: 0.008f)),
                                (0.03f, Tone(0.02f, 3000f, 3000f, Wave.Noise, 0.4f, decay: 0.007f)),
                                (0.07f, Tone(0.03f, 4200f, 4200f, Wave.Noise, 0.35f, decay: 0.01f))));
+
+        // Wall buff zones and buffed ball
+        // Zone spawn: a beacon calling the player. A soft rising swell, then two bell pings a fifth apart with a
+        // shimmer of air on top, inviting rather than alarming.
+        Save(Sfx.ZoneSpawn, Mix((0f, Tone(0.3f, 300f, 1200f, Wave.Triangle, 0.3f, attack: 0.08f, decay: 0.15f)),
+                                (0.06f, Tone(0.35f, E6, E6, Wave.Triangle, 0.35f, decay: 0.14f, vibratoHz: 9f, vibratoDepth: 0.015f)),
+                                (0.15f, Tone(0.45f, B6, B6, Wave.Triangle, 0.3f, decay: 0.18f, vibratoHz: 9f, vibratoDepth: 0.015f)),
+                                (0.15f, Tone(0.3f, B6 * 1.006f, B6 * 1.006f, Wave.Square, 0.07f, duty: 0.125f, decay: 0.1f)),
+                                (0f, Tone(0.4f, 3000f, 8000f, Wave.Noise, 0.07f, attack: 0.12f, decay: 0.12f))));
+        // Zone take: the ball soaking up the power. A fast rising sweep over a sub thump, landing on a bright open
+        // fifth with a sparkle; bigger and heavier than the bonus pickup chime.
+        Save(Sfx.ZoneTake, Mix((0f, Tone(0.18f, 200f, 1600f, Wave.Square, 0.35f, duty: 0.25f, decay: 0.15f)),
+                               (0f, Tone(0.2f, 120f, 45f, Wave.Triangle, 0.9f, decay: 0.08f)),
+                               (0.15f, Tone(0.4f, C6, C6, Wave.Square, 0.3f, duty: 0.25f, decay: 0.18f, vibratoHz: 10f, vibratoDepth: 0.02f)),
+                               (0.15f, Tone(0.4f, G6, G6, Wave.Triangle, 0.35f, decay: 0.2f, vibratoHz: 10f, vibratoDepth: 0.02f)),
+                               (0.15f, Tone(0.4f, C5, C5, Wave.Triangle, 0.3f, decay: 0.2f)),
+                               (0.12f, Tone(0.3f, 5000f, 10000f, Wave.Noise, 0.1f, decay: 0.1f))));
+        // Zone expire (missed): a soft detuned "wah" falling away with a little fizz. Quiet: a shrug, not a fail.
+        Save(Sfx.ZoneExpire, Mix((0f, Tone(0.35f, 900f, 300f, Wave.Triangle, 0.4f, attack: 0.02f, decay: 0.15f, vibratoHz: 7f, vibratoDepth: 0.03f)),
+                                 (0f, Tone(0.35f, 880f, 280f, Wave.Square, 0.08f, duty: 0.125f, attack: 0.02f, decay: 0.12f)),
+                                 (0f, Tone(0.3f, 6000f, 1500f, Wave.Noise, 0.08f, decay: 0.1f))));
+        // Buff fade: the ball's power winding down, a wobbling falling square over a sinking hum and a breath of noise.
+        Save(Sfx.BuffFade, Mix((0f, Tone(0.45f, 900f, 120f, Wave.Square, 0.25f, duty: 0.25f, decay: 0.2f, vibratoHz: 16f, vibratoDepth: 0.08f)),
+                               (0f, Tone(0.45f, 450f, 60f, Wave.Triangle, 0.45f, decay: 0.2f)),
+                               (0f, Tone(0.3f, 4000f, 500f, Wave.Noise, 0.1f, decay: 0.1f))));
+        // Power hit: layered on brick hits while the ball deals extra damage. A short heavy crunch (sub thump,
+        // noise crack, low square knock) so the doubled damage is felt.
+        Save(Sfx.PowerHit, Mix((0f, Tone(0.12f, 160f, 50f, Wave.Triangle, 1f, decay: 0.05f)),
+                               (0f, Tone(0.08f, 3000f, 800f, Wave.Noise, 0.45f, decay: 0.03f)),
+                               (0f, Tone(0.06f, 440f, 330f, Wave.Square, 0.3f, duty: 0.25f, decay: 0.03f))));
 
         AssetDatabase.Refresh();
         RegisterNewSounds();

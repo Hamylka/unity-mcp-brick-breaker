@@ -6,7 +6,11 @@ public class DamageWallBuff : WallBuff
 {
     [Min(1f)] public float multiplier = 2f;
 
-    public override void Apply(BallController ball) => ball.DamageMultiplier = multiplier;
+    public override void Apply(BallController ball)
+    {
+        ball.DamageMultiplier = multiplier;
+        if (ball.TryGetComponent(out BallVisual visual)) visual.PowerColor = color;
+    }
 
     public override void Remove(BallController ball) => ball.DamageMultiplier = 1f;
 }

@@ -588,6 +588,22 @@ MonoBehaviour:
   ghostSaturation: 0.8
   passKick: 0.35
   passKickTime: 0.15
+  powerColor: {r: 1, g: 0.75, b: 0.1, a: 1}
+  powerFadeIn: 0.15
+  powerFadeOut: 0.4
+  powerBodyScale: 1.25
+  throbRate: 2.5
+  arcRadius: 0.62
+  arcWidth: 0.09
+  arcSpan: 120
+  arcSpin: 600
+  arcIntensity: 4
+  powerHaloScale: 1.5
+  powerTrailWidth: 1.6
+  powerTrailBrightness: 1.2
+  crackleInterval: 0.06
+  boltInterval: 0.3
+  warnTime: 2
 --- !u!1 &75570440
 GameObject:
   m_ObjectHideFlags: 0
@@ -939,6 +955,31 @@ MonoBehaviour:
     volume: 0.22
     pitchJitter: 0.1
     minInterval: 0.07
+  - id: 38
+    clip: {fileID: 8300000, guid: 61dfe4876e22ffa4c95f8f1de5f30ebe, type: 3}
+    volume: 0.5
+    pitchJitter: 0
+    minInterval: 0.3
+  - id: 39
+    clip: {fileID: 8300000, guid: bb6a10f7b7537a744ae2ec14db498bb3, type: 3}
+    volume: 0.6
+    pitchJitter: 0
+    minInterval: 0.2
+  - id: 40
+    clip: {fileID: 8300000, guid: 1f690fe8302a99d41849cc11e71af794, type: 3}
+    volume: 0.4
+    pitchJitter: 0
+    minInterval: 0.3
+  - id: 41
+    clip: {fileID: 8300000, guid: b6daaf027b480294897efb8bdf51097f, type: 3}
+    volume: 0.5
+    pitchJitter: 0
+    minInterval: 0.2
+  - id: 42
+    clip: {fileID: 8300000, guid: a3a81ca0939a57a4e8ecc09fd9f21e5c, type: 3}
+    volume: 0.4
+    pitchJitter: 0.06
+    minInterval: 0.04
 --- !u!4 &106477069
 Transform:
   m_ObjectHideFlags: 0
