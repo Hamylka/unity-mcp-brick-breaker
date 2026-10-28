@@ -144,8 +144,10 @@ public class GameOverAnimation : MonoBehaviour
         foreach (BallController ball in FindObjectsByType<BallController>())
         {
             Vector3 p = ball.Position;
-            NeonFx.Flash(p, Color.white * 3f, 1.4f, 0.25f);
-            NeonFx.Flash(p, poofColor * 2f, 2.2f, 0.35f);
+            // Square flashes only at pixel size (a hot core); the big light is a soft round glow.
+            NeonFx.Flash(p, Color.white * 2f, 0.45f, 0.15f);
+            SoftFlash.Spawn(p, Color.white * 1.5f, 1.6f, 0.3f);
+            SoftFlash.Spawn(p, poofColor * 2f, 3.2f, 0.5f);
             NeonFx.Ring(p, poofColor * 1.5f, 32, 6f, 0.11f, 0.45f);
             NeonFx.Burst(p, poofColor * 1.5f, 26, 5f, 0.12f, 0.6f);
             NeonFx.Burst(p, poofTipColor * 1.5f, 14, 3f, 0.09f, 0.8f);
@@ -184,7 +186,8 @@ public class GameOverAnimation : MonoBehaviour
         Vector3 p = brick.transform.position;
         float width = brick.Size.x;
 
-        NeonFx.Flash(p, Color.Lerp(color, Color.white, 0.5f) * 2.5f, width * 1.6f, 0.16f);
+        NeonFx.Flash(p, Color.Lerp(color, Color.white, 0.5f) * 2f, 0.35f, 0.12f);
+        SoftFlash.Spawn(p, color * 1.6f, width * 2.4f, 0.32f);
         NeonFx.Burst(p, color * 1.6f, 12, 4.5f, 0.11f, 0.65f);
         NeonFx.Embers(p, color, 2, 0.07f, 1f);
         if (index % ringEvery == 1 || ringEvery == 1) NeonFx.Ring(p, color * 1.4f, 20, 4f, 0.09f, 0.35f);
@@ -196,8 +199,9 @@ public class GameOverAnimation : MonoBehaviour
 
     private void Collapse(Vector3 center)
     {
-        NeonFx.Flash(center, Color.white * 3f, 5f, 0.3f);
-        NeonFx.Flash(center, collapseColor * 2f, 8f, 0.5f);
+        NeonFx.Flash(center, Color.white * 2f, 0.6f, 0.18f);
+        SoftFlash.Spawn(center, Color.white * 1.4f, 3.5f, 0.4f);
+        SoftFlash.Spawn(center, collapseColor * 1.8f, 8f, 0.7f);
         NeonFx.Ring(center, collapseColor * 1.6f, 48, 9f, 0.14f, 0.6f);
         NeonFx.Ring(center, poofColor * 1.6f, 36, 5.5f, 0.12f, 0.7f);
         NeonFx.Burst(center, collapseColor * 1.5f, 40, 7f, 0.13f, 0.9f);
