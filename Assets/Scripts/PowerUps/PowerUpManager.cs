@@ -49,6 +49,7 @@ public class PowerUpManager : MonoBehaviour
 
     private readonly Dictionary<PowerUpDefinition, int> stacks = new();
     private int pending;
+    private readonly Queue<int> pendingDamage = new(); // damage gain of each level-up still waiting for its pick
     private float savedTimeScale = 1f;
 
     private void OnEnable()
@@ -76,11 +77,9 @@ public class PowerUpManager : MonoBehaviour
 
     private void HandleLevelUp(int newLevel)
     {
-        // Damage first, so a card picked now only counts from the next level-up.
-        int gain = DamagePerLevel;
-        if (gain > 0)
-            foreach (BallController ball in FindObjectsByType<BallController>()) ball.AddDamage(gain);
-
+        // The gain is fixed now, so a card picked in this level-up only counts from the next one, but it is
+        // applied after the pick: the bricks recolor with the new damage once the card screen is gone.
+        pendingDamage.Enqueue(DamagePerLevel);
         pending++;
         if (!IsChoosing) StartCoroutine(ChoiceLoop());
     }
@@ -110,17 +109,26 @@ public class PowerUpManager : MonoBehaviour
 
             pending--;
             List<PowerUpDefinition> choices = Roll(ChoiceCount);
-            if (choices.Count == 0) continue;
+            if (choices.Count > 0)
+            {
+                bool closed = false;
+                screen.Show(choices, GetStacks, Apply, () => closed = true, RerollCount, () => Roll(ChoiceCount));
+                while (!closed) yield return null;
+            }
 
-            bool closed = false;
-            screen.Show(choices, GetStacks, Apply, () => closed = true, RerollCount, () => Roll(ChoiceCount));
-            while (!closed) yield return null;
+            ApplyLevelDamage(pendingDamage.Count > 0 ? pendingDamage.Dequeue() : 0);
         }
 
         // One extra frame so the confirming tap is not read as a ball launch.
         yield return null;
         Time.timeScale = savedTimeScale;
         IsChoosing = false;
+    }
+
+    private static void ApplyLevelDamage(int gain)
+    {
+        if (gain <= 0) return;
+        foreach (BallController ball in FindObjectsByType<BallController>()) ball.AddDamage(gain);
     }
 
     private void Apply(PowerUpDefinition definition)
