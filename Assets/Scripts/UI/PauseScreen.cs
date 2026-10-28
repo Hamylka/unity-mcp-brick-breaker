@@ -74,6 +74,8 @@ public class PauseScreen : MonoBehaviour
 
     private GameManager game;
     private PowerUpManager powerUps;
+    private PixelText damageLabel;
+    private const int DamageStat = 3; // index in the stats grid
     private ExperienceSystem experience;
     private BrickGrid grid;
 
@@ -239,7 +241,10 @@ public class PauseScreen : MonoBehaviour
         statValues[0].Text = level.ToString();
         statValues[1].Text = $"{seconds / 60}:{seconds % 60:00}";
         statValues[2].Text = game != null ? game.BricksDestroyed.ToString() : "0";
-        statValues[3].Text = damage.ToString();
+        statValues[DamageStat].Text = damage.ToString();
+        // The label also tells how much damage each level-up adds (passive + cards).
+        if (damageLabel != null)
+            damageLabel.Text = powerUps != null ? $"DAMAGE +{powerUps.DamagePerLevel}/LV" : "DAMAGE";
         statValues[4].Text = grid != null ? $"{grid.CurrentMinHp}-{grid.CurrentMaxHp}" : "-";
         statValues[5].Text = experience != null ? $"{experience.CurrentXp}/{experience.XpToNextLevel}" : "-";
 
@@ -599,6 +604,7 @@ public class PauseScreen : MonoBehaviour
 
             PixelText label = NewText(labels[i] + "Label", statsPanel, labels[i], 3f, accentColor);
             Place(label.rectTransform, new Vector2(x, y + 30f), new Vector2(300f, 24f));
+            if (i == DamageStat) damageLabel = label;
 
             PixelText value = NewText(labels[i] + "Value", statsPanel, "0", 6f, Color.white);
             Place(value.rectTransform, new Vector2(x, y - 14f), new Vector2(300f, 48f));
