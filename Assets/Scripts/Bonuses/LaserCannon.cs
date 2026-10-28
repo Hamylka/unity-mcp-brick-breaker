@@ -56,8 +56,11 @@ public class LaserCannon : MonoBehaviour
         remaining -= dt;
         if (remaining <= 0f)
         {
-            SoundManager.Play(Sfx.BonusExpire);
+            // Power-down: the cannon winds down and sputters, a last puff of sparks and embers drifting off it.
+            SoundManager.Play(Sfx.LaserPowerDown);
             NeonFx.Burst(transform.position, color, 12, 2f, 0.07f, 0.35f);
+            NeonFx.Sparks(transform.position, Vector3.forward, color, 6, 1.5f, 30f, 0.06f, 0.25f);
+            NeonFx.Embers(transform.position, Color.Lerp(color, Color.white, 0.3f), 4, 0.06f, 0.8f);
             if (bolt != null) Destroy(bolt.gameObject);
             Destroy(this);
             return;

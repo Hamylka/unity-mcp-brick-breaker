@@ -980,6 +980,26 @@ MonoBehaviour:
     volume: 0.4
     pitchJitter: 0.06
     minInterval: 0.04
+  - id: 43
+    clip: {fileID: 8300000, guid: b255be7e4215450469364fed7bb9511c, type: 3}
+    volume: 0.5
+    pitchJitter: 0.02
+    minInterval: 0.05
+  - id: 44
+    clip: {fileID: 8300000, guid: 7c086f1716b20bd4088c1b5974d20caa, type: 3}
+    volume: 0.5
+    pitchJitter: 0.02
+    minInterval: 0.05
+  - id: 45
+    clip: {fileID: 8300000, guid: 49f19324c90476445a095b4f92b98a39, type: 3}
+    volume: 0.5
+    pitchJitter: 0.02
+    minInterval: 0.05
+  - id: 46
+    clip: {fileID: 8300000, guid: a08a8d6708ea7e941a3701b8841ee127, type: 3}
+    volume: 0.45
+    pitchJitter: 0
+    minInterval: 0.2
 --- !u!4 &106477069
 Transform:
   m_ObjectHideFlags: 0

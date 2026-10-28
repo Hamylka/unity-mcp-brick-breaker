@@ -65,5 +65,11 @@ public enum Sfx
     ZoneTake,
     ZoneExpire,
     BuffFade,
-    PowerHit
+    PowerHit,
+
+    // Bonus item pickups (one per bonus) and the laser power-down
+    PickupMultiBall,
+    PickupLaser,
+    PickupShield,
+    LaserPowerDown
 }
