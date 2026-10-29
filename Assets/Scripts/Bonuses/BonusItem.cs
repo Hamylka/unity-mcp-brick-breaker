@@ -25,6 +25,7 @@ public class BonusItem : MonoBehaviour
 
     private Rigidbody body;
     private bool collected;
+    private PaddleController paddleRef;
 
     private void Awake()
     {
@@ -59,18 +60,37 @@ public class BonusItem : MonoBehaviour
     private void FixedUpdate()
     {
         // Constant velocity, re-applied every step so nothing can alter the fall.
-        body.linearVelocity = Vector3.back * fallSpeed;
+        body.linearVelocity = Vector3.back * (fallSpeed * PowerUpStats.BonusFallSpeed);
         body.angularVelocity = Vector3.up * (spinSpeed * Mathf.Deg2Rad);
 
-        if (body.position.z < despawnZ) Destroy(gameObject);
+        if (body.position.z < despawnZ) { Destroy(gameObject); return; }
+        if (PowerUpStats.CatchZoneScale > 1.001f) CheckWideCatch();
+    }
+
+    // Catch Zone: the paddle also picks the item up inside a wider strip, without touching the paddle's collider.
+    private void CheckWideCatch()
+    {
+        if (collected) return;
+        paddleRef ??= FindAnyObjectByType<PaddleController>();
+        if (paddleRef == null || !paddleRef.TryGetComponent(out Collider paddleCollider)) return;
+
+        Bounds bounds = paddleCollider.bounds;
+        float halfWidth = bounds.extents.x * PowerUpStats.CatchZoneScale;
+        Vector3 p = body.position;
+        if (Mathf.Abs(p.x - bounds.center.x) > halfWidth) return;
+        if (p.z < bounds.min.z - 0.3f || p.z > bounds.max.z + 0.3f) return;
+        Collect(paddleRef);
     }
 
     private void OnTriggerEnter(Collider other)
     {
         if (collected) return;
         PaddleController paddle = other.GetComponentInParent<PaddleController>();
-        if (paddle == null) return;
+        if (paddle != null) Collect(paddle);
+    }
 
+    private void Collect(PaddleController paddle)
+    {
         collected = true;
         Collected?.Invoke(this, paddle);
         Destroy(gameObject);

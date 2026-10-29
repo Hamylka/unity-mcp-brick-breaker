@@ -55,6 +55,7 @@ public class PowerUpManager : MonoBehaviour
 
     private void OnEnable()
     {
+        PowerUpStats.Reset(); // a new run starts with no card bonuses
         if (experience != null) experience.LevelUp += HandleLevelUp;
     }
 

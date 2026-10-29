@@ -14,6 +14,9 @@ public class LaserCannon : MonoBehaviour
     private float totalTime;
     private float interval;
     private float cooldown;
+
+    // Laser Focus is read live, so a pick made while the cannon is up speeds it at once.
+    private float Interval => interval / PowerUpStats.LaserFireRate;
     private Color color;
     private LineRenderer bolt;
     private float boltWidth;
@@ -34,7 +37,7 @@ public class LaserCannon : MonoBehaviour
         totalTime = duration;
         interval = fireInterval;
         color = boltColor;
-        if (cooldown <= 0f || cooldown > interval) cooldown = Mathf.Min(0.3f, interval); // first shot comes quickly
+        if (cooldown <= 0f || cooldown > Interval) cooldown = Mathf.Min(0.3f, Interval); // first shot comes quickly
 
         if (bolt == null)
         {
@@ -78,7 +81,7 @@ public class LaserCannon : MonoBehaviour
         cooldown -= dt;
         if (cooldown <= 0f && armed)
         {
-            cooldown = interval;
+            cooldown = Interval;
             Fire();
         }
         UpdateSight(armed, dt);
@@ -95,7 +98,7 @@ public class LaserCannon : MonoBehaviour
         if (sight == null) return;
         float nearest = FindTarget(out BrickStack target);
         Vector3 origin = transform.position;
-        float charge = 1f - Mathf.Clamp01(cooldown / interval);
+        float charge = 1f - Mathf.Clamp01(cooldown / Interval);
         sight.Update(origin, origin + Vector3.forward * nearest, target != null ? target.Bottom : null,
             charge, Mathf.Max(0f, cooldown), armed, dt);
     }

@@ -5457,6 +5457,14 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 4cb75c260a2e0d741a4b3b17633f985f, type: 2}
   - {fileID: 11400000, guid: d6b26d4c7d49c704a82f16ec85c19b60, type: 2}
   - {fileID: 11400000, guid: 20acfaee587e9674cb36115261148392, type: 2}
+  - {fileID: 11400000, guid: 3a93e1ab1ba10894c8cfb6382fb46439, type: 2}
+  - {fileID: 11400000, guid: 3ac0f7d0411c2034b911cfdaf5365e32, type: 2}
+  - {fileID: 11400000, guid: 96e5b0d4476c84140853aa9daad0c339, type: 2}
+  - {fileID: 11400000, guid: c600012268911e843980fe2e4b2a702f, type: 2}
+  - {fileID: 11400000, guid: 3f33debc5e41ca94ba1b20c4cc9132c5, type: 2}
+  - {fileID: 11400000, guid: 8e918e7a82dbdbd4b9809c6f60b91002, type: 2}
+  - {fileID: 11400000, guid: b2961b5fe51249243b0fecb09cbb7076, type: 2}
+  - {fileID: 11400000, guid: 8e62ce5bc761a384da68ea206aaed35f, type: 2}
   baseChoiceCount: 3
   baseRerolls: 1
   rarityWeights:

@@ -74,6 +74,14 @@ public class PaddleController : MonoBehaviour
         paddleHalfWidth *= factor;
     }
 
+    /// <summary>Makes the paddle catch up with the finger faster (upgrades): every smoothing time shrinks by <paramref name="factor"/>.</summary>
+    public void MultiplyFollowSpeed(float factor)
+    {
+        horizontalSmoothTime = Mathf.Max(0.001f, horizontalSmoothTime / factor);
+        depthSmoothTime = Mathf.Max(0.001f, depthSmoothTime / factor);
+        releaseSmoothTime = Mathf.Max(0.001f, releaseSmoothTime / factor);
+    }
+
     private void Awake()
     {
         body = GetComponent<Rigidbody>();
