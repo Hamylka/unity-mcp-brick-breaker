@@ -182,7 +182,7 @@ public class LaserCannon : MonoBehaviour
     {
         int damage = 1;
         foreach (BallController ball in BallController.Active)
-            if (!ball.IsExtra) damage = Mathf.Max(damage, ball.Damage);
+            if (!ball.IsExtra) damage = Mathf.Max(damage, ball.AttackDamage);
         return damage;
     }
 
