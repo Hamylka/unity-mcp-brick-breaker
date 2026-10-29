@@ -82,9 +82,12 @@ public class PaddleController : MonoBehaviour
         releaseSmoothTime = Mathf.Max(0.001f, releaseSmoothTime / factor);
     }
 
+    private GameManager gameManager;
+    private bool frozen;
+
     private void Awake()
     {
-        body = GetComponent<Rigidbody>();
+        body =GetComponent<Rigidbody>();
         body.isKinematic = true;
         body.interpolation = RigidbodyInterpolation.Interpolate;
         body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
@@ -94,8 +97,27 @@ public class PaddleController : MonoBehaviour
         targetZ = restZ;
     }
 
+    private void Start()
+    {
+        gameManager = FindFirstObjectByType<GameManager>();
+    }
+
     private void Update()
     {
+        // The run is over (Game Over animation, then the screen): the paddle stays where it is.
+        if (gameManager != null && gameManager.IsGameOver)
+        {
+            if (!frozen)
+            {
+                frozen = true;
+                dragging = false;
+                targetX = body.position.x;
+                targetZ = body.position.z;
+            }
+            return;
+        }
+        frozen = false;
+
         if (Time.timeScale == 0f)
         {
             dragging = false; // paused (menus): ignore the pointer
