@@ -20,7 +20,7 @@ public class ExperienceSystem : MonoBehaviour
 
     [Header("Wall Clear Bonus")]
     [Tooltip("Clearing every brick grants this share of the XP needed for the current level (0.5 = 50%).")]
-    [SerializeField, Range(0f, 2f)] private float clearBonus = 0.5f;
+    [SerializeField, Range(0f, 2f)] private float clearBonus = 0.25f;
 
     [Header("XP Orbs")]
     [Tooltip("XP orbs leave the ball if one is within this distance of the brick that was hit, otherwise they leave the brick.")]

@@ -4629,7 +4629,7 @@ MonoBehaviour:
   grid: {fileID: 1367461215}
   baseXp: 12
   power: 1.2
-  clearBonus: 0.5
+  clearBonus: 0.25
   orbOriginRange: 1.5
   logLevelUps: 1
   showDebugOverlay: 0
