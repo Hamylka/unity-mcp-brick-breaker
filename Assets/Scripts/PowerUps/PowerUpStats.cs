@@ -29,8 +29,32 @@ public static class PowerUpStats
     /// <summary>Duration factor of timed bonuses (Bonus Extender): Laser and Multi-Ball.</summary>
     public static float BonusDuration { get; set; } = 1f;
 
+    /// <summary>Damage added per brick hit since the ball last touched the paddle (Rampage), as a fraction.</summary>
+    public static float RampagePercent { get; set; }
+
+    /// <summary>Damage added per wall bounce since the ball's last brick hit (Ricochet), as a fraction.</summary>
+    public static float RicochetPercent { get; set; }
+
+    /// <summary>Echo picks: every <see cref="EchoInterval"/> ball hits repeat once for free.</summary>
+    public static int EchoPicks { get; set; }
+
+    /// <summary>Share of the damage beyond a brick's HP that passes to the brick behind (Overkill Spill).</summary>
+    public static float OverkillPercent { get; set; }
+
+    private static int echoCounter;
+    private static readonly int[] EchoIntervals = { 10, 8, 6, 5, 4, 3 };
+    private static readonly Color EchoColor = new(0.75f, 0.9f, 1f);
+
+    /// <summary>Ball hits between two Echo repeats after this many picks (0 = no Echo).</summary>
+    public static int EchoInterval(int picks) => picks <= 0 ? 0 : EchoIntervals[Mathf.Min(picks, EchoIntervals.Length) - 1];
+
     public static void Reset()
     {
+        RampagePercent = 0f;
+        RicochetPercent = 0f;
+        EchoPicks = 0;
+        OverkillPercent = 0f;
+        echoCounter = 0;
         BonusFallSpeed = 1f;
         CatchZoneScale = 1f;
         ExecutionerBonus = 0f;
@@ -38,6 +62,48 @@ public static class PowerUpStats
         LaserFireRate = 1f;
         ExtraMultiBalls = 0;
         BonusDuration = 1f;
+    }
+
+    /// <summary>
+    /// Damage of this ball's next hit on <paramref name="brick"/>: the ball's damage with Rampage, Ricochet and
+    /// Executioner counted (rounded up).
+    /// </summary>
+    public static int BallHitDamage(BallController ball, Brick brick)
+    {
+        float factor = 1f + RampagePercent * ball.HitsSincePaddle + RicochetPercent * ball.WallBounces;
+        int damage = factor > 1f ? Mathf.CeilToInt(ball.Damage * factor - 0.001f) : ball.Damage;
+        return WithExecutioner(brick, damage);
+    }
+
+    /// <summary>
+    /// Bookkeeping after a ball hit landed: streak counters, then the extra hits that ride on it (Overkill Spill, Echo).
+    /// </summary>
+    public static void AfterBallHit(BallController ball, Brick brick, int damage, int hpBefore)
+    {
+        ball.RegisterBrickHit();
+
+        if (OverkillPercent > 0f && damage > hpBefore)
+        {
+            BrickGrid grid = brick.GetComponentInParent<BrickGrid>();
+            if (grid != null && grid.TryGetComponent(out AreaDamage area))
+                area.OverkillSpill(brick, (damage - hpBefore) * OverkillPercent);
+        }
+
+        int every = EchoInterval(EchoPicks);
+        if (every > 0 && ++echoCounter >= every)
+        {
+            echoCounter = 0;
+            if (!brick.IsAlive) return;
+            float echoFactor = 1f + 0.25f * Mathf.Max(0, EchoPicks - EchoIntervals.Length);
+            int echo = Mathf.CeilToInt(damage * echoFactor - 0.001f);
+
+            // The hit rings again on the same brick; it still triggers area effects like any ball hit.
+            brick.Pulse(EchoColor * 1.6f, 0.22f, 0.08f);
+            NeonFx.Ring(brick.transform.position, EchoColor, 16, 2.5f, 0.08f, 0.25f);
+            SoundManager.Play(Sfx.ChainZap, 0.8f);
+            using var tag = DamageTag.Begin(DamageSource.Echo);
+            brick.TakeHit(echo);
+        }
     }
 
     /// <summary>Damage a ball hit deals to <paramref name="brick"/> once Executioner is counted (rounded up).</summary>

@@ -9,7 +9,9 @@ public enum DamageSource
     Chain,
     Volatile,
     Cleave,
-    Meltdown
+    Meltdown,
+    Echo,
+    OverkillSpill
 }
 
 /// <summary>

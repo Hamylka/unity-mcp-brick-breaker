@@ -407,3 +407,12 @@ Single source of truth for what is left. Update it at the end of every task (tic
   * Assets in `Assets/Data/PowerUps` (+ `Effects`), added to the manager's pool in `Game.unity`; icons are first drafts.
 - **Checked:** compiles clean, no console errors. Not played.
 - **Open issues:** playtest each card (Catch Zone reach, Shield Plus with a fading extra, Twin Fission cap, Paddle Speed feel). Executioner does not count Laser or AoE hits. Pause-screen `Describe` texts not seen on screen. Next: Epic cards, then Legendary.
+
+### [2026-10-29] - Power-up pool rework, stage 3: Epic cards (by Claude)
+- **Done (branch `feature/powerup-pool-rework`):** 5 Epic cards, the pool goes to 26. Ball hits now go through `PowerUpStats.BallHitDamage` / `AfterBallHit` (called from `BrickStack.OnBallHit`); `DamageSource` gained `Echo` and `OverkillSpill` (appended).
+  * **Rampage** (unlimited): +2% per pick for every brick hit since the ball last touched the paddle. **Ricochet** (unlimited): +10% per pick for every wall bounce since the ball's last brick hit. Both are per-ball counters on `BallController` (`HitsSincePaddle` reset by `PaddleBallSurface`, `WallBounces` by `Wall`), added together as one factor, then Executioner on top, rounded up. Laser, Phase and area damage do not use them.
+  * **Echo** (unlimited): every 10th / 8th / 6th / 5th / 4th / 3rd ball hit (picks 1 to 6) repeats once on the same brick if it survived (a global counter, shared by all balls); each pick beyond 6 adds +25% echo damage. The echo is a normal brick hit, so area effects and the Cleave counter react to it. Placeholder FX (pulse, ring, `ChainZap`).
+  * **Overkill Spill** (max 3): when a ball hit kills a brick, 50% / 75% / 100% of the damage beyond its HP goes to the nearest brick behind it in the column (`AreaDamage.OverkillSpill`, does not trigger area effects, fraction carry like the others).
+  * **Wide Choice** (max 1): `PowerUpManager.BonusChoices` +1.
+- **Checked:** compiles clean, no console errors. Not played.
+- **Open issues:** playtest (Rampage / Ricochet size vs the damage curve, Echo feel, Overkill with Piercing); dedicated visuals and sounds for Echo, Rampage and Ricochet (Opus). Pause screen texts not seen on screen. Next: Legendary cards.

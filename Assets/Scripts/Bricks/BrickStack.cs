@@ -53,8 +53,20 @@ public class BrickStack : BallSurface
         bricks.Add(brick);
     }
 
-    public override void OnBallHit(BallController ball, Collision collision) =>
-        TakeDamage(PowerUpStats.WithExecutioner(Bottom, ball != null ? ball.Damage : 1));
+    public override void OnBallHit(BallController ball, Collision collision)
+    {
+        Brick bottom = Bottom;
+        if (ball == null || bottom == null)
+        {
+            TakeDamage(1);
+            return;
+        }
+
+        int hpBefore = bottom.HitPoints;
+        int damage = PowerUpStats.BallHitDamage(ball, bottom);
+        TakeDamage(damage);
+        PowerUpStats.AfterBallHit(ball, bottom, damage, hpBefore);
+    }
 
     /// <summary>Damages the bottom brick of the stack (ball hits, lasers, other abilities).</summary>
     public void TakeDamage(int damage)

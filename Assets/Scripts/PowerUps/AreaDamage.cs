@@ -213,6 +213,46 @@ public class AreaDamage : MonoBehaviour
         SoundManager.Play(Sfx.PierceZip, 1f + 0.06f * (count - 1));
     }
 
+    /// <summary>
+    /// Overkill Spill: damage beyond what a killed brick had left carries on into the nearest brick behind it, in the
+    /// same column. Like the other secondary damage it does not trigger area effects again.
+    /// </summary>
+    public void OverkillSpill(Brick source, float damage)
+    {
+        if (applying || damage <= 0f) return;
+        applying = true;
+        try
+        {
+            using var tag = DamageTag.Begin(DamageSource.OverkillSpill);
+            grid.GetLiveBricks(live);
+            Vector3 origin = source.transform.position;
+            float halfWidth = grid.BrickWidth * 0.5f;
+            float halfDepth = grid.CellDepth * 0.5f;
+
+            Brick next = null;
+            float best = float.MaxValue;
+            foreach (Brick candidate in live)
+            {
+                if (candidate == source) continue;
+                Vector3 d = candidate.transform.position - origin;
+                if (Mathf.Abs(d.x) < halfWidth && d.z > halfDepth && d.z < best)
+                {
+                    best = d.z;
+                    next = candidate;
+                }
+            }
+            if (next == null) return;
+
+            next.Pulse(PierceColor * 1.5f, 0.2f, 0.04f);
+            ChainBolt.Spawn(origin, next.transform.position, PierceColor * 1.6f, 0.015f, 0.12f, 0.14f);
+            DealFraction(next, damage);
+        }
+        finally
+        {
+            applying = false;
+        }
+    }
+
     // Cleave: a sweep along the whole row of the brick that was hit.
     private void Cleave(Brick source)
     {

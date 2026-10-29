@@ -190,6 +190,19 @@ public class BallController : MonoBehaviour
     /// <summary>Permanently changes the damage per hit (upgrades, perks).</summary>
     public void AddDamage(int amount) => damage = Mathf.Max(1, damage + amount);
 
+    /// <summary>Brick hits since the ball last touched the paddle (Rampage).</summary>
+    public int HitsSincePaddle { get; private set; }
+
+    /// <summary>Wall bounces since the ball's last brick hit (Ricochet).</summary>
+    public int WallBounces { get; private set; }
+
+    /// <summary>Called by the brick after a ball hit landed: the streak grows, the wall bounces are spent.</summary>
+    public void RegisterBrickHit()
+    {
+        HitsSincePaddle++;
+        WallBounces = 0;
+    }
+
     /// <summary>Permanently multiplies the damage per hit by <paramref name="factor"/> (cards), on top of earlier picks.</summary>
     public void MultiplyDamage(float factor) => cardDamageMultiplier *= factor;
 
@@ -331,6 +344,8 @@ public class BallController : MonoBehaviour
         // 2) Let the surface customise the result (paddle angles, wall zones, ...).
         BallSurface surface = collision.collider.GetComponentInParent<BallSurface>();
         if (surface != null) surface.OnBallHit(this, collision);
+        if (surface is PaddleBallSurface) HitsSincePaddle = 0;   // Rampage streak ends
+        else if (surface is Wall) WallBounces++;                 // Ricochet charge
 
         // 3) Apply, including the anti-horizontal-loop safeguard.
         Direction = ClampDirection(Direction);
