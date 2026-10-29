@@ -68,7 +68,6 @@ Single source of truth for what is left. Update it at the end of every task (tic
 
 *1. Fixes and card edits (Sonnet).*
 - **Echo feedback:** keep the small ring and pulse, add a short bright tick on the ball at the proc, rate limit when several balls proc in one frame.
-- **Brick colours inconsistent while ball damage changes:** first fix built 2026-10-30 (reference = permanent damage, see changelog); check in play, remaining cause is the quantised hits-left ramp.
 - **Paddle must not move during the Game Over animation.**
 - **Run timer** at the end of the run should start when the ball first launches.
 - **Brick colors / pips / skulls use ball damage only** while AoE does most of the damage: the late wall shows many skulls (the user plays in NUMBERS mode and finds it fine).
