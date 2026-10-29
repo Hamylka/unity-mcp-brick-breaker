@@ -60,8 +60,12 @@ public class RunProfiler : MonoBehaviour
         UnityEngine.SceneManagement.SceneManager.sceneLoaded += (_, _) => Create();
     }
 
+    /// <summary>Run recording and sharing are developer tools: only the editor and development builds have them.</summary>
+    public static bool Available => Application.isEditor || Debug.isDebugBuild;
+
     private static void Create()
     {
+        if (!Available) return;
         if (FindAnyObjectByType<RunProfiler>() == null)
             new GameObject("RunProfiler").AddComponent<RunProfiler>();
     }

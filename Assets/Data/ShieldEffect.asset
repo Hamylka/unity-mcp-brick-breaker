@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: ShieldEffect
   m_EditorClassIdentifier: Assembly-CSharp::ShieldEffect
   barrierMaterial: {fileID: 2100000, guid: e57e2395d806dec4dbeb2fd58d304a8b, type: 2}
-  barrierZ: -2.6
+  barrierZ: -2.0
   width: 9
   thickness: 0.12
