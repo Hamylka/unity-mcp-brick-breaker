@@ -71,7 +71,10 @@ Single source of truth for what is left. Update it at the end of every task (tic
 2. ~~**Shield: let the ball through the paddle.**~~ Done (branch `fix/shield-ball-through-paddle`), to playtest.
 3. ~~**Multi-Ball timing and telegraph.**~~ Done (branch `fix/multiball-timing-telegraph`, 3-tick countdown on the ball, split only while it heads upfield), to playtest.
 4. ~~**Wall buff zone picks the main ball.**~~ Done (branch `fix/wall-buff-main-ball`), to playtest.
-5. **Multi-Ball inherits the wall buff.** Today the extras spawned from a buffed ball (e.g. 2x damage) do not get the buff, and their trail looks far too big. If the main ball has a wall buff when a Multi-Ball is picked, the extras spawn from it with the same buff and the same time remaining (no reset).
+5. ~~**Multi-Ball inherits the wall buff.**~~ Done (branch `fix/multiball-inherits-wall-buff`), to playtest.
+6. **Fading Multi-Ball extras must not trigger the Shield.** An extra that is shrinking away in its last 2 s (`TemporaryBall` fade) should pass through the shield barrier without bouncing or breaking it: the shield is only for balls that still count (the main ball, and extras that are not fading). Check `ShieldBarrier.OnBallHit` / the barrier collider against `TemporaryBall` (e.g. ignore collision once the fade starts), then playtest with a shield up and a fading extra crossing it.
+
+Then cut the v0.2 release.
 
 **v0.3: progression rework** (data and reasoning in the changelog entries of 2026-10-29; do 3 and 2 together, 1 can go first or alone)
 
@@ -391,3 +394,9 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Done (branch `fix/wall-buff-main-ball`):** v0.2 bonus fix 4. When an extra ball takes a wall buff zone, `WallBuffZone` calls the new `BallController.TakeMainRole()`: the roles swap. The taker is promoted (stops fading) and the previous main becomes an extra that inherits the taker's remaining Multi-Ball time (`TemporaryBall.TransferTo`, same HUD ring), so the ball count and the timer do not change. `BallController.MainChanged` tells `GameManager`, which re-points its lose handler, `AutoReset` and the grid's ball (`SetMainBall`) and plays the gold promotion cue (`PlayPromoteCue`, shared with the lost-main promotion). Does nothing if the taker is already main or no main ball is flying.
 - **Checked:** compiles clean, no console errors. Not played.
 - **Open issues:** playtest with Multi-Ball (extra takes a zone, check the gold cue, the HUD ring, losing the old main afterwards). Fix 5 (Multi-Ball inherits the wall buff) is next.
+
+### [2026-10-29] - Multi-Ball inherits the wall buff (by Claude)
+- **Done (branch `fix/multiball-inherits-wall-buff`):** v0.2 bonus fix 5. When Multi-Ball splits, `BallBuffAura.Inherit(source, extra)` copies the source's wall buff (2x damage or Phase) onto each extra with the same time left (no reset) and the same HUD ring id, so the HUD shows one ring, not one per ball. The extra gets the buff's normal look (ring and flash on start, fade out at the end).
+- **Trail bug found and fixed:** a clone made from a buffed ball started with the source's widened trail (`BallVisual.StyleTrails` read the live width), hence the huge trail. The plain width is now kept in a hidden serialized field (`baseTrailWidth`) that clones inherit. Trail widths are now set every frame from the buff blends (power, phase) times the new `BallVisual.LifeFade`, so they ease back to plain when a buff ends. `TemporaryBall` fades the trails of a ball with a `BallVisual` through `LifeFade` instead of writing the widths itself (the two used to overwrite each other).
+- **Checked:** compiles clean, no console errors. Not played.
+- **Open issues:** playtest (take a 2x zone, then pick Multi-Ball: extras should glow gold with a normal trail and lose the buff together with the main ball; same with Phase; check the extras' fade-out with a buff on). A buff refreshed on the main ball afterwards does not reach the extras.

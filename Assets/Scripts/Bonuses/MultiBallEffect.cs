@@ -62,6 +62,7 @@ public class MultiBallEffect : BonusEffect
             string procId = procIds[Mathf.Min(i / extraBalls, procIds.Count - 1)];
             BallController extra = source.SpawnExtra(direction);
             extra.gameObject.AddComponent<TemporaryBall>().Begin(duration, fadeTime, procId);
+            BallBuffAura.Inherit(source, extra); // a wall buff on the source (2x damage, Phase) follows, same time left
             NeonFx.Sparks(source.Position, direction, TemporaryBall.HudColor, 6, 6f, 25f, 0.08f, 0.25f); // a streak along each new path
         }
         if (count == 0) return;
