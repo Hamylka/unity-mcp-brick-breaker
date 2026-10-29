@@ -35,9 +35,14 @@ public class ShieldBarrier : BallSurface
     private float sparkTimer;
     private float age;
     private int bouncesLeft = 1;
+    private int bouncesTotal = 1; // segments of the HUD ring
 
     /// <summary>Lets the shield absorb more bounces before it breaks (Shield Plus picked while it is up).</summary>
-    public void AddBounces(int count) => bouncesLeft += count;
+    public void AddBounces(int count)
+    {
+        bouncesLeft += count;
+        bouncesTotal += count;
+    }
 
     public static ShieldBarrier Create(Material material, float z, float width, float thickness)
     {
@@ -54,7 +59,7 @@ public class ShieldBarrier : BallSurface
         barrier.startScale = cube.transform.localScale;
         barrier.ApplyGlow(Glow + RaiseGlowBoost);
         cube.transform.localScale = new Vector3(0f, barrier.startScale.y, barrier.startScale.z);
-        barrier.bouncesLeft = 1 + PowerUpStats.ShieldExtraBounces;
+        barrier.bouncesLeft = barrier.bouncesTotal = 1 + PowerUpStats.ShieldExtraBounces;
         Current = barrier;
 
         // A flash and a line of sparks along the barrier as it appears.
@@ -112,7 +117,7 @@ public class ShieldBarrier : BallSurface
             return;
         }
 
-        ActiveBonusTracker.Report("shield", "shield", "SHIELD", ShieldColor, -1f, 0f);
+        ActiveBonusTracker.Report("shield", "shield", "SHIELD", ShieldColor, -1f, 0f, bouncesTotal, bouncesLeft);
 
         if (raiseT < 1f)
         {

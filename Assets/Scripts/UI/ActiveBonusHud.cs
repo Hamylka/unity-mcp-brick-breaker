@@ -31,6 +31,7 @@ public class ActiveBonusHud : MonoBehaviour
         public CanvasGroup Group;
         public Image Fill;
         public PixelText Time;
+        public readonly List<Image> Segments = new(); // one arc per charge, for segmented rings
         public float FadeLeft = FadeTime;
         public bool Alive;
     }
@@ -160,6 +161,12 @@ public class ActiveBonusHud : MonoBehaviour
     {
         ring.Group.alpha = 1f;
 
+        if (entry.Segmented)
+        {
+            RefreshSegments(ring, entry);
+            return;
+        }
+
         float fill = 1f;
         bool warning = false;
         if (entry.Timed)
@@ -178,6 +185,39 @@ public class ActiveBonusHud : MonoBehaviour
             : entry.Remaining < 3f ? entry.Remaining.ToString("0.0")
             : Mathf.CeilToInt(entry.Remaining).ToString();
         ring.Time.color = warning ? color : Color.white;
+    }
+
+    // Segmented ring (Shield: one arc per bounce left). Spent arcs go dark; the plain fill is hidden.
+    private static void RefreshSegments(Ring ring, ActiveBonusTracker.Entry entry)
+    {
+        ring.Fill.enabled = false;
+
+        if (ring.Segments.Count != entry.Segments)
+        {
+            foreach (Image old in ring.Segments) Destroy(old.gameObject);
+            ring.Segments.Clear();
+
+            float gap = 0.04f; // fraction of the circle left empty between arcs
+            for (int i = 0; i < entry.Segments; i++)
+            {
+                Image seg = NewImage("Segment" + i, ring.Rect, Color.white);
+                seg.type = Image.Type.Filled;
+                seg.fillMethod = Image.FillMethod.Radial360;
+                seg.fillOrigin = (int)Image.Origin360.Top;
+                seg.fillClockwise = true;
+                seg.fillAmount = 1f / entry.Segments - gap;
+                RectTransform rect = seg.rectTransform;
+                rect.anchorMin = Vector2.zero;
+                rect.anchorMax = Vector2.one;
+                rect.offsetMin = rect.offsetMax = Vector2.zero;
+                // Clockwise from the top, the gap split on both sides of each arc.
+                rect.localRotation = Quaternion.Euler(0f, 0f, -(i + 0.5f * gap * entry.Segments) * 360f / entry.Segments);
+                ring.Segments.Add(seg);
+            }
+        }
+
+        for (int i = 0; i < ring.Segments.Count; i++)
+            ring.Segments[i].color = i < entry.SegmentsLeft ? entry.Color : TrackColor;
     }
 
     private Ring CreateRing(string id)

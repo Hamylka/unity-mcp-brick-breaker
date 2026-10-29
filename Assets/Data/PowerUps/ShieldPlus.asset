@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Shield Plus
   description: The shield absorbs one more bounce
-  rarity: 2
+  rarity: 4
   icon: '#######
 
     #######
@@ -28,5 +28,5 @@ MonoBehaviour:
     ...#...
 
     .......'
-  maxStacks: 3
+  maxStacks: 1
   effect: {fileID: 11400000, guid: 62da65c375bfc9241b29acd114dadec2, type: 2}

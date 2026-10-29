@@ -19,8 +19,12 @@ public static class ActiveBonusTracker
         public float Remaining;
         public float Total;
         public int Frame;
+        /// <summary>Segments in the ring (0 = a plain ring). Used by bonuses counted in charges, like Shield bounces.</summary>
+        public int Segments;
+        public int SegmentsLeft;
 
         public bool Timed => Remaining >= 0f && Total > 0f;
+        public bool Segmented => Segments > 1;
     }
 
     private static readonly List<Entry> entries = new();
@@ -34,11 +38,20 @@ public static class ActiveBonusTracker
     /// <paramref name="group"/> names the bonus. Pass a negative remaining time for "until broken".
     /// </summary>
     public static void Report(string id, string group, string label, Color color, float remaining, float total)
+        => Report(id, group, label, color, remaining, total, 0, 0);
+
+    /// <summary>
+    /// Like the timer overload, but the ring is cut into <paramref name="segments"/> pieces of which
+    /// <paramref name="segmentsLeft"/> are lit (one per charge left). Use it with no timer (remaining below 0).
+    /// </summary>
+    public static void Report(string id, string group, string label, Color color, float remaining, float total,
+        int segments, int segmentsLeft)
     {
         var entry = new Entry
         {
             Id = id, Group = group, Label = label, Color = color,
-            Remaining = remaining, Total = total, Frame = Time.frameCount
+            Remaining = remaining, Total = total, Frame = Time.frameCount,
+            Segments = segments, SegmentsLeft = segmentsLeft
         };
 
         for (int i = 0; i < entries.Count; i++)
