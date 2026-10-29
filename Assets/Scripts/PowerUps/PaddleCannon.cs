@@ -2,20 +2,25 @@ using UnityEngine;
 
 /// <summary>
 /// Paddle Cannon card: every paddle bounce fires instant bolts straight ahead from lanes spread across the paddle's
-/// width. One lane at the first pick, one more per pick up to <see cref="MaxLanes"/>, then +25% bolt damage per pick.
+/// width. Capped at <see cref="MaxPicks"/> picks; each pick follows the <c>Lanes</c> / <c>DamageFactors</c> table below.
 /// Each bolt deals a share of the bouncing ball's damage to the first brick in its lane.
 /// </summary>
 public static class PaddleCannon
 {
-    public const int MaxLanes = 7;
+    public const int MaxPicks = 5;
+
+    // One entry per pick: lanes across the paddle and a bolt damage factor (on top of DamageShare).
+    private static readonly int[] Lanes = { 1, 2, 3, 5, 7 };
+    private static readonly float[] DamageFactors = { 1f, 1f, 1.25f, 1.25f, 1.5f };
     private const float DamageShare = 0.5f;
-    private const float ExtraDamagePerPick = 0.25f;
     private const float MaxRange = 40f;
     private static readonly Color BoltColor = new(0.45f, 0.95f, 1f);
     private static readonly RaycastHit[] hits = new RaycastHit[32];
 
-    public static int LanesFor(int picks) => Mathf.Clamp(picks, 0, MaxLanes);
-    public static float DamageFactorFor(int picks) => 1f + ExtraDamagePerPick * Mathf.Max(0, picks - MaxLanes);
+    private static int Index(int picks) => Mathf.Clamp(picks, 1, MaxPicks) - 1;
+
+    public static int LanesFor(int picks) => picks <= 0 ? 0 : Lanes[Index(picks)];
+    public static float DamageFactorFor(int picks) => picks <= 0 ? 1f : DamageFactors[Index(picks)];
 
     /// <summary>Fires the volley from the paddle's front edge. Call it when the ball bounces off the paddle.</summary>
     public static void Fire(Bounds paddle, BallController ball)

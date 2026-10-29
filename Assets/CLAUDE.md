@@ -67,7 +67,6 @@ Single source of truth for what is left. Update it at the end of every task (tic
 **v0.3: progression rework, finishing.** Built and profiled on 3 phone runs (changelog entries of 2026-10-29): XP per brick, HP window following ball damage and the kill rate, the 31-card pool, multiplicative Power Ball / Meteor Ball. Progression is stable (a level every 10 to 15 s for 11 minutes). What is left of v0.3:
 
 *1. Fixes and card edits (Sonnet).*
-- **Paddle Cannon:** stack cap of 5, rework the lane table (`PaddleCannon.LanesFor` / `DamageFactorFor`, `Describe`).
 - **Rampage text:** "+2% DMG FOR EACH BRICK HIT, RESETS ON PADDLE", show the current streak bonus if there is room.
 - **Echo feedback:** keep the small ring and pulse, add a short bright tick on the ball at the proc, rate limit when several balls proc in one frame.
 - **Brick colours inconsistent while ball damage changes:** needs analysis first.
@@ -492,3 +491,8 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Done (branch `fix/shield-plus`):** Shield Plus is now Legendary with max 1 stack (`ShieldPlus.asset`: rarity 4, maxStacks 1; the effect still adds +1 bounce, also to a shield already up). `ActiveBonusTracker.Report` has a new overload with `segments` and `segmentsLeft`; `ShieldBarrier` reports one segment per bounce (`bouncesTotal` / `bouncesLeft`, grows with `AddBounces`). `ActiveBonusHud.RefreshSegments` draws the ring as that many clockwise arcs (4% gap), lit in the bonus color, spent ones dark; a shield with one bounce still shows a full ring. Any future charge-based bonus can use the same overload.
 - **Checked:** edits only, not compiled in Unity nor played.
 - **Open issues:** check the arcs and gap on screen with a 2-bounce shield (Shield Plus picked), the rotation direction, and that the shield card shows as Legendary on the pause screen. Roadmap fix "Shield Plus" is done.
+
+### [2026-10-30] - Paddle Cannon cap and lane table (by Claude)
+- **Done (branch `fix/paddle-cannon`):** Paddle Cannon is capped at 5 stacks (`PaddleCannon.asset` maxStacks 5, `PaddleCannon.MaxPicks`). The old "1 lane per pick up to 7, then +25% damage" rule is replaced by a table in `PaddleCannon` (one entry per pick): lanes 1 / 2 / 3 / 5 / 7 and bolt damage factor x1 / 1 / 1.25 / 1.25 / 1.5 (on top of the 50% share of the ball's damage). `Describe` reads "N BOLTS PER BOUNCE, X% DMG EACH".
+- **Checked:** edits only, not compiled in Unity nor played.
+- **Open issues:** the table values are a first guess (pick 5 = 7 bolts at 75% each, about 5x the pick-1 volley): tune the two arrays at the top of `PaddleCannon`. Not played. Roadmap fix "Paddle Cannon" is done.
