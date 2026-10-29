@@ -36,7 +36,7 @@ public class AreaDamage : MonoBehaviour
     [Tooltip("Damage of one tick, as a share of the burning brick's maximum HP (0.2 = 20%).")]
     [SerializeField, Min(0f)] private float burnPercentMaxHp = 0.2f;
     [Tooltip("A tick never deals more than this many hits of the ball's current damage (stops the burn from scaling with the HP window).")]
-    [SerializeField, Min(0.1f)] private float burnMaxBallHits = 4f;
+    [SerializeField, Min(0.1f)] private float burnMaxBallHits = 2f;
     [SerializeField, Min(1)] private int burnTicks = 3;
     [SerializeField, Min(0.1f)] private float burnTickInterval = 1f;
 

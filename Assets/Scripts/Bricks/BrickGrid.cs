@@ -94,7 +94,9 @@ public class BrickGrid : MonoBehaviour
     [Tooltip("Bricks the player should destroy per second (about the rate rows are added). Faster than this means the player has more power than the ball damage shows (splash, cleave, orbs), so new bricks get tougher.")]
     [SerializeField, Min(0.1f)] private float targetKillsPerSecond = 1.5f;
     [Tooltip("Time constant (s) of the kill rate average.")]
-    [SerializeField, Min(0.5f)] private float killRateSmoothing = 8f;
+    [SerializeField, Min(0.5f)] private float killRateSmoothing = 25f;
+    [Tooltip("When the wanted window falls (pace relaxed), the toughest HP shrinks to at most this share of itself per row (0.9 = -10% per row).")]
+    [SerializeField, Range(0.5f, 1f)] private float shrinkPerRow = 0.9f;
     [Tooltip("The pace factor multiplying the window grows by at most this factor per row while the kill rate is over target.")]
     [SerializeField, Min(1f)] private float maxPaceGrowthPerRow = 1.3f;
     [Tooltip("The pace factor never goes above this. Also, when the toughest brick already needs more than (smoothed damage x target hits x this) HP, it stops growing and relaxes.")]
@@ -475,7 +477,7 @@ public class BrickGrid : MonoBehaviour
     }
 
     // HP window for the next row: max = ceil(smoothed ball damage x target hits), min = max x ratio.
-    // It never goes down and grows at most x maxGrowthPerRow per row.
+    // It grows at most x maxGrowthPerRow per row and shrinks at most to shrinkPerRow of itself per row.
     private void UpdateHpWindow()
     {
         // Pace factor: the ball's damage misses splash, cleave, orbs and bolts, so the window also follows how fast
@@ -495,12 +497,17 @@ public class BrickGrid : MonoBehaviour
         int max = wanted;
         if (windowReady)
         {
-            max = Mathf.Max(CurrentMaxHp, wanted);
-            max = Mathf.Min(max, Mathf.Max(CurrentMaxHp, Mathf.FloorToInt(CurrentMaxHp * maxGrowthPerRow)));
+            // Grows toward the wanted value (at most x maxGrowthPerRow per row); when the wanted value falls (pace relaxed)
+            // it shrinks back too, by at most shrinkPerRow per row, so a short kill burst does not harden the wall for good.
+            if (wanted >= CurrentMaxHp)
+                max = Mathf.Min(wanted, Mathf.Max(CurrentMaxHp, Mathf.FloorToInt(CurrentMaxHp * maxGrowthPerRow)));
+            else
+                max = Mathf.Max(wanted, Mathf.CeilToInt(CurrentMaxHp * shrinkPerRow));
         }
 
         int min = Mathf.Clamp(Mathf.RoundToInt(max * minHpRatio), 1, max);
         bool grew = windowReady && max > CurrentMaxHp;
+        bool shrank = windowReady && max < CurrentMaxHp;
         CurrentMinHp = min;
         CurrentMaxHp = max;
 
@@ -508,6 +515,12 @@ public class BrickGrid : MonoBehaviour
         {
             windowReady = true;
             lastNoticeMax = max;
+            return;
+        }
+        if (shrank)
+        {
+            Brick.SetColorScale(max, false);
+            lastNoticeMax = Mathf.Min(lastNoticeMax, max); // a later regrowth can warn again
             return;
         }
         if (!grew) return;
