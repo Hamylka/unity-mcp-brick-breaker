@@ -125,6 +125,39 @@ public class BallController : MonoBehaviour
         return extra;
     }
 
+    private readonly List<Collider> paddleGhosted = new(); // paddle colliders switched off until the ball is in front
+    private const float PaddleExitMargin = 0.1f;
+
+    /// <summary>
+    /// Lets the ball pass through the paddle from behind (after bouncing off the shield). Collision with the
+    /// paddle comes back once the ball is in front of it.
+    /// </summary>
+    public void PassThroughPaddle()
+    {
+        if (paddle == null || paddleGhosted.Count > 0) return;
+        if (sphere == null) sphere = GetComponent<SphereCollider>();
+        foreach (Collider collider in paddle.GetComponentsInChildren<Collider>())
+        {
+            Physics.IgnoreCollision(sphere, collider, true);
+            paddleGhosted.Add(collider);
+        }
+    }
+
+    // Gives the paddle collision back once the ball has cleared the paddle's front edge.
+    private void UpdatePaddleGhost()
+    {
+        if (paddleGhosted.Count == 0) return;
+        float radius = sphere.radius * Mathf.Max(transform.lossyScale.x, transform.lossyScale.z);
+        float frontZ = float.MinValue;
+        foreach (Collider collider in paddleGhosted)
+            if (collider != null) frontZ = Mathf.Max(frontZ, collider.bounds.max.z);
+        if (body.position.z < frontZ + radius + PaddleExitMargin) return;
+
+        foreach (Collider collider in paddleGhosted)
+            if (collider != null) Physics.IgnoreCollision(sphere, collider, false);
+        paddleGhosted.Clear();
+    }
+
     /// <summary>Multiplies the base speed (upgrades). 1.1 = 10% faster.</summary>
     public void MultiplyBaseSpeed(float factor) => baseSpeed *= Mathf.Max(0.1f, factor);
 
@@ -173,6 +206,7 @@ public class BallController : MonoBehaviour
 
         boost = Mathf.Max(0f, boost - Time.fixedDeltaTime / boostDecayTime);
         UpdatePhasing();
+        UpdatePaddleGhost();
 
         // Re-apply every step so the speed can never drift.
         Direction = ClampDirection(Direction);

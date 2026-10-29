@@ -64,6 +64,7 @@ public class ShieldBarrier : BallSurface
         if (breakT >= 0f) return;
         barrierCollider.enabled = false; // the bounce was already computed, so this is safe
         breakT = 0f;
+        ball.PassThroughPaddle(); // the rebound goes back up through the paddle instead of bouncing off its back
         SoundManager.Play(Sfx.ShieldBreak);
 
         // Shatter: a flash where the ball struck, then shards spraying forward along the whole barrier.
