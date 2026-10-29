@@ -8,8 +8,9 @@ the visuals and the audio (**82 C# scripts, ~12,700 lines**) directly inside the
 No line of code was written by hand: the only human input was the brief, the prompts, playtesting, and tuning
 public parameters in the Inspector.
 
-Two models were used: **Claude Sonnet 5.5** on day 1, then **Claude Opus 5.5** from day 2 onward,
-partly to compare what each one brings (see [Two models, one project](#two-models-one-project)).
+Two models were used: **Claude Sonnet 5.5** on day 1, then **both Claude Sonnet 5.5 and Claude Opus 5.5** from day 2
+onward, chosen per task: Sonnet for simple tasks and everything outside art, Opus when a task needs SFX or VFX
+enhancements (see [Two models, one project](#two-models-one-project)).
 
 **Result:** a playable prototype in **4 hours** on day 1 (work estimated at about a week by hand), then polished into
 a full game loop with a neon art direction, audio and an Android build. Two tagged releases so far (**v0.1** on
@@ -42,11 +43,15 @@ a logo and a run profiler.
 
 ## Two models, one project
 
-The project was built in two phases with two Claude models:
+The project was built with two Claude models, and the split changed after day 1:
 
 - **Day 1 (2026-10-21): Claude Sonnet 5.5** built the playable prototype from the brief.
-- **From day 2 (2026-10-23 onward): Claude Opus 5.5** took over for polish, game flow, art direction, audio and the
-  Android build.
+- **From day 2 (2026-10-23 onward): both models, depending on the task.** I switch between **Claude Sonnet 5.5** and
+  **Claude Opus 5.5** to save tokens:
+  - **Sonnet 5.5** for simple tasks and everything outside art: gameplay features and systems, balancing, small fixes,
+    UI tweaks, refactors, docs and Git operations.
+  - **Opus 5.5** for tasks that need SFX or VFX enhancements (art direction, visual effects, shaders, audio and music),
+    and for the hard debugging that came up along the way.
 
 Same setup for both: the same brief, the same MCP connection to the Unity Editor, and the same rule that no code is
 written by hand.
@@ -65,7 +70,7 @@ written by hand.
 | UI | HUD with a runtime pixel font, rounded flat sprites, "LEVEL UP!" banner, pooled pixel particles |
 | Power-ups | Roguelite level-up card screen (rarity weights, halo and sparkles, Confirm and disabled Reroll), 6 starter power-ups, slow-down before the cards appear |
 
-### Claude Opus 5.5: polish, game flow, art, audio and mobile (day 2 onward)
+### Claude Opus 5.5: polish, game flow, art, audio and mobile (day 2)
 
 | Area | Work |
 |---|---|
@@ -97,9 +102,8 @@ Sonnet for most features.
 
 **What both did well:** I never had to explain something twice with either model.
 
-**Since then:** the model is picked per task to save tokens. Sonnet for gameplay features, small fixes, refactors and
-docs; Opus for art direction, visual effects, audio, hard debugging and planning large systems (the table is in
-[`CLAUDE.md`](CLAUDE.md)).
+**Since then:** the per-task split described above applies (the model table is in [`CLAUDE.md`](CLAUDE.md)).
+The tables above show what each model did in the first phases, before the work was shared between them.
 
 
 ## The game
