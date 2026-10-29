@@ -79,20 +79,17 @@ Single source of truth for what is left. Update it at the end of every task (tic
   * Legendary, single pick: **Bonus Magnet**: falling bonus items drift toward the paddle. **Phoenix Ball**: once per run, when the last ball is lost, a new ball appears on the paddle instead of Game Over (the card is consumed).
 - Old Legendary stay: Meltdown (1), Loaded Dice (2). Check in the run profiler afterwards: pick spread per card, and no card offered more than a few times without being picked.
 
-**Windows / landscape**
-- Make a Windows build and try it (window resize, fullscreen toggle).
-- Fill the side areas (neon decoration, later stats / the wordmark).
+*4. Fixes and polish found while playtesting.*
+- The run timer shown at the end of the run should start once the ball has first launched from the paddle.
+- Brick colours are sometimes inconsistent while ball damage is changing. Needs more analysis first.
+- The Phase wall buff turns most bricks into skulls (the damage x0.125 changes the hits-left estimate). Bricks must not change visually when the player grabs Phase: the hits-left estimate (colors, pips, numbers) ignores the Phase damage downscale as a special case.
+- The Laser uses the ball's damage without the Phase downscale while the ball is phasing.
+- The paddle must not move during the Game Over animation.
 
 **Later**
 - More bonus item effects (each a new `BonusEffect` subclass plus a `BonusDefinition` asset).
 - More wall effects beyond the buff zones (ideas to be thought out).
 - Title screen using `Logo_Wordmark`.
-
-**Playtest on a real phone**
-- HP scaling (5 rows / x1.75), "DIFFICULTY INCREASED!" notice (position, size, wording), brick recolor.
-- Bonus items and effects: crystal size, Shield/Laser/Multi-Ball feel, bonus HUD rings, sound mix and particle sizes.
-- Card level pips and tags, app icon on a launcher, splash screen in a build.
-- Pause screen: button size and spot under the notch, row text size, scrolling a long power-up list, auto-pause when the app goes to the background.
 
 ## 6. Project Changelog & Architecture Status
 ### [2026-10-21] - Project Initialization
