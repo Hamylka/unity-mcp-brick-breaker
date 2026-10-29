@@ -72,7 +72,7 @@ Single source of truth for what is left. Update it at the end of every task (tic
 3. ~~**Multi-Ball timing and telegraph.**~~ Done (branch `fix/multiball-timing-telegraph`, 3-tick countdown on the ball, split only while it heads upfield), to playtest.
 4. ~~**Wall buff zone picks the main ball.**~~ Done (branch `fix/wall-buff-main-ball`), to playtest.
 5. ~~**Multi-Ball inherits the wall buff.**~~ Done (branch `fix/multiball-inherits-wall-buff`), to playtest.
-6. **Fading Multi-Ball extras must not trigger the Shield.** An extra that is shrinking away in its last 2 s (`TemporaryBall` fade) should pass through the shield barrier without bouncing or breaking it: the shield is only for balls that still count (the main ball, and extras that are not fading). Check `ShieldBarrier.OnBallHit` / the barrier collider against `TemporaryBall` (e.g. ignore collision once the fade starts), then playtest with a shield up and a fading extra crossing it.
+6. ~~**Fading Multi-Ball extras must not trigger the Shield.**~~ Done (branch `fix/fading-extras-ignore-shield`), to playtest.
 
 Then cut the v0.2 release.
 
@@ -400,3 +400,8 @@ Then cut the v0.2 release.
 - **Trail bug found and fixed:** a clone made from a buffed ball started with the source's widened trail (`BallVisual.StyleTrails` read the live width), hence the huge trail. The plain width is now kept in a hidden serialized field (`baseTrailWidth`) that clones inherit. Trail widths are now set every frame from the buff blends (power, phase) times the new `BallVisual.LifeFade`, so they ease back to plain when a buff ends. `TemporaryBall` fades the trails of a ball with a `BallVisual` through `LifeFade` instead of writing the widths itself (the two used to overwrite each other).
 - **Checked:** compiles clean, no console errors. Not played.
 - **Open issues:** playtest (take a 2x zone, then pick Multi-Ball: extras should glow gold with a normal trail and lose the buff together with the main ball; same with Phase; check the extras' fade-out with a buff on). A buff refreshed on the main ball afterwards does not reach the extras.
+
+### [2026-10-29] - Fading Multi-Ball extras ignore the Shield (by Claude)
+- **Done (branch `fix/fading-extras-ignore-shield`):** v0.2 bonus fix 6. `TemporaryBall.IsFading` is true during the last seconds of an extra's life (the shrink). `ShieldBarrier.UpdateFadingPassThrough` (every frame while the barrier is up) switches off collision between the barrier and every fading extra (`Physics.IgnoreCollision`) and restores it if the ball stops fading (e.g. promoted to main), so a shrinking extra crosses the shield without bouncing or breaking it.
+- **Checked:** compiles clean, no console errors. Not played.
+- **Open issues:** playtest with a shield up and a fading extra crossing it. Next: cut the v0.2 release.
