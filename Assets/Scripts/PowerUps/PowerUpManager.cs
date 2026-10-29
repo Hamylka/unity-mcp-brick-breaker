@@ -31,6 +31,8 @@ public class PowerUpManager : MonoBehaviour
     [SerializeField, Min(0f)] private float slowDownTime = 0.8f;
     [Tooltip("Seconds of stillness between the full stop and the cards opening.")]
     [SerializeField, Min(0f)] private float openDelay = 0.3f;
+    [Tooltip("Seconds the game takes to ease from the full stop back to normal speed after the last card.")]
+    [SerializeField, Min(0f)] private float resumeTime = 1f;
 
     /// <summary>Extra cards on top of the base count (meta-progression, perks...).</summary>
     public int BonusChoices { get; set; }
@@ -52,6 +54,7 @@ public class PowerUpManager : MonoBehaviour
     private int pending;
     private readonly Queue<int> pendingDamage = new(); // damage gain of each level-up still waiting for its pick
     private float savedTimeScale = 1f;
+    private bool keepSavedTimeScale;
 
     private void OnEnable()
     {
@@ -92,15 +95,17 @@ public class PowerUpManager : MonoBehaviour
     private IEnumerator ChoiceLoop()
     {
         IsChoosing = true;
-        savedTimeScale = Time.timeScale > 0f ? Time.timeScale : 1f;
+        if (!keepSavedTimeScale) savedTimeScale = Time.timeScale > 0f ? Time.timeScale : 1f;
+        keepSavedTimeScale = false;
 
         // Ease into slow motion, then a full stop. The HUD banner and the choice screen run on unscaled time.
         float elapsed = 0f;
+        float from = Time.timeScale > 0f ? Time.timeScale : savedTimeScale;
         while (elapsed < slowDownTime)
         {
             elapsed += Time.unscaledDeltaTime;
             float k = Mathf.Clamp01(elapsed / slowDownTime);
-            Time.timeScale = Mathf.Lerp(savedTimeScale, 0f, k * k * (3f - 2f * k)); // smoothstep
+            Time.timeScale = Mathf.Lerp(from, 0f, k * k * (3f - 2f * k)); // smoothstep
             yield return null;
         }
         Time.timeScale = 0f;
@@ -129,6 +134,34 @@ public class PowerUpManager : MonoBehaviour
 
         // One extra frame so the confirming tap is not read as a ball launch.
         yield return null;
+
+        // Ease back to normal speed instead of snapping to it. The paddle keeps working during the ease.
+        // Stops early if another level-up arrives or if something else took the time scale (Game Over).
+        float resumed = 0f;
+        float lastSet = Time.timeScale;
+        while (resumed < resumeTime && pending == 0)
+        {
+            if (!Mathf.Approximately(Time.timeScale, lastSet))
+            {
+                IsChoosing = false; // another system owns the time now
+                yield break;
+            }
+            resumed += Time.unscaledDeltaTime;
+            float k = Mathf.Clamp01(resumed / resumeTime);
+            lastSet = Mathf.Lerp(0f, savedTimeScale, k * k * (3f - 2f * k)); // smoothstep
+            Time.timeScale = lastSet;
+            yield return null;
+        }
+
+        if (pending > 0)
+        {
+            // A new level-up came in during the ease: run the whole sequence again from the current speed.
+            IsChoosing = false;
+            keepSavedTimeScale = true; // the current speed is mid-ease, the real one is already saved
+            StartCoroutine(ChoiceLoop());
+            yield break;
+        }
+
         Time.timeScale = savedTimeScale;
         IsChoosing = false;
     }
