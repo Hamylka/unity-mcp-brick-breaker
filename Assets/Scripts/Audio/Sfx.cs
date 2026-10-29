@@ -46,5 +46,39 @@ public enum Sfx
     BallPromote,
 
     // Difficulty
-    HpScaleUp
+    HpScaleUp,
+
+    // Wall buffs
+    PhasePass,
+
+    // Area power-ups
+    Shockwave,
+    PierceZip,
+    ChainZap,
+    VolatileBlast,
+    CleaveSweep,
+    BurnIgnite,
+    BurnTick,
+
+    // Wall buff zones and buffed ball
+    ZoneSpawn,
+    ZoneTake,
+    ZoneExpire,
+    BuffFade,
+    PowerHit,
+
+    // Bonus item pickups (one per bonus) and the laser power-down
+    PickupMultiBall,
+    PickupLaser,
+    PickupShield,
+    LaserPowerDown,
+
+    // Game over animation
+    BallPoof,
+    WallTremor,
+    BrickBlast,
+    WallCollapse,
+
+    // Multi-Ball countdown before the split
+    MultiBallTick
 }

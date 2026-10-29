@@ -86,6 +86,9 @@ public class BrickGrid : MonoBehaviour
     [Tooltip("Each scaling multiplies the min and max HP by this (compounding, rounded). 1.25 = +25% per proc.")]
     [SerializeField, Min(1f)] private float hpMultiplier = 1.25f;
 
+    [Tooltip("Bricks spawned at HP tier T give XP per HP x hpMultiplier^(-T x this). 0 = flat 1 XP per HP, 1 = XP per row stays constant as HP scales, 0.25 = a gentle drop.")]
+    [SerializeField, Range(0f, 1f)] private float xpScalingExponent = 0.25f;
+
     [Header("Endless Spawn Timing")]
     [Tooltip("Pop-in delay between neighbouring bricks of a new row (ripple from the center).")]
     [SerializeField, Min(0f)] private float spawnRipple = 0.04f;
@@ -122,6 +125,23 @@ public class BrickGrid : MonoBehaviour
 
     /// <summary>Multiplies the time between steps (upgrades). 1.25 = the wall is 25% slower.</summary>
     public void MultiplyStepInterval(float factor) => stepInterval *= Mathf.Max(0.1f, factor);
+
+    /// <summary>Width of one brick cell (X), for area-of-effect distances.</summary>
+    public float BrickWidth => lengthInCells * cellSize;
+    /// <summary>Depth of one brick cell (Z).</summary>
+    public float CellDepth => cellSize;
+
+    /// <summary>Fills the list with the bottom brick of every stack that still has one alive (the bricks the ball can hit).</summary>
+    public void GetLiveBricks(System.Collections.Generic.List<Brick> result)
+    {
+        result.Clear();
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            if (!transform.GetChild(i).TryGetComponent(out BrickStack stack)) continue;
+            Brick bottom = stack.Bottom;
+            if (bottom != null && bottom.IsAlive) result.Add(bottom);
+        }
+    }
 
     public int RemainingBricks { get; private set; }
     public bool IsGameOver { get; private set; }
@@ -162,6 +182,10 @@ public class BrickGrid : MonoBehaviour
     {
         if (generateOnStart) Generate();
     }
+
+    // Brick colors show the hits left with the current ball damage: recolor them when it changes
+    // (damage upgrade, wall buff, main ball lost to an extra). Does nothing while it stays the same.
+    private void Update() => Brick.SetHitDamage(BallController.MainDamage);
 
     private void OnValidate()
     {
@@ -261,6 +285,7 @@ public class BrickGrid : MonoBehaviour
         HpScaleTier = 0;
         ApplyHpWindow(0);
         Brick.ResetColorScale(CurrentMaxHp);
+        Brick.ResetHitDamage(BallController.MainDamage);
 
         // Back to the starting position and fresh timers.
         offset = 0f;
@@ -344,6 +369,7 @@ public class BrickGrid : MonoBehaviour
             brick.name = $"Brick_{layer}";
             brick.ApplySize(size);
             brick.Initialize(layerHitPoints[layer], palette);
+            brick.XpPerHp = Mathf.Pow(hpMultiplier, -xpScalingExponent * HpScaleTier);
             stack.AddBrick(brick);
             brick.Destroyed += HandleBrickDestroyed;
             brick.Hit += HandleBrickHit;

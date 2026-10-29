@@ -18,6 +18,8 @@ public class LaserCannon : MonoBehaviour
     private LineRenderer bolt;
     private float boltWidth;
     private float flash;
+    private LaserSight sight;
+    private readonly RaycastHit[] hits = new RaycastHit[32];
 
     /// <summary>Starts (or refreshes) the cannon.</summary>
     public void Activate(float duration, float fireInterval, Material material, Color boltColor, float width)
@@ -48,6 +50,9 @@ public class LaserCannon : MonoBehaviour
         bolt.sharedMaterial = material;
         boltWidth = width;
         bolt.widthMultiplier = width;
+
+        if (sight == null) sight = new LaserSight(transform, material, boltColor);
+        sight.SetColor(boltColor);
     }
 
     private void Update()
@@ -56,8 +61,11 @@ public class LaserCannon : MonoBehaviour
         remaining -= dt;
         if (remaining <= 0f)
         {
-            SoundManager.Play(Sfx.BonusExpire);
+            // Power-down: the cannon winds down and sputters, a last puff of sparks and embers drifting off it.
+            SoundManager.Play(Sfx.LaserPowerDown);
             NeonFx.Burst(transform.position, color, 12, 2f, 0.07f, 0.35f);
+            NeonFx.Sparks(transform.position, Vector3.forward, color, 6, 1.5f, 30f, 0.06f, 0.25f);
+            NeonFx.Embers(transform.position, Color.Lerp(color, Color.white, 0.3f), 4, 0.06f, 0.8f);
             if (bolt != null) Destroy(bolt.gameObject);
             Destroy(this);
             return;
@@ -66,30 +74,60 @@ public class LaserCannon : MonoBehaviour
         ActiveBonusTracker.Report("laser", "laser", "LASER", color, remaining, totalTime);
         UpdateBoltFlash(dt);
 
+        bool armed = AnyBallFlying();
         cooldown -= dt;
-        if (cooldown > 0f || !AnyBallFlying()) return;
-        cooldown = interval;
-        Fire();
+        if (cooldown <= 0f && armed)
+        {
+            cooldown = interval;
+            Fire();
+        }
+        UpdateSight(armed, dt);
     }
 
-    private void Fire()
+    private void OnDestroy()
     {
-        Vector3 origin = transform.position;
-        Vector3 end = origin + Vector3.forward * MaxRange;
+        sight?.Destroy();
+    }
 
-        // The nearest solid thing in the way, ignoring balls and the paddle itself.
+    // The aiming guide shows the lane of the next bolt and charges up toward it.
+    private void UpdateSight(bool armed, float dt)
+    {
+        if (sight == null) return;
+        float nearest = FindTarget(out BrickStack target);
+        Vector3 origin = transform.position;
+        float charge = 1f - Mathf.Clamp01(cooldown / interval);
+        sight.Update(origin, origin + Vector3.forward * nearest, target != null ? target.Bottom : null,
+            charge, Mathf.Max(0f, cooldown), armed, dt);
+    }
+
+    /// <summary>Distance to the nearest solid thing in the bolt's lane (balls and the paddle ignored), and the brick stack there if any.</summary>
+    private float FindTarget(out BrickStack target)
+    {
         float nearest = MaxRange;
-        BrickStack target = null;
-        foreach (RaycastHit hit in Physics.RaycastAll(origin, Vector3.forward, MaxRange, ~0, QueryTriggerInteraction.Ignore))
+        target = null;
+        int count = Physics.RaycastNonAlloc(transform.position, Vector3.forward, hits, MaxRange, ~0, QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < count; i++)
         {
+            RaycastHit hit = hits[i];
             if (hit.distance >= nearest) continue;
             if (hit.collider.GetComponentInParent<BallController>() != null) continue;
             if (hit.collider.GetComponentInParent<PaddleController>() != null) continue;
             nearest = hit.distance;
             target = hit.collider.GetComponentInParent<BrickStack>();
         }
-        end = origin + Vector3.forward * nearest;
-        if (target != null) target.TakeDamage(CurrentDamage());
+        return nearest;
+    }
+
+    private void Fire()
+    {
+        Vector3 origin = transform.position;
+        float nearest = FindTarget(out BrickStack target);
+        Vector3 end = origin + Vector3.forward * nearest;
+        if (target != null)
+        {
+            using var tag = DamageTag.Begin(DamageSource.Laser);
+            target.TakeDamage(CurrentDamage());
+        }
 
         bolt.SetPosition(0, origin);
         bolt.SetPosition(1, end);

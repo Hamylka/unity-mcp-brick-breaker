@@ -14,7 +14,7 @@ public class ActiveBonusHud : MonoBehaviour
     private const float RingGap = 10f;
     private const float RowGap = 14f;
     private const float Margin = 30f;
-    private const float TopOffset = 155f;
+    private const float TopOffset = 180f; // clears the pause button (bottom edge at 148)
     private const float LabelGap = 14f;
     private const float LabelHeight = 21f; // 7 font pixels at size 3
     private const float WarnTime = 2f;
@@ -71,13 +71,10 @@ public class ActiveBonusHud : MonoBehaviour
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 5; // under the level-up and game over screens
 
-        var scaler = canvasObject.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080f, 1920f);
-        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 0f;
+        ScreenColumn.ConfigureScaler(canvasObject.AddComponent<CanvasScaler>());
 
-        root = (RectTransform)canvasObject.transform;
+        // Rows hang from the top-right corner of the playfield column (same safe area as the XP bar).
+        root = ScreenColumn.Create(canvasObject.transform);
     }
 
     private void LateUpdate() // after the bonuses have reported this frame

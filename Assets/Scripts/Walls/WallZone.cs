@@ -14,7 +14,7 @@ public class WallZone
     [Range(0f, 1f)] public float end = 0.5f;
     public Color gizmoColor = Color.cyan;
     [Tooltip("Invoked when the ball bounces inside this zone.")]
-    public UnityEvent<BallController> onBallHit;
+    public UnityEvent<BallController> onBallHit = new();
 
     public bool Contains(float t) => t >= start && t <= end;
 }

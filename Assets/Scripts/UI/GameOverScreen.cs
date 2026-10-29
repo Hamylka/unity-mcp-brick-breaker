@@ -20,6 +20,8 @@ public class GameOverScreen : MonoBehaviour
     [SerializeField] private Color labelColor = new(0.2f, 0.85f, 1f, 1f);
     [SerializeField] private Color bestColor = new(1f, 0.85f, 0.2f, 1f);
     [SerializeField] private Color buttonColor = new(1f, 0.82f, 0.2f, 1f);
+    [SerializeField] private Color dataKeptColor = new(0.2f, 0.85f, 1f, 1f);
+    [SerializeField] private Color dataDiscardedColor = new(0.45f, 0.48f, 0.6f, 1f);
 
     [Header("Particles")]
     [Tooltip("Scales the number of pixel embers and bursts. 0 = none.")]
@@ -75,6 +77,14 @@ public class GameOverScreen : MonoBehaviour
     private UiButton button;
     private Image wipe;
     private PixelParticleSystem particles;
+    private CanvasGroup dataGroup;
+    private UiButton keepButton;
+    private UiButton shareButton;
+    private Image keepImage;
+    private Image shareImage;
+    private PixelText keepLabel;
+    private PixelText shareLabel;
+    private float shareLabelTime;
 
     private bool open;
     private bool newBest;
@@ -122,6 +132,10 @@ public class GameOverScreen : MonoBehaviour
             letter.rect.localScale = Vector3.zero;
         }
 
+        shareLabelTime = 0f;
+        shareLabel.Text = "SHARE";
+        RefreshDataRow();
+
         root.gameObject.SetActive(true);
         open = true;
         Animate(0f); // apply the starting state now, so the first rendered frame does not flash the final layout
@@ -167,6 +181,7 @@ public class GameOverScreen : MonoBehaviour
         AnimateStats(dt);
         AnimateBest();
         AnimateButton();
+        AnimateDataRow(dt);
         EmitEmbers(dt);
 
         if (restarting)
@@ -330,11 +345,7 @@ public class GameOverScreen : MonoBehaviour
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 30;
 
-        var scaler = canvasObject.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080f, 1920f);
-        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 0f; // portrait: width is the limiting side, taller phones just get more height
+        ScreenColumn.ConfigureScaler(canvasObject.AddComponent<CanvasScaler>()); // centered layout fits the column
         canvasObject.AddComponent<GraphicRaycaster>();
 
         root = (RectTransform)canvasObject.transform;
@@ -384,12 +395,84 @@ public class GameOverScreen : MonoBehaviour
         PixelText label = NewText("Label", buttonRect, "RESTART", 7f, new Color(0.2f, 0.08f, 0.02f, 1f));
         Stretch(label.rectTransform);
 
+        // Run data row under Restart: keep / discard the recorded data of this run, and send it off the device.
+        RectTransform dataRoot = NewRect("RunData", root);
+        Place(dataRoot, new Vector2(0f, -520f), new Vector2(900f, 110f));
+        dataGroup = dataRoot.gameObject.AddComponent<CanvasGroup>();
+        keepButton = AddSmallButton(dataRoot, "Keep", new Vector2(-170f, 0f), new Vector2(520f, 100f), out keepImage, out keepLabel);
+        keepButton.Clicked += HandleKeepClicked;
+        shareButton = AddSmallButton(dataRoot, "Share", new Vector2(270f, 0f), new Vector2(260f, 100f), out shareImage, out shareLabel);
+        shareButton.Clicked += HandleShareClicked;
+        shareLabel.Text = "SHARE";
+
         // Black wipe on top, used when restarting.
         wipe = NewImage("Wipe", root, Color.clear, null);
         wipe.raycastTarget = false;
         Stretch(wipe.rectTransform);
 
         root.gameObject.SetActive(false);
+    }
+
+    private UiButton AddSmallButton(Transform parent, string name, Vector2 position, Vector2 size, out Image image, out PixelText label)
+    {
+        image = NewImage(name + "Button", parent, dataKeptColor, UiSprites.RoundedRect);
+        image.raycastTarget = true;
+        Place(image.rectTransform, position, size);
+        UiButton uiButton = image.gameObject.AddComponent<UiButton>();
+        label = NewText("Label", image.rectTransform, "", 4f, new Color(0.02f, 0.06f, 0.12f, 1f));
+        Stretch(label.rectTransform);
+        return uiButton;
+    }
+
+    private void HandleKeepClicked()
+    {
+        RunProfiler profiler = RunProfiler.Instance;
+        if (profiler == null) return;
+        profiler.SetKept(!profiler.IsKept);
+        SoundManager.Play(Sfx.CardSelect);
+        RefreshDataRow();
+    }
+
+    private void HandleShareClicked()
+    {
+        RunProfiler profiler = RunProfiler.Instance;
+        if (profiler == null) return;
+
+        // Sharing a run that was discarded would be a surprise: keep it again first.
+        if (!profiler.IsKept) profiler.SetKept(true);
+        shareLabel.Text = profiler.Share();
+        shareLabelTime = 1.6f;
+        SoundManager.Play(Sfx.Confirm);
+        RefreshDataRow();
+    }
+
+    private void RefreshDataRow()
+    {
+        RunProfiler profiler = RunProfiler.Instance;
+        bool kept = profiler != null && profiler.IsKept;
+        keepLabel.Text = kept ? "RUN DATA: KEPT" : "RUN DATA: DISCARDED";
+        keepImage.color = kept ? dataKeptColor : dataDiscardedColor;
+        shareImage.color = dataKeptColor;
+    }
+
+    private void AnimateDataRow(float dt)
+    {
+        RunProfiler profiler = RunProfiler.Instance;
+        bool available = profiler != null && profiler.HasSavedRun;
+        float k = Mathf.Clamp01((time - ButtonAt - 0.15f) / ButtonTime);
+        dataGroup.alpha = available ? k : 0f;
+
+        bool ready = available && k >= 1f && !restarting;
+        keepButton.Interactable = ready;
+        shareButton.Interactable = ready;
+        keepButton.transform.localScale = Vector3.one * (keepButton.IsPressed ? 0.95f : 1f);
+        shareButton.transform.localScale = Vector3.one * (shareButton.IsPressed ? 0.95f : 1f);
+
+        if (shareLabelTime > 0f)
+        {
+            shareLabelTime -= dt;
+            if (shareLabelTime <= 0f) shareLabel.Text = "SHARE";
+        }
     }
 
     private void AddWord(string word, float y)

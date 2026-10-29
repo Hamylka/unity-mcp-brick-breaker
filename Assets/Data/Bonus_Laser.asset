@@ -16,3 +16,4 @@ MonoBehaviour:
   color: {r: 1, g: 0.2, b: 0.6, a: 1}
   dropWeight: 6
   effect: {fileID: 11400000, guid: 8ae4568367abf7d45b22e33e13b40757, type: 2}
+  pickupSound: 44

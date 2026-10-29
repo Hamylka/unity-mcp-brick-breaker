@@ -10,4 +10,6 @@ public class BallSpeedEffect : PowerUpEffect
     {
         foreach (BallController ball in context.Balls) ball.MultiplyBaseSpeed(1f + percent);
     }
+
+    public override string Describe(int stacks) => $"BALL SPEED +{CompoundPercent(percent, stacks)}%";
 }

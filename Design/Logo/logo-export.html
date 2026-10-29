@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Neon Breaker Logo Export</title>
+<!-- Renders one logo asset at full window size, for headless screenshots: export-logo.ps1 drives it.
+     ?a=word | wordt (transparent) | icon | fg (adaptive foreground) | bg (adaptive background) | preview -->
+<style>
+  html, body { margin:0; background:transparent; overflow:hidden; }
+  svg { display:block; width:100vw; height:100vh; }
+  body.preview { background:#05040c; overflow:auto; padding:16px; color:#8d89b8; font:12px system-ui, sans-serif; }
+  body.preview svg { width:auto; height:auto; }
+  .row { display:flex; gap:16px; align-items:flex-end; flex-wrap:wrap; margin-bottom:16px; }
+</style>
+<script src="logo-lib.js"></script>
+<script src="logo-final.js"></script>
+</head>
+<body>
+<script>
+const a = new URLSearchParams(location.search).get('a') || 'preview';
+const builders = {
+  word: () => logoWordmark('w'),
+  wordt: () => logoWordmark('t', false),
+  icon: () => logoIcon('i'),
+  fg: () => logoAdaptiveForeground('f'),
+  bg: () => logoAdaptiveBackground('b'),
+};
+if (builders[a]) document.body.innerHTML = builders[a]();
+else {
+  // preview: the adaptive icon as a launcher would mask it (circle and squircle), next to the full icon
+  document.body.className = 'preview';
+  const layered = (clip, r) => `<div style="width:216px;height:216px;position:relative;overflow:hidden;border-radius:${r};clip-path:${clip}">
+    <div style="position:absolute;inset:-54px">${logoAdaptiveBackground('pb')}</div><div style="position:absolute;inset:-54px">${logoAdaptiveForeground('pf')}</div></div>`;
+  document.body.innerHTML = `<div class="row">${logoIcon('pi', 216)}${layered('circle(50%)', '0')}${layered('none', '30%')}</div>
+    <div class="row" style="max-width:1100px">${logoWordmark('pw')}</div>`;
+  document.querySelectorAll('.row div div svg').forEach(s => { s.style.width = '324px'; s.style.height = '324px'; });
+  document.querySelector('.row:last-child svg').style.width = '100%';
+}
+</script>
+</body>
+</html>

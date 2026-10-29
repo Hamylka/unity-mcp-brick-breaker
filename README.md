@@ -147,17 +147,19 @@ The sound effects and the music can be regenerated with **Tools > Brick Breaker 
 
 ## Status
 
-Version 0.1: playable prototype with a complete run loop. Bonus item drops (Multi-Ball, Laser, Shield) and the Reroll
-button are active. Balancing is not final, and the level-up card rolls are still repetitive (small power-up pool).
+Version 0.2: playable build with a complete run loop, 13 power-up cards (including area-of-effect damage), three bonus
+items (Multi-Ball with a telegraphed split, Laser with an aim guide, Shield), wall buff zones (2x damage, Phase), a pause
+screen, a readable brick HP display, a Game Over animation, a logo and app icon, a first Windows landscape layout and a
+run profiler for balancing. Balancing is not final: the late game levels up too fast and the card pool runs dry.
 
 ### Roadmap
 
-1. Fix the repetitive level-up card rolls.
-2. Playtest and tune HP scaling, bonuses and HUD on a real phone.
-3. Design a logo for the game.
-4. Windows version in landscape, without breaking the current mobile camera setup (separate camera/layout per platform).
-5. Special effects on the walls (ideas still to be thought out).
-6. More bonus items and power-ups.
+1. Progression rework (v0.3): bigger power-up pool with percent-based damage cards, XP per brick tied to the level cost,
+   brick HP that follows the ball damage.
+2. Windows build in landscape (resize, fullscreen) and neon decoration for the side areas.
+3. Title screen using the wordmark.
+4. More bonus items and wall effects.
+5. Playtest on a real phone (HUD sizes, pause screen, sounds).
 
 ## Author
 

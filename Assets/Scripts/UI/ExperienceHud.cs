@@ -40,17 +40,31 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
     [Header("XP Orbs")]
     [Tooltip("Seconds an XP orb takes to fly from the brick to the bar.")]
     [SerializeField, Min(0.1f)] private float orbTravelTime = 0.7f;
-    [Tooltip("One orb is sent per XP point, up to this many per hit. Bigger rewards share the XP between the orbs.")]
-    [SerializeField, Min(1)] private int maxOrbsPerHit = 8;
     [Tooltip("Seconds between the orbs of one hit, so they pop out as a small burst.")]
     [SerializeField, Min(0f)] private float orbStagger = 0.05f;
     [Tooltip("Scales the number of pixel sparkles. 0 = none.")]
     [SerializeField, Range(0f, 2f)] private float particleAmount = 1f;
 
+    // XP orb denominations: the XP of a hit is merged into the fewest orbs. Index = tier.
+    private static readonly int[] OrbValues = { 1, 5, 20, 50, 100 };
+    private static readonly Color[] OrbColors =
+    {
+        new(0.82f, 0.85f, 0.92f), // 1   white / grey
+        new(0.3f, 1f, 0.4f),      // 5   green
+        new(0.25f, 0.55f, 1f),    // 20  blue
+        new(0.72f, 0.3f, 1f),     // 50  purple
+        new(1f, 0.82f, 0.2f),     // 100 gold
+    };
+    private static readonly float[] OrbScales = { 1f, 1.15f, 1.3f, 1.45f, 1.65f };
+    private Color[][] tierBurstColors;
+
     private sealed class Orb
     {
         public GameObject root;
         public RectTransform rect;
+        public Image glow;
+        public Image core;
+        public int tier;
         public Vector2 start;
         public Vector2 control;
         public float time;
@@ -91,7 +105,6 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
 
     private Banner levelUpBanner;
     private Banner clearBanner;
-    private Rect lastSafeArea;
 
     private float shown;       // animated value:  (level - 1) + fraction of the current level
     private float target;
@@ -159,7 +172,6 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
     private void Update()
     {
         float dt = Time.unscaledDeltaTime;
-        ApplySafeArea();
 
         // Bar: glide toward the target; crossing a whole number means a level was gained.
         shown = Mathf.SmoothDamp(shown, target, ref velocity, fillSmoothTime, Mathf.Infinity, dt);
@@ -257,23 +269,14 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
         return 1f + c3 * u * u * u + c1 * u * u;
     }
 
-    private void ApplySafeArea()
-    {
-        Rect area = Screen.safeArea;
-        if (area == lastSafeArea) return;
-        lastSafeArea = area;
-        safeArea.anchorMin = new Vector2(area.xMin / Screen.width, area.yMin / Screen.height);
-        safeArea.anchorMax = new Vector2(area.xMax / Screen.width, area.yMax / Screen.height);
-        safeArea.offsetMin = safeArea.offsetMax = Vector2.zero;
-    }
-
     // ---------------------------------------------------------------- UI construction
 
     // ---------------------------------------------------------------- XP orbs and pixel bursts
 
     /// <summary>
-    /// Launches one orb per XP point (up to Max Orbs Per Hit) from a world position to the XP bar, as a small burst.
-    /// Each orb calls onArrive with its share of the XP when it lands.
+    /// Merges the XP into the fewest orbs (denominations 1, 5, 20, 50, 100, each with its own color and size)
+    /// and launches them from a world position to the XP bar, as a small burst.
+    /// Each orb calls onArrive with its value when it lands.
     /// </summary>
     public void Deliver(Vector3 worldPosition, int amount, System.Action<int> onArrive)
     {
@@ -294,29 +297,41 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
         RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRect, screen, null, out Vector2 start);
         Vector2 target = GetBarTarget();
 
-        int orbCount = Mathf.Clamp(amount, 1, maxOrbsPerHit);
-        int share = amount / orbCount;
-        int extra = amount % orbCount;
-        for (int i = 0; i < orbCount; i++)
+        // Merge the XP into the fewest orbs: biggest denominations first, remainder in smaller ones.
+        int orbIndex = 0;
+        for (int tier = OrbValues.Length - 1; tier >= 0; tier--)
         {
-            int portion = share + (i < extra ? 1 : 0);
-            Orb orb = FindFreeOrb();
-            if (orb == null)
-            {
-                onArrive?.Invoke(portion); // all orbs busy: add this share right away
-                continue;
-            }
-
-            orb.start = start + UnityEngine.Random.insideUnitCircle * 18f;
-            orb.control = (orb.start + target) * 0.5f + new Vector2(UnityEngine.Random.Range(-220f, 220f), UnityEngine.Random.Range(60f, 260f));
-            orb.duration = orbTravelTime * UnityEngine.Random.Range(0.9f, 1.15f);
-            orb.time = -i * orbStagger; // negative = waiting for its turn in the burst
-            orb.trailTimer = 0f;
-            orb.amount = portion;
-            orb.onArrive = onArrive;
-            orb.active = true;
-            orb.shown = false;
+            int count = amount / OrbValues[tier];
+            amount -= count * OrbValues[tier];
+            for (int n = 0; n < count; n++)
+                LaunchOrb(tier, orbIndex++, start, target, onArrive);
         }
+    }
+
+    private void LaunchOrb(int tier, int i, Vector2 start, Vector2 target, System.Action<int> onArrive)
+    {
+        int portion = OrbValues[tier];
+        Orb orb = FindFreeOrb();
+        if (orb == null)
+        {
+            onArrive?.Invoke(portion); // all orbs busy: add this share right away
+            return;
+        }
+
+        orb.tier = tier;
+        Color tint = OrbColors[tier];
+        orb.glow.color = new Color(tint.r, tint.g, tint.b, 0.3f);
+        orb.core.color = tint;
+
+        orb.start = start + UnityEngine.Random.insideUnitCircle * 18f;
+        orb.control = (orb.start + target) * 0.5f + new Vector2(UnityEngine.Random.Range(-220f, 220f), UnityEngine.Random.Range(60f, 260f));
+        orb.duration = orbTravelTime * UnityEngine.Random.Range(0.9f, 1.15f);
+        orb.time = -i * orbStagger; // negative = waiting for its turn in the burst
+        orb.trailTimer = 0f;
+        orb.amount = portion;
+        orb.onArrive = onArrive;
+        orb.active = true;
+        orb.shown = false;
     }
 
     private Orb FindFreeOrb()
@@ -347,8 +362,8 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
                 SoundManager.Play(Sfx.OrbLaunch);
 
                 // Small pop each time an orb comes out of the brick.
-                int pop = Mathf.RoundToInt(UnityEngine.Random.Range(3, 6) * particleAmount);
-                particles.Burst(orb.start, pop, burstColors, 120f, 340f, 6f, 12f, 0.25f, 0.5f, 4f, 0f);
+                int pop = Mathf.RoundToInt(UnityEngine.Random.Range(3, 6) * (1 + orb.tier * 0.5f) * particleAmount);
+                particles.Burst(orb.start, pop, TierBurstColors(orb.tier), 120f, 340f, 6f, 12f, 0.25f, 0.5f, 4f, 0f);
             }
 
             float u = Mathf.Clamp01(orb.time / orb.duration);
@@ -357,7 +372,7 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
             Vector2 p = inv * inv * orb.start + 2f * inv * e * orb.control + e * e * target;
 
             orb.rect.anchoredPosition = p;
-            orb.rect.localScale = Vector3.one * (Mathf.Min(1f, u / 0.12f) * Mathf.Lerp(1f, 0.75f, u));
+            orb.rect.localScale = Vector3.one * (Mathf.Min(1f, u / 0.12f) * Mathf.Lerp(1f, 0.75f, u) * OrbScales[orb.tier]);
 
             // Pixel trail.
             orb.trailTimer -= dt;
@@ -366,7 +381,7 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
                 orb.trailTimer = 0.03f;
                 Vector2 jitter = new(UnityEngine.Random.Range(-5f, 5f), UnityEngine.Random.Range(-5f, 5f));
                 Vector2 drift = new(UnityEngine.Random.Range(-20f, 20f), UnityEngine.Random.Range(-20f, 20f));
-                Color color = UnityEngine.Random.value < 0.35f ? Color.white : fillColor;
+                Color color = UnityEngine.Random.value < 0.35f ? Color.white : OrbColors[orb.tier];
                 particles.Emit(p + jitter, drift, color, UnityEngine.Random.Range(8f, 13f), UnityEngine.Random.Range(0.25f, 0.45f), 3f, 0f);
             }
 
@@ -381,9 +396,9 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
         orb.root.SetActive(false);
 
         // Explosion on the bar: scattered squares plus a few big white flashes. Several orbs stack into a bigger blast.
-        int count = Mathf.RoundToInt(Mathf.Clamp(10 + orb.amount * 4, 10, 36) * particleAmount);
-        particles.Burst(target, count, burstColors, 200f, 640f, 8f, 18f, 0.35f, 0.8f, 3.5f, 260f);
-        particles.Burst(target, Mathf.RoundToInt(3 * particleAmount), new[] { Color.white }, 40f, 160f, 18f, 26f, 0.12f, 0.25f, 6f, 0f);
+        int count = Mathf.RoundToInt((10 + orb.tier * 8) * particleAmount);
+        particles.Burst(target, count, TierBurstColors(orb.tier), 200f, 640f, 8f, 18f, 0.35f, 0.8f, 3.5f, 260f);
+        particles.Burst(target, Mathf.RoundToInt((3 + orb.tier) * particleAmount), new[] { Color.white }, 40f, 160f, 18f, 26f, 0.12f, 0.25f, 6f, 0f);
 
         System.Action<int> callback = orb.onArrive;
         int amount = orb.amount;
@@ -393,8 +408,10 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
         // Quick successions climb in pitch, like a combo.
         orbChain = Time.unscaledTime - lastOrbArrival < 0.35f ? orbChain + 1 : 0;
         lastOrbArrival = Time.unscaledTime;
-        SoundManager.Play(Sfx.OrbCollect, 1f + Mathf.Min(orbChain, 12) * 0.05f);
+        SoundManager.Play(Sfx.OrbCollect, 1f + Mathf.Min(orbChain, 12) * 0.05f + orb.tier * 0.1f); // richer orbs ring higher
     }
+
+    private Color[] TierBurstColors(int tier) => tierBurstColors[tier];
 
     // The tip of the filled part of the bar, in canvas coordinates.
     private Vector2 GetBarTarget()
@@ -409,6 +426,9 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
     {
         canvasRect = (RectTransform)canvasParent;
         burstColors = new[] { fillColor, Color.white, new Color(0.7f, 0.95f, 1f) };
+        tierBurstColors = new Color[OrbColors.Length][];
+        for (int t = 0; t < OrbColors.Length; t++)
+            tierBurstColors[t] = new[] { OrbColors[t], Color.white, Color.Lerp(OrbColors[t], Color.white, 0.5f) };
 
         RectTransform particleLayer = NewRect("XpParticles", canvasParent);
         Stretch(particleLayer);
@@ -432,7 +452,7 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
             Place(shine.rectTransform, middle, middle, new Vector2(-3f, 3f), new Vector2(10f, 10f));
 
             root.gameObject.SetActive(false);
-            orbs.Add(new Orb { root = root.gameObject, rect = root });
+            orbs.Add(new Orb { root = root.gameObject, rect = root, glow = glow, core = core });
         }
     }
 
@@ -447,14 +467,10 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
         canvas.sortingOrder = 10;
 
         // Reference layout is 1080x1920 portrait. No GraphicRaycaster: nothing here is interactive.
-        var scaler = canvasObject.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080f, 1920f);
-        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 0f; // portrait: width is the limiting side, taller phones just get more height
+        ScreenColumn.ConfigureScaler(canvasObject.AddComponent<CanvasScaler>());
 
-        safeArea = NewRect("SafeArea", canvasObject.transform);
-        Stretch(safeArea);
+        // Corner HUD lives in the playfield column (inside the safe area), so it stays above the game on wide screens.
+        safeArea = ScreenColumn.Create(canvasObject.transform, "SafeArea");
 
         // Level badge (top left): small "LV" label above a big number.
         badge = NewRect("LevelBadge", safeArea);

@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: PowerBall
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Power Ball
-  description: +1 damage per hit
-  rarity: 2
+  description: +1 base damage on every level-up
+  rarity: 3
   icon: '#.....#
 
     .#.#.#.

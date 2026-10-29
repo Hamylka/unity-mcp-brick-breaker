@@ -25,6 +25,7 @@ public class ShieldBarrier : BallSurface
     /// <summary>The shield currently up, or null.</summary>
     public static ShieldBarrier Current { get; private set; }
 
+    private readonly System.Collections.Generic.HashSet<Collider> ignoredBalls = new();
     private Collider barrierCollider;
     private Renderer barrierRenderer;
     private MaterialPropertyBlock block;
@@ -64,6 +65,7 @@ public class ShieldBarrier : BallSurface
         if (breakT >= 0f) return;
         barrierCollider.enabled = false; // the bounce was already computed, so this is safe
         breakT = 0f;
+        ball.PassThroughPaddle(); // the rebound goes back up through the paddle instead of bouncing off its back
         SoundManager.Play(Sfx.ShieldBreak);
 
         // Shatter: a flash where the ball struck, then shards spraying forward along the whole barrier.
@@ -81,6 +83,7 @@ public class ShieldBarrier : BallSurface
     {
         float dt = Time.deltaTime; // scaled: freezes with the game
         age += dt;
+        if (breakT < 0f) UpdateFadingPassThrough();
 
         if (breakT >= 0f)
         {
@@ -114,6 +117,26 @@ public class ShieldBarrier : BallSurface
             sparkTimer = SparkInterval;
             Vector3 spot = transform.position + Vector3.right * (Random.Range(-0.5f, 0.5f) * startScale.x * 0.9f);
             NeonFx.Embers(spot, ShieldColor, 1, 0.06f, 0.5f);
+        }
+    }
+
+    /// <summary>
+    /// Extras shrinking away at the end of their Multi-Ball life no longer count: they pass through the barrier
+    /// without bouncing or breaking it. Collision is switched off for them and back on if they stop fading
+    /// (e.g. promoted to main).
+    /// </summary>
+    private void UpdateFadingPassThrough()
+    {
+        for (int i = 0; i < BallController.Active.Count; i++)
+        {
+            BallController ball = BallController.Active[i];
+            if (ball == null) continue;
+            var sphere = ball.GetComponent<SphereCollider>();
+            if (sphere == null) continue;
+
+            bool fading = ball.TryGetComponent(out TemporaryBall temp) && temp.IsFading;
+            if (fading) { if (ignoredBalls.Add(sphere)) Physics.IgnoreCollision(sphere, barrierCollider, true); }
+            else if (ignoredBalls.Remove(sphere)) Physics.IgnoreCollision(sphere, barrierCollider, false);
         }
     }
 

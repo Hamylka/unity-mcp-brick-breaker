@@ -77,6 +77,16 @@ public class PixelParticleSystem
         }
     }
 
+    /// <summary>Removes every live particle at once.</summary>
+    public void Clear()
+    {
+        foreach (Particle p in pool)
+        {
+            p.life = 0f;
+            p.image.enabled = false;
+        }
+    }
+
     public void Tick(float dt)
     {
         foreach (Particle p in pool)

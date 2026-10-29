@@ -21,6 +21,10 @@ public class PowerUpScreen : MonoBehaviour
     [SerializeField] private Color confirmColor = new(0.25f, 0.85f, 0.45f, 1f);
     [SerializeField] private Color rerollColor = new(0.3f, 0.8f, 0.95f, 1f);
     [SerializeField] private Color disabledColor = new(0.17f, 0.2f, 0.29f, 1f);
+    [Tooltip("Level label, owned level pips and the NEW! tag.")]
+    [SerializeField] private Color levelColor = new(0.4f, 1f, 0.5f, 1f);
+    [Tooltip("Used instead of the level color when this pick reaches the power-up's max level.")]
+    [SerializeField] private Color maxLevelColor = new(1f, 0.8f, 0.25f, 1f);
 
     [Header("Layout (reference resolution 1080x1920)")]
     [SerializeField, Min(100f)] private float cardWidth = 300f;
@@ -260,6 +264,17 @@ public class PowerUpScreen : MonoBehaviour
         Color bright = Color.Lerp(card.RarityColor, Color.white, 0.25f * card.SelectT);
         card.Border.color = Color.Lerp(dark, bright, card.SelectT);
 
+        // Level display: the pip this pick would fill blinks, the NEW!/MAX! tag gently pulses.
+        if (card.NextPip != null)
+        {
+            float blink = 0.5f + 0.5f * Mathf.Sin(time * 8f);
+            Color pip = Color.Lerp(card.NextPipColor * 0.45f, Color.white, blink * 0.6f);
+            pip.a = 1f;
+            card.NextPip.color = pip;
+        }
+        if (card.Tag != null)
+            card.Tag.localScale = Vector3.one * (1f + 0.06f * Mathf.Sin(time * 6f + index));
+
         // Sparkles: lots around the chosen card, a few on rare finds.
         float rate = isSelected ? 40f : 0f;
         if (!isSelected && card.Rarity >= PowerUpRarity.Epic) rate = card.Rarity == PowerUpRarity.Legendary ? 14f : 6f;
@@ -433,11 +448,7 @@ public class PowerUpScreen : MonoBehaviour
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 20;
 
-        var scaler = canvasObject.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080f, 1920f);
-        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
-        scaler.matchWidthOrHeight = 0f; // portrait: width is the limiting side, taller phones just get more height
+        ScreenColumn.ConfigureScaler(canvasObject.AddComponent<CanvasScaler>()); // centered layout fits the column
         canvasObject.AddComponent<GraphicRaycaster>();
 
         root = (RectTransform)canvasObject.transform;
@@ -540,11 +551,9 @@ public class PowerUpScreen : MonoBehaviour
         Place(description.rectTransform, Vector2.zero, new Vector2(0f, -60f), new Vector2(width - 44f, 190f));
 
         PixelText rarityText = NewText("Rarity", rect, RarityStyle.GetLabel(def.Rarity), 3f, rarity, PixelText.Align.Center);
-        Place(rarityText.rectTransform, Vector2.zero, new Vector2(0f, -196f), new Vector2(width - 20f, 30f));
+        Place(rarityText.rectTransform, Vector2.zero, new Vector2(0f, -184f), new Vector2(width - 20f, 30f));
 
-        string levelLabel = stacks <= 0 ? "NEW!" : $"LV {stacks + 1}";
-        PixelText level = NewText("Level", rect, levelLabel, 4f, new Color(0.4f, 1f, 0.5f), PixelText.Align.Center);
-        Place(level.rectTransform, Vector2.zero, new Vector2(0f, -238f), new Vector2(width - 20f, 34f));
+        BuildLevelDisplay(rect, view, def, stacks, width, topY);
 
         view.Index = index;
         view.Clicked = SelectCard;
@@ -558,6 +567,53 @@ public class PowerUpScreen : MonoBehaviour
         view.BaseX = x;
         view.Appear = 0f;
         return view;
+    }
+
+    // Bottom of the card: "LV 2/3" (or "LV 4" when unlimited), one pip per level for capped power-ups (owned ones filled,
+    // the one this pick grants blinking), and a corner tag: NEW! on a first pick, MAX! when this pick reaches the cap.
+    private void BuildLevelDisplay(RectTransform card, CardView view, PowerUpDefinition def, int stacks, float width, float topY)
+    {
+        int max = def.MaxStacks;
+        int next = stacks + 1;
+        bool capped = max > 0;
+        bool reachesMax = capped && next >= max;
+        Color color = reachesMax ? maxLevelColor : levelColor;
+
+        string label = capped ? $"LV {next}/{max}" : $"LV {next}";
+        PixelText level = NewText("Level", card, label, 4f, color, PixelText.Align.Center);
+        Place(level.rectTransform, Vector2.zero, new Vector2(0f, capped ? -222f : -234f), new Vector2(width - 20f, 34f));
+
+        if (capped)
+        {
+            const float pipGap = 8f;
+            const float pipHeight = 20f;
+            float pipWidth = Mathf.Min(44f, (width - 60f - pipGap * (max - 1)) / max);
+            float rowStart = -(max - 1) * 0.5f * (pipWidth + pipGap);
+            for (int i = 0; i < max; i++)
+            {
+                Color pipColor = i < stacks ? color : disabledColor; // owned levels share the label color
+                Image pip = NewImage($"Pip{i}", card, pipColor, false);
+                Place(pip.rectTransform, Vector2.zero, new Vector2(rowStart + i * (pipWidth + pipGap), -256f), new Vector2(pipWidth, pipHeight));
+                if (i == stacks)
+                {
+                    view.NextPip = pip;
+                    view.NextPipColor = color;
+                }
+            }
+        }
+
+        // Corner tag, top right, clear of the header diamond.
+        // A one-level power-up is both new and maxed: NEW! wins, the gold label and pip already say it is the last level.
+        string tagText = stacks <= 0 ? "NEW!" : reachesMax ? "MAX!" : null;
+        if (tagText == null) return;
+
+        Color tagColor = tagText == "MAX!" ? maxLevelColor : levelColor;
+        const float tagWidth = 90f;
+        Image tag = NewImage("Tag", card, tagColor, false);
+        Place(tag.rectTransform, Vector2.zero, new Vector2(width * 0.5f - tagWidth * 0.5f - 10f, topY - 72f), new Vector2(tagWidth, 36f));
+        PixelText tagLabel = NewText("Label", tag.rectTransform, tagText, 3f, new Color(0.04f, 0.05f, 0.12f), PixelText.Align.Center);
+        Stretch(tagLabel.rectTransform);
+        view.Tag = tag.rectTransform;
     }
 
     // ---------------------------------------------------------------- small helpers

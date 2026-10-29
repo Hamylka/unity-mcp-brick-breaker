@@ -22,6 +22,17 @@ public class Brick : MonoBehaviour
     [Tooltip("Glow strength of the neon outline (the material's emission map). Above 1 the bloom picks it up.")]
     [SerializeField, Min(0f)] private float glowIntensity = 2.4f;
 
+    [Header("HP Readability")]
+    [Tooltip("Body brightness multiplier from the weakest (x) to the toughest brick (y): weak bricks look hollow, tough ones solid.")]
+    [SerializeField] private Vector2 bodyByToughness = new(0.4f, 2.6f);
+    [Tooltip("Outline glow multiplier from the weakest (x) to the toughest brick (y).")]
+    [SerializeField] private Vector2 glowByToughness = new(0.7f, 1.45f);
+    [Tooltip("Every hit that does not destroy the brick flashes it white, then it settles on the color of its remaining HP.")]
+    [SerializeField, Min(0f)] private float hitFlashBrightness = 1.6f;
+    [SerializeField, Min(0.01f)] private float hitFlashTime = 0.18f;
+    [Tooltip("Chips thrown in the old color on a non-lethal hit, so losing an HP step is visible.")]
+    [SerializeField, Min(0)] private int hitChips = 4;
+
     [Header("Shape")]
     [Tooltip("Rounded corners with a built-in neon outline (visual only, the stack's box collider is unchanged).")]
     [SerializeField] private bool roundedShape = true;
@@ -43,6 +54,14 @@ public class Brick : MonoBehaviour
     [Header("Spawn Juice")]
     [Tooltip("Seconds for the pop-in animation of a freshly spawned brick.")]
     [SerializeField, Min(0.01f)] private float spawnTime = 0.3f;
+
+    [Header("Area Effects")]
+    [Tooltip("Fire color added on top of a burning brick (Meltdown).")]
+    [SerializeField, ColorUsage(false, true)] private Color burnTint = new(1f, 0.3f, 0.08f);
+    [Tooltip("Strength of the flickering fire glow on a burning brick. Above 1 the bloom picks it up.")]
+    [SerializeField, Min(0f)] private float burnGlow = 2.2f;
+    [Tooltip("Seconds for the fire glow to come in and die out.")]
+    [SerializeField, Min(0.01f)] private float burnFadeTime = 0.25f;
 
     /// <summary>Brick, hit points actually removed (never more than it had left). Raised on every hit.</summary>
     public event Action<Brick, int> Hit;
@@ -68,16 +87,51 @@ public class Brick : MonoBehaviour
     /// <summary>Sets the scale without recoloring anyone (new run).</summary>
     public static void ResetColorScale(int maxHitPoints) => ColorScaleMaxHp = Mathf.Max(1, maxHitPoints);
 
+    /// <summary>
+    /// Ball damage used to turn HP into hits left (<see cref="HitsFor"/>). The color ramp runs on hits, not HP,
+    /// so a damage upgrade cools the whole wall down. Fed every frame by the grid.
+    /// </summary>
+    public static int HitDamage { get; private set; } = 1;
+
+    private static event Action HitDamageChanged;
+
+    /// <summary>Changes the damage reference. Every living brick fades to its new color (no pulse: it can happen often).</summary>
+    public static void SetHitDamage(int damage)
+    {
+        int clamped = Mathf.Max(1, damage);
+        if (clamped == HitDamage) return;
+        HitDamage = clamped;
+        HitDamageChanged?.Invoke();
+    }
+
+    /// <summary>Sets the damage reference without recoloring anyone (new run).</summary>
+    public static void ResetHitDamage(int damage) => HitDamage = Mathf.Max(1, damage);
+
+    /// <summary>Ball hits needed to remove this many HP with the current <see cref="HitDamage"/> (AoE not counted).</summary>
+    public static int HitsFor(int hitPoints) => Mathf.Max(1, Mathf.CeilToInt(hitPoints / (float)HitDamage));
+
+    /// <summary>Estimated ball hits left to break this brick.</summary>
+    public int HitsLeft => HitsFor(HitPoints);
+
     public int MaxHitPoints { get; private set; } = 1;
     public int HitPoints { get; private set; } = 1;
     public bool IsAlive => HitPoints > 0;
+    /// <summary>Fractional damage waiting to become a whole HP (splash power-ups at low damage).</summary>
+    public float DamageCarry { get; set; }
+    /// <summary>XP granted per HP removed. Shrinks for bricks spawned after the HP window scaled up (set by <see cref="BrickGrid"/>).</summary>
+    public float XpPerHp { get; set; } = 1f;
 
     private MaterialPropertyBlock block;
+    private Vector3 size = new(1f, 0.4f, 0.5f);
     private Vector3 baseScale = Vector3.one;
     private Color shownColor = Color.white;
     private Color fromColor = Color.white;
     private Color targetColor = Color.white;
+    private float shownToughness;
+    private float fromToughness;
+    private float targetToughness;
     private float colorT = 1f;
+    private float colorTime = 0.12f;
     private float punchT = 1f;
     private float landT = 1f;
     private float shrinkT;
@@ -94,6 +148,24 @@ public class Brick : MonoBehaviour
     private float fromY;
     private float toY;
 
+    private bool pulsePending;
+    private float pulseDelay;
+    private Color pulseColor;
+    private float pulseTime;
+    private bool burning;
+    private float burnHeat;
+
+    /// <summary>On fire (Meltdown): the brick flickers with a fire glow until it is set back to false.</summary>
+    public bool Burning
+    {
+        get => burning;
+        set
+        {
+            burning = value && IsAlive;
+            if (burning) enabled = true;
+        }
+    }
+
     private void Awake()
     {
         baseScale = transform.localScale;
@@ -106,6 +178,7 @@ public class Brick : MonoBehaviour
     /// </summary>
     public void ApplySize(Vector3 size)
     {
+        this.size = size;
         var filter = GetComponent<MeshFilter>();
         if (roundedShape && filter != null)
         {
@@ -124,29 +197,88 @@ public class Brick : MonoBehaviour
         palette = brickPalette;
         MaxHitPoints = HitPoints = Mathf.Max(1, hitPoints);
         baseScale = transform.localScale;
-        shownColor = targetColor = CurrentColor();
-        ApplyColor(shownColor);
+        targetColor = CurrentColor();
+        targetToughness = CurrentToughness();
+        ApplyColor(targetColor, targetToughness);
         enabled = false;
 
         ColorScaleChanged -= OnColorScaleChanged;
         ColorScaleChanged += OnColorScaleChanged;
+        HitDamageChanged -= OnHitDamageChanged;
+        HitDamageChanged += OnHitDamageChanged;
+        BrickHpOverlay.Register(this);
     }
 
-    private void OnDestroy() => ColorScaleChanged -= OnColorScaleChanged;
+    private void OnDestroy()
+    {
+        ColorScaleChanged -= OnColorScaleChanged;
+        HitDamageChanged -= OnHitDamageChanged;
+        BrickHpOverlay.Unregister(this);
+    }
 
-    private Color CurrentColor() => palette != null ? palette.GetColor(HitPoints, ColorScaleMaxHp) : Color.white;
+    // Ball damage changed: a slow fade to the color of the new hits-left count.
+    private void OnHitDamageChanged()
+    {
+        if (!IsAlive || shrinking) return;
+        StartColorFade(shownColor, shownToughness, colorFadeTime * 2.5f);
+    }
+
+    // ---- read by BrickHpOverlay (HP numbers / pips display modes)
+
+    /// <summary>False while the brick is dying, so its label disappears with the hit.</summary>
+    public bool ShowsHpLabel => IsAlive && !shrinking;
+    /// <summary>Current animated size compared to the resting size (spawn pop-in, hit punch).</summary>
+    public float VisualScale => baseScale.x > 0f ? transform.localScale.x / baseScale.x : 1f;
+    /// <summary>World size of the brick (its mesh, not the collider).</summary>
+    public Vector3 Size => size;
+    /// <summary>Color of the hits left (the label's tint, without the hit flash).</summary>
+    public Color HpColor => CurrentColor();
+
+    // The ramp runs on hits left: white = breaks in one hit, hot red = as many hits as the toughest brick spawning now.
+    private Color CurrentColor() => palette != null ? palette.GetColor(HitsLeft, HitsFor(ColorScaleMaxHp)) : Color.white;
+    private float CurrentToughness() => BrickPalette.GetToughness(HitsLeft, HitsFor(ColorScaleMaxHp));
+
+    // Fades from a start color and toughness to the ones of the current HP.
+    private void StartColorFade(Color from, float fromTough, float duration)
+    {
+        fromColor = from;
+        fromToughness = fromTough;
+        targetColor = CurrentColor();
+        targetToughness = CurrentToughness();
+        colorTime = duration;
+        colorT = 0f;
+        enabled = true;
+    }
 
     // The scale moved (the wall got tougher): fade to the new color and pulse so the change is noticeable,
     // with a couple of embers rising off the brick in its new color.
     private void OnColorScaleChanged()
     {
         if (!IsAlive || shrinking) return;
-        fromColor = shownColor;
-        targetColor = CurrentColor();
-        colorT = 0f;
+        StartColorFade(shownColor, shownToughness, colorFadeTime);
         punchT = 0f;
-        enabled = true;
         NeonFx.Embers(transform.position, targetColor, 2, 0.06f, 0.6f);
+    }
+
+    /// <summary>
+    /// Lights the whole brick up in a color (HDR is fine) with a small punch, then fades back to its HP color.
+    /// Area effects call it on every brick they reach, even when the damage has not added up to a whole HP yet,
+    /// so their reach reads at the pixelated resolution. A delay lets a sweep travel along a row.
+    /// </summary>
+    public void Pulse(Color color, float duration = 0.22f, float delay = 0f)
+    {
+        if (!IsAlive || shrinking) return;
+        if (delay > 0f)
+        {
+            pulsePending = true;
+            pulseDelay = delay;
+            pulseColor = color;
+            pulseTime = duration;
+            enabled = true;
+            return;
+        }
+        StartColorFade(color, Mathf.Max(shownToughness, 1f), duration);
+        punchT = 0f;
     }
 
     /// <summary>Starts hidden (scale 0) and pops in after a delay, with a small overshoot.</summary>
@@ -170,11 +302,10 @@ public class Brick : MonoBehaviour
 
         if (HitPoints > 0)
         {
-            fromColor = shownColor;
-            targetColor = CurrentColor();
-            colorT = 0f;
+            // White-hot flash, then settle on the (paler) color of the HP left; chips fly off in the old color.
+            if (hitChips > 0) NeonFx.Burst(transform.position, shownColor, hitChips, 2.2f, 0.07f, 0.3f);
+            StartColorFade(Color.white * hitFlashBrightness, Mathf.Max(shownToughness, 1f), hitFlashTime);
             punchT = 0f;
-            enabled = true;
             SoundManager.Play(Sfx.BrickHit, 1f + (MaxHitPoints - HitPoints) * 0.08f); // rises as the brick weakens
             Damaged?.Invoke(this, HitPoints);
             return;
@@ -182,6 +313,21 @@ public class Brick : MonoBehaviour
 
         SoundManager.Play(Sfx.BrickBreak);
         Destroyed?.Invoke(this);
+        shrinking = true;
+        shrinkT = 0f;
+        enabled = true;
+    }
+
+    /// <summary>
+    /// Kills the brick without raising any event or sound: no XP, no bonus drop, no wall-clear. Used by the
+    /// game over animation, which plays its own explosion. The brick shrinks away like a normal break.
+    /// </summary>
+    public void BreakSilently()
+    {
+        if (!IsAlive || shrinking) return;
+        HitPoints = 0;
+        burning = false;
+        pulsePending = false;
         shrinking = true;
         shrinkT = 0f;
         enabled = true;
@@ -255,10 +401,28 @@ public class Brick : MonoBehaviour
             }
         }
 
+        if (pulsePending)
+        {
+            pulseDelay -= dt;
+            if (pulseDelay <= 0f)
+            {
+                pulsePending = false;
+                Pulse(pulseColor, pulseTime);
+            }
+        }
+
+        bool fireChanged = burning || burnHeat > 0f;
+        if (fireChanged) burnHeat = Mathf.MoveTowards(burnHeat, burning ? 1f : 0f, dt / burnFadeTime);
+
         if (colorT < 1f)
         {
-            colorT = Mathf.Min(1f, colorT + dt / Mathf.Max(colorFadeTime, 0.0001f));
-            ApplyColor(Color.Lerp(fromColor, targetColor, colorT));
+            colorT = Mathf.Min(1f, colorT + dt / Mathf.Max(colorTime, 0.0001f));
+            float k = 1f - (1f - colorT) * (1f - colorT); // ease-out: the flash drops fast, then settles
+            ApplyColor(Color.Lerp(fromColor, targetColor, k), Mathf.Lerp(fromToughness, targetToughness, k));
+        }
+        else if (fireChanged)
+        {
+            ApplyColor(shownColor, shownToughness); // re-applied every frame for the flicker
         }
 
         float punch = 0f;
@@ -281,23 +445,35 @@ public class Brick : MonoBehaviour
         scale.z *= 1f + landSquash * 0.5f * land;
         transform.localScale = scale;
 
-        if (!moving && !spawning && colorT >= 1f && punchT >= 1f && landT >= 1f)
+        if (!moving && !spawning && colorT >= 1f && punchT >= 1f && landT >= 1f && !pulsePending && !burning && burnHeat <= 0f)
         {
             transform.localScale = baseScale;
             enabled = false;
         }
     }
 
-    private void ApplyColor(Color color)
+    /// <param name="toughness">0 = 1 HP, 1 = toughest: tough bricks get a fuller body and a stronger glow.</param>
+    private void ApplyColor(Color color, float toughness)
     {
         shownColor = color;
+        shownToughness = toughness;
         if (targetRenderer == null) return;
         block ??= new MaterialPropertyBlock();
         targetRenderer.GetPropertyBlock(block);
-        Color body = color * bodyBrightness;
+        Color body = color * (bodyBrightness * Mathf.Lerp(bodyByToughness.x, bodyByToughness.y, toughness));
+        float glow = glowIntensity * Mathf.Lerp(glowByToughness.x, glowByToughness.y, toughness);
+        Color emission = color * glow; // HDR glow in the HP color
+        if (burnHeat > 0f)
+        {
+            // Fire on top of the HP color: per-brick noise so a burning wall does not flicker in sync.
+            Vector3 p = transform.position;
+            float flicker = 0.55f + 0.45f * Mathf.PerlinNoise(Time.time * 9f, p.x * 3.1f + p.z * 1.7f);
+            emission += burnTint * (burnGlow * burnHeat * flicker);
+            body = Color.Lerp(body, burnTint * 0.5f, 0.4f * burnHeat * flicker);
+        }
         body.a = 1f;
         block.SetColor(BaseColorId, body);
-        block.SetColor(EmissionColorId, color * glowIntensity); // HDR glow in the HP color
+        block.SetColor(EmissionColorId, emission);
         targetRenderer.SetPropertyBlock(block);
     }
 }

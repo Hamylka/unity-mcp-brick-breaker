@@ -27,7 +27,7 @@ public class PaddleController : MonoBehaviour
     [SerializeField] private bool springBackOnRelease = true;
 
     [Header("Drag Sensitivity")]
-    [Tooltip("World units travelled sideways when dragging across the full screen width.")]
+    [Tooltip("World units travelled sideways when dragging across the playfield column (the full width on a phone).")]
     [SerializeField, Min(0.1f)] private float horizontalDragRange = 9f;
     [Tooltip("World units travelled in depth when dragging across the full screen height.")]
     [SerializeField, Min(0.1f)] private float depthDragRange = 6f;
@@ -132,7 +132,8 @@ public class PaddleController : MonoBehaviour
             Vector2 delta = position - lastPointerPosition;
             lastPointerPosition = position;
 
-            targetX += delta.x / Screen.width * horizontalDragRange;
+            // Measured on the playfield column, so a drag feels the same on a phone and in a wide window.
+            targetX += delta.x / ScreenColumn.PixelWidth * horizontalDragRange;
             targetZ += delta.y / Screen.height * depthDragRange;
         }
         else if (dragging)

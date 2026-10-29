@@ -570,6 +570,40 @@ MonoBehaviour:
   coreTrailTime: 0.1
   sparkCount: 7
   sparkSpeed: 4
+  ghostMaterial: {fileID: 0}
+  phaseColor: {r: 0.55, g: 0.4, b: 1, a: 1}
+  phaseFadeIn: 0.12
+  phaseFadeOut: 0.35
+  phaseCoreScale: 0.55
+  shellScale: 1.55
+  shellIntensity: 2.4
+  shellFlicker: 0.45
+  shellFlickerSpeed: 14
+  echoInterval: 0.04
+  echoSize: 0.32
+  echoLifetime: 0.22
+  echoIntensity: 0.9
+  phaseTrailTime: 0.34
+  phaseTrailBrightness: 1.3
+  ghostSaturation: 0.8
+  passKick: 0.35
+  passKickTime: 0.15
+  powerColor: {r: 1, g: 0.75, b: 0.1, a: 1}
+  powerFadeIn: 0.15
+  powerFadeOut: 0.4
+  powerBodyScale: 1.25
+  throbRate: 2.5
+  arcRadius: 0.62
+  arcWidth: 0.09
+  arcSpan: 120
+  arcSpin: 600
+  arcIntensity: 4
+  powerHaloScale: 1.5
+  powerTrailWidth: 1.6
+  powerTrailBrightness: 1.2
+  crackleInterval: 0.06
+  boltInterval: 0.3
+  warnTime: 2
 --- !u!1 &75570440
 GameObject:
   m_ObjectHideFlags: 0
@@ -729,6 +763,7 @@ MonoBehaviour:
   masterVolume: 0.8
   muted: 0
   voices: 12
+  crowdBoost: 0.25
   sounds:
   - id: 0
     clip: {fileID: 8300000, guid: 90c8e814d3526f74795a44ead05f1860, type: 3}
@@ -880,6 +915,116 @@ MonoBehaviour:
     volume: 0.45
     pitchJitter: 0
     minInterval: 0.5
+  - id: 30
+    clip: {fileID: 8300000, guid: 25e73f6224831514e8768782390a2b68, type: 3}
+    volume: 0.35
+    pitchJitter: 0.08
+    minInterval: 0.06
+  - id: 31
+    clip: {fileID: 8300000, guid: 412dd271f12b77848adde2cab1e31f56, type: 3}
+    volume: 0.35
+    pitchJitter: 0.06
+    minInterval: 0.04
+  - id: 32
+    clip: {fileID: 8300000, guid: f85cd994217a1584d84ccd2ed690e1ae, type: 3}
+    volume: 0.3
+    pitchJitter: 0.06
+    minInterval: 0.05
+  - id: 33
+    clip: {fileID: 8300000, guid: 0d66e6f6da78d3740a99a293a8de8eb7, type: 3}
+    volume: 0.3
+    pitchJitter: 0.08
+    minInterval: 0.06
+  - id: 34
+    clip: {fileID: 8300000, guid: 87d4e6c42000eb145aa3c65cf4b92fde, type: 3}
+    volume: 0.55
+    pitchJitter: 0.05
+    minInterval: 0.05
+  - id: 35
+    clip: {fileID: 8300000, guid: 9e95d372076fafc43834053ff41ed5ae, type: 3}
+    volume: 0.5
+    pitchJitter: 0.03
+    minInterval: 0.1
+  - id: 36
+    clip: {fileID: 8300000, guid: 571761276ae3538429adcdf2d0a64014, type: 3}
+    volume: 0.3
+    pitchJitter: 0.08
+    minInterval: 0.12
+  - id: 37
+    clip: {fileID: 8300000, guid: 062012edeb7c24c478a7dcaa64863ed4, type: 3}
+    volume: 0.22
+    pitchJitter: 0.1
+    minInterval: 0.07
+  - id: 38
+    clip: {fileID: 8300000, guid: 61dfe4876e22ffa4c95f8f1de5f30ebe, type: 3}
+    volume: 0.5
+    pitchJitter: 0
+    minInterval: 0.3
+  - id: 39
+    clip: {fileID: 8300000, guid: bb6a10f7b7537a744ae2ec14db498bb3, type: 3}
+    volume: 0.6
+    pitchJitter: 0
+    minInterval: 0.2
+  - id: 40
+    clip: {fileID: 8300000, guid: 1f690fe8302a99d41849cc11e71af794, type: 3}
+    volume: 0.4
+    pitchJitter: 0
+    minInterval: 0.3
+  - id: 41
+    clip: {fileID: 8300000, guid: b6daaf027b480294897efb8bdf51097f, type: 3}
+    volume: 0.5
+    pitchJitter: 0
+    minInterval: 0.2
+  - id: 42
+    clip: {fileID: 8300000, guid: a3a81ca0939a57a4e8ecc09fd9f21e5c, type: 3}
+    volume: 0.4
+    pitchJitter: 0.06
+    minInterval: 0.04
+  - id: 43
+    clip: {fileID: 8300000, guid: b255be7e4215450469364fed7bb9511c, type: 3}
+    volume: 0.5
+    pitchJitter: 0.02
+    minInterval: 0.05
+  - id: 44
+    clip: {fileID: 8300000, guid: 7c086f1716b20bd4088c1b5974d20caa, type: 3}
+    volume: 0.5
+    pitchJitter: 0.02
+    minInterval: 0.05
+  - id: 45
+    clip: {fileID: 8300000, guid: 49f19324c90476445a095b4f92b98a39, type: 3}
+    volume: 0.5
+    pitchJitter: 0.02
+    minInterval: 0.05
+  - id: 46
+    clip: {fileID: 8300000, guid: a08a8d6708ea7e941a3701b8841ee127, type: 3}
+    volume: 0.45
+    pitchJitter: 0
+    minInterval: 0.2
+  - id: 47
+    clip: {fileID: 8300000, guid: c16fb1d8ff486e14b91126b29b30b0f7, type: 3}
+    volume: 0.7
+    pitchJitter: 0
+    minInterval: 0.2
+  - id: 48
+    clip: {fileID: 8300000, guid: ec971ab045cd61e448cb20dc1f957dd6, type: 3}
+    volume: 0.55
+    pitchJitter: 0
+    minInterval: 0.5
+  - id: 49
+    clip: {fileID: 8300000, guid: e55fcb43babca2d4eae31c75a01efb23, type: 3}
+    volume: 0.4
+    pitchJitter: 0.08
+    minInterval: 0.035
+  - id: 50
+    clip: {fileID: 8300000, guid: 9e6c78d2888dae5468f0dc21f5e77298, type: 3}
+    volume: 0.85
+    pitchJitter: 0
+    minInterval: 0.5
+  - id: 51
+    clip: {fileID: 8300000, guid: ccc066faaa312f44290d2b93e34359e3, type: 3}
+    volume: 0.4
+    pitchJitter: 0
+    minInterval: 0.1
 --- !u!4 &106477069
 Transform:
   m_ObjectHideFlags: 0
@@ -945,6 +1090,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -955,6 +1105,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &149156449
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1250,7 +1403,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 60
-  field of view: 56.373573
+  field of view: 56.445835
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -1349,6 +1502,10 @@ MonoBehaviour:
   followStrength: 0.38
   smoothTime: 0.25
   maxSideOffset: 1.5
+  maxShakeOffset: 0.3
+  maxShakeRoll: 2
+  shakeDecay: 1.4
+  shakeFrequency: 22
 --- !u!114 &330585549
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1373,6 +1530,7 @@ GameObject:
   m_Component:
   - component: {fileID: 358591253}
   - component: {fileID: 358591252}
+  - component: {fileID: 358591254}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -1397,6 +1555,7 @@ MonoBehaviour:
   experience: {fileID: 1113459636}
   powerUps: {fileID: 1463217166}
   gameOverScreen: {fileID: 1033658656}
+  gameOverAnimation: {fileID: 358591254}
   slowDownTime: 0.7
 --- !u!4 &358591253
 Transform:
@@ -1413,6 +1572,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &358591254
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 358591251}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc176e3a8a35e64429e36c8497239ae5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameOverAnimation
+  hitStopScale: 0.04
+  hitStopTime: 0.18
+  poofColor: {r: 1, g: 0.5, b: 0.15, a: 1}
+  poofTipColor: {r: 1, g: 0.2, b: 0.7, a: 1}
+  poofShake: 0.45
+  tremorTime: 0.45
+  tremorColor: {r: 2.2, g: 0.25, b: 0.3, a: 1}
+  tremorShake: 0.3
+  chainTimePerBrick: 0.025
+  minChainTime: 0.6
+  maxChainTime: 1.7
+  chainCurve: 0.7
+  chainJitter: 0.05
+  fuseTime: 0.1
+  shakePerBrick: 0.07
+  ringEvery: 4
+  collapseColor: {r: 1, g: 0.35, b: 0.75, a: 1}
+  collapseShake: 0.75
+  settleTime: 0.45
 --- !u!1 &365817721
 GameObject:
   m_ObjectHideFlags: 0
@@ -1956,6 +2146,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -1966,6 +2161,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &495051921
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2073,6 +2271,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -2083,6 +2286,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &502015790
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2190,6 +2396,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -2200,6 +2411,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &519610158
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2487,6 +2701,8 @@ MonoBehaviour:
   confirmColor: {r: 0.25, g: 0.85, b: 0.45, a: 1}
   rerollColor: {r: 0.3, g: 0.8, b: 0.95, a: 1}
   disabledColor: {r: 0.17, g: 0.2, b: 0.29, a: 1}
+  levelColor: {r: 0.4, g: 1, b: 0.5, a: 1}
+  maxLevelColor: {r: 1, g: 0.8, b: 0.25, a: 1}
   cardWidth: 300
   cardHeight: 560
   cardGap: 28
@@ -2557,6 +2773,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -2567,6 +2788,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &646673903
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -2674,6 +2898,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -2684,6 +2913,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &679566964
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3091,6 +3323,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -3101,6 +3338,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &786484271
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3208,6 +3448,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -3218,6 +3463,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &799370084
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3324,77 +3572,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &900741007
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 900741008}
-  - component: {fileID: 900741009}
-  - component: {fileID: 900741010}
-  m_Layer: 0
-  m_Name: DiagText
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &900741008
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 900741007}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1960090557}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 400, y: 100}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &900741009
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 900741007}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5456ca66b673e9e428f57ad2cbfa527a, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PixelText
-  m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 0
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  text: LEVEL UP!
-  pixelSize: 8
-  spacing: 1
-  lineGap: 3
-  wrap: 0
-  alignment: 1
---- !u!222 &900741010
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 900741007}
-  m_CullTransparentMesh: 1
 --- !u!1 &905355204
 GameObject:
   m_ObjectHideFlags: 0
@@ -3445,6 +3622,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -3455,6 +3637,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &905355207
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3631,6 +3816,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -3641,6 +3831,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &968705954
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3817,6 +4010,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -3827,6 +4025,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &997073579
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3989,6 +4190,8 @@ MonoBehaviour:
   labelColor: {r: 0.2, g: 0.85, b: 1, a: 1}
   bestColor: {r: 1, g: 0.85, b: 0.2, a: 1}
   buttonColor: {r: 1, g: 0.82, b: 0.2, a: 1}
+  dataKeptColor: {r: 0.2, g: 0.85, b: 1, a: 1}
+  dataDiscardedColor: {r: 0.45, g: 0.48, b: 0.6, a: 1}
   particleAmount: 1
 --- !u!4 &1033658657
 Transform:
@@ -4236,6 +4439,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -4246,6 +4454,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &1069399620
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4423,9 +4634,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ExperienceSystem
   grid: {fileID: 1367461215}
-  baseXp: 10
+  baseXp: 12
   power: 1.2
-  clearBonus: 0.5
+  clearBonus: 0.25
+  orbOriginRange: 1.5
   logLevelUps: 1
   showDebugOverlay: 0
 --- !u!4 &1113459637
@@ -4689,6 +4901,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -4699,6 +4916,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &1207203049
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4981,6 +5201,7 @@ MonoBehaviour:
   baseMaxHp: 5
   rowsPerScaling: 5
   hpMultiplier: 1.75
+  xpScalingExponent: 0.25
   spawnRipple: 0.04
   waveRowDelay: 0.06
   dangerZ: 1.8
@@ -5225,6 +5446,13 @@ MonoBehaviour:
   - {fileID: 11400000, guid: d31e35a61da5f594e9d48512065e95b8, type: 2}
   - {fileID: 11400000, guid: 2d6315afb6f474945bcd21e27d2d11bb, type: 2}
   - {fileID: 11400000, guid: 0020b002d16bdfc418532b5df9a015da, type: 2}
+  - {fileID: 11400000, guid: 000a48554badc484880accfac3bd36c8, type: 2}
+  - {fileID: 11400000, guid: 6c439bd29420ab64b8b8014d0b172cda, type: 2}
+  - {fileID: 11400000, guid: d3eb935b8fa98bc4a95c28fc20527f0b, type: 2}
+  - {fileID: 11400000, guid: a7a8c92c8738091458e96dcc5a1e5ba6, type: 2}
+  - {fileID: 11400000, guid: 4cb75c260a2e0d741a4b3b17633f985f, type: 2}
+  - {fileID: 11400000, guid: d6b26d4c7d49c704a82f16ec85c19b60, type: 2}
+  - {fileID: 11400000, guid: 20acfaee587e9674cb36115261148392, type: 2}
   baseChoiceCount: 3
   baseRerolls: 1
   rarityWeights:
@@ -5233,6 +5461,7 @@ MonoBehaviour:
   - 10
   - 4
   - 1
+  passiveDamagePerLevel: 1
   slowDownTime: 0.8
   openDelay: 0.3
 --- !u!4 &1463217167
@@ -5300,6 +5529,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -5310,6 +5544,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &1490082932
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5451,6 +5688,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -5461,6 +5703,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &1592379365
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5637,6 +5882,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -5647,6 +5897,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &1678567299
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5754,6 +6007,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -5764,6 +6022,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &1785543932
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5871,6 +6132,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -5881,6 +6147,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &1826685354
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -5982,7 +6251,6 @@ MonoBehaviour:
   clearColor: {r: 0.35, g: 0.95, b: 1, a: 1}
   clearOutlineColor: {r: 0.03, g: 0.08, b: 0.25, a: 1}
   orbTravelTime: 0.7
-  maxOrbsPerHit: 8
   orbStagger: 0.05
   particleAmount: 1
 --- !u!4 &1827069033
@@ -6278,6 +6546,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -6288,6 +6561,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &1945355546
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -6345,67 +6621,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1945355543}
   m_Mesh: {fileID: 0}
---- !u!1 &1960090555
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1960090557}
-  - component: {fileID: 1960090556}
-  m_Layer: 0
-  m_Name: DiagCanvas
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!223 &1960090556
-Canvas:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1960090555}
-  m_Enabled: 1
-  serializedVersion: 3
-  m_RenderMode: 2
-  m_Camera: {fileID: 0}
-  m_PlaneDistance: 100
-  m_PixelPerfect: 0
-  m_ReceivesEvents: 1
-  m_OverrideSorting: 0
-  m_OverridePixelPerfect: 0
-  m_SortingBucketNormalizedSize: 0
-  m_VertexColorAlwaysGammaSpace: 0
-  m_UseReflectionProbes: 0
-  m_AdditionalShaderChannelsFlag: 0
-  m_UpdateRectTransformForStandalone: 0
-  m_SortingLayerID: 0
-  m_SortingOrder: 0
-  m_TargetDisplay: 0
---- !u!224 &1960090557
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1960090555}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 900741008}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 100, y: 100}
-  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1987465567
 GameObject:
   m_ObjectHideFlags: 0
@@ -6456,6 +6671,11 @@ MonoBehaviour:
   palette: {fileID: 11400000, guid: b6e41ff3a9b969042a7223c8fa48f72e, type: 2}
   bodyBrightness: 0.15
   glowIntensity: 2.4
+  bodyByToughness: {x: 0.4, y: 2.6}
+  glowByToughness: {x: 0.7, y: 1.45}
+  hitFlashBrightness: 1.6
+  hitFlashTime: 0.18
+  hitChips: 4
   roundedShape: 1
   cornerRadius: 0.12
   outlineWidth: 0.05
@@ -6466,6 +6686,9 @@ MonoBehaviour:
   landSquash: 0.12
   landTime: 0.16
   spawnTime: 0.3
+  burnTint: {r: 1, g: 0.3, b: 0.08, a: 1}
+  burnGlow: 2.2
+  burnFadeTime: 0.25
 --- !u!23 &1987465570
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -6692,7 +6915,6 @@ SceneRoots:
   - {fileID: 192762123}
   - {fileID: 1113459637}
   - {fileID: 1827069033}
-  - {fileID: 1960090557}
   - {fileID: 630538258}
   - {fileID: 1463217167}
   - {fileID: 1033658657}
