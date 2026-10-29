@@ -195,8 +195,18 @@ public class PowerUpManager : MonoBehaviour
             result.Add(pick);
             pool.Remove(pick);
         }
+
+        // Soft rescue for casual players: an offer made only of utility cards swaps one for a random damage card.
+        if (result.Count > 1 && !result.Exists(IsOffensive))
+        {
+            var offensive = pool.FindAll(IsOffensive);
+            if (offensive.Count > 0)
+                result[UnityEngine.Random.Range(0, result.Count)] = offensive[UnityEngine.Random.Range(0, offensive.Count)];
+        }
         return result;
     }
+
+    private static bool IsOffensive(PowerUpDefinition definition) => definition.Effect != null && definition.Effect.IsOffensive;
 
     private static bool HasRarity(List<PowerUpDefinition> pool, PowerUpRarity rarity)
     {

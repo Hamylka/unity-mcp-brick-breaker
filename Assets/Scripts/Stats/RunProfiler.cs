@@ -276,6 +276,8 @@ public class RunProfiler : MonoBehaviour
         s.rowsSpawned = grid.RowsSpawned;
         s.targetHits = Round(grid.TargetHits);
         s.smoothedDamage = Round(grid.SmoothedDamage);
+        s.paceFactor = Round(grid.PaceFactor);
+        s.killRate = Round(grid.KillRate);
         s.hpWindowMin = grid.CurrentMinHp;
         s.hpWindowMax = grid.CurrentMaxHp;
         s.ballDamage = BallController.MainDamage;
