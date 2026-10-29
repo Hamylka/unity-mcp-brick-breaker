@@ -70,7 +70,7 @@ Single source of truth for what is left. Update it at the end of every task (tic
 1. ~~**Laser bonus: aiming reference.**~~ Done (branch `fix/laser-aim-reference`, aim beam + closing brackets on the target brick), to playtest.
 2. ~~**Shield: let the ball through the paddle.**~~ Done (branch `fix/shield-ball-through-paddle`), to playtest.
 3. ~~**Multi-Ball timing and telegraph.**~~ Done (branch `fix/multiball-timing-telegraph`, 3-tick countdown on the ball, split only while it heads upfield), to playtest.
-4. **Wall buff zone picks the main ball.** A ball that takes a wall buff zone becomes the main ball over the other ones.
+4. ~~**Wall buff zone picks the main ball.**~~ Done (branch `fix/wall-buff-main-ball`), to playtest.
 5. **Multi-Ball inherits the wall buff.** Today the extras spawned from a buffed ball (e.g. 2x damage) do not get the buff, and their trail looks far too big. If the main ball has a wall buff when a Multi-Ball is picked, the extras spawn from it with the same buff and the same time remaining (no reset).
 
 **v0.3: progression rework** (data and reasoning in the changelog entries of 2026-10-29; do 3 and 2 together, 1 can go first or alone)
@@ -386,3 +386,8 @@ Single source of truth for what is left. Update it at the end of every task (tic
   * More pickups during a countdown join the same split (each keeps its own HUD line, shown as a full ring while pending; the extras cap is applied at split time). The countdown follows the main ball, including a promoted extra, holds while no main ball is flying, and runs on scaled time (pauses with the game).
 - **Checked:** compiles clean, sound generated and registered in the scene's `SoundManager` (scene saved). Play mode: ball launched, bonus applied from code; the split came 1.84 s later (countdown 1.15 s, then a wait while the ball was heading down), main ball direction Z 0.81, both extras fanning upward (Z 0.49 and 0.98). No console errors.
 - **Open issues:** not seen by eye nor heard (ring and preview size at the 640 px pixelation, tick volume). The previews use the same orange as the ball and may blend into its halo: switch them to white or the crystal color if so. The `Game.unity` save also picked up a camera FOV value and two run profiler colors written by the editor (harmless).
+
+### [2026-10-29] - Wall buff zone picks the main ball (by Claude)
+- **Done (branch `fix/wall-buff-main-ball`):** v0.2 bonus fix 4. When an extra ball takes a wall buff zone, `WallBuffZone` calls the new `BallController.TakeMainRole()`: the roles swap. The taker is promoted (stops fading) and the previous main becomes an extra that inherits the taker's remaining Multi-Ball time (`TemporaryBall.TransferTo`, same HUD ring), so the ball count and the timer do not change. `BallController.MainChanged` tells `GameManager`, which re-points its lose handler, `AutoReset` and the grid's ball (`SetMainBall`) and plays the gold promotion cue (`PlayPromoteCue`, shared with the lost-main promotion). Does nothing if the taker is already main or no main ball is flying.
+- **Checked:** compiles clean, no console errors. Not played.
+- **Open issues:** playtest with Multi-Ball (extra takes a zone, check the gold cue, the HUD ring, losing the old main afterwards). Fix 5 (Multi-Ball inherits the wall buff) is next.

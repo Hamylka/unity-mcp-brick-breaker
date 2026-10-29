@@ -346,6 +346,32 @@ public class BallController : MonoBehaviour
         if (TryGetComponent(out TemporaryBall temporary)) temporary.Cancel();
     }
 
+    /// <summary>Raised when the main role moves to another ball: (previous main, new main).</summary>
+    public static event Action<BallController, BallController> MainChanged;
+
+    /// <summary>
+    /// Makes this ball the main one (a wall buff zone does this for the ball that takes it). The previous main swaps
+    /// places: it becomes an extra and inherits this ball's remaining Multi-Ball time, so the run never loses a ball.
+    /// Does nothing if this ball is already main, or if there is no flying main ball to swap with.
+    /// </summary>
+    public void TakeMainRole()
+    {
+        if (!IsExtra || !IsFlying) return;
+
+        BallController previous = null;
+        foreach (BallController other in active)
+            if (other != null && other != this && !other.IsExtra) { previous = other; break; }
+        if (previous == null || !previous.IsFlying) return;
+
+        TemporaryBall life = GetComponent<TemporaryBall>();
+        PromoteToMain();
+        previous.IsExtra = true;
+        previous.AutoReset = false;
+        previous.name = $"{previous.name} (Extra)";
+        if (life != null) life.TransferTo(previous);
+        MainChanged?.Invoke(previous, this);
+    }
+
     // Starts flying right away from a given spot (extras skip the paddle and the launch sound).
     private void StartFlying(Vector3 position, Vector3 direction)
     {

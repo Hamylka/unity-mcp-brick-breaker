@@ -149,6 +149,7 @@ public class WallBuffZone : MonoBehaviour
         consumed = true;
 
         BallBuffAura.Give(ball, buff);
+        ball.TakeMainRole(); // the ball that takes the zone leads, whatever ball it was
 
         // The light leaves the wall and arcs into the ball: two bolts from the top line, sparks along the zone.
         Vector3 at = new(innerX + inward.x * 0.3f, ball.Position.y, ball.Position.z);
