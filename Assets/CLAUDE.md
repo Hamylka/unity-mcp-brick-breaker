@@ -64,17 +64,7 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 ## 5. Roadmap
 Single source of truth for what is left. Update it at the end of every task (tick off, add, reorder); changelog entries below only describe what was done.
 
-**v0.2 (next release)** = the current `develop`, the wall clear bonus at 25% (done, branch `fix/wall-clear-bonus-25`) and the five bonus item fixes below (each on its own `fix/...` branch). Cut the release (`release/0.2`, tag `v0.2`, bump `bundleVersion`) once all of them are merged into `develop`.
-
-**v0.2 bonus item fixes (from the 2026-10-29 playtest, in this order)**
-1. ~~**Laser bonus: aiming reference.**~~ Done (branch `fix/laser-aim-reference`, aim beam + closing brackets on the target brick), to playtest.
-2. ~~**Shield: let the ball through the paddle.**~~ Done (branch `fix/shield-ball-through-paddle`), to playtest.
-3. ~~**Multi-Ball timing and telegraph.**~~ Done (branch `fix/multiball-timing-telegraph`, 3-tick countdown on the ball, split only while it heads upfield), to playtest.
-4. ~~**Wall buff zone picks the main ball.**~~ Done (branch `fix/wall-buff-main-ball`), to playtest.
-5. ~~**Multi-Ball inherits the wall buff.**~~ Done (branch `fix/multiball-inherits-wall-buff`), to playtest.
-6. ~~**Fading Multi-Ball extras must not trigger the Shield.**~~ Done (branch `fix/fading-extras-ignore-shield`), to playtest.
-
-Then cut the v0.2 release.
+**v0.2** is released (tag `v0.2`, `bundleVersion` 0.2.0, Android version code 2): wall clear bonus at 25% and the six bonus item fixes of the 2026-10-29 playtest, all playtested. Next release is v0.3.
 
 **v0.3: progression rework** (data and reasoning in the changelog entries of 2026-10-29; do 3 and 2 together, 1 can go first or alone)
 
@@ -405,3 +395,7 @@ Then cut the v0.2 release.
 - **Done (branch `fix/fading-extras-ignore-shield`):** v0.2 bonus fix 6. `TemporaryBall.IsFading` is true during the last seconds of an extra's life (the shrink). `ShieldBarrier.UpdateFadingPassThrough` (every frame while the barrier is up) switches off collision between the barrier and every fading extra (`Physics.IgnoreCollision`) and restores it if the ball stops fading (e.g. promoted to main), so a shrinking extra crosses the shield without bouncing or breaking it.
 - **Checked:** compiles clean, no console errors. Not played.
 - **Open issues:** playtest with a shield up and a fading extra crossing it. Next: cut the v0.2 release.
+
+### [2026-10-29] - Release v0.2 (by Claude)
+- **Done:** cut from `develop` via `release/0.2`, merged into `main` with `--no-ff` and tagged `v0.2` (`bundleVersion` 0.2.0, Android version code 2). README status and roadmap updated. Contents since v0.1: AoE power-ups, card levels, XP rebalance and orbs, pause screen, wall buff zones, brick HP readability, VFX/SFX passes, ball damage rework, Game Over animation, run profiler, logo and icon, Windows landscape first pass, wall clear bonus 25%, and the six bonus item fixes. All playtested by the user.
+- **Open issues:** none new. Next: v0.3 progression rework (section 5).
