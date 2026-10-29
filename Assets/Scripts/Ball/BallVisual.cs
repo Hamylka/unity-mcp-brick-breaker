@@ -133,6 +133,13 @@ public class BallVisual : MonoBehaviour
     /// <summary>Seconds left on the wall buff this ball carries (infinity = none). Set by <see cref="BallBuffAura"/>.</summary>
     public float BuffTimeLeft { get; set; } = float.PositiveInfinity;
 
+    /// <summary>Trail width factor 0-1 (a fading multi-ball extra). Applied on top of the buff looks, so they never fight.</summary>
+    public float LifeFade { get; set; } = 1f;
+
+    // Trail width of the plain ball. Serialized (hidden) so a clone made while the source is buffed (its trail is wider
+    // then) still starts from the plain width instead of baking the buffed one in.
+    [SerializeField, HideInInspector] private float baseTrailWidth;
+
     private BallController ball;
     private Transform body;
     private MeshRenderer bodyRenderer;
@@ -291,7 +298,9 @@ public class BallVisual : MonoBehaviour
         foreach (TrailRenderer trail in GetComponents<TrailRenderer>()) { outer = trail; break; }
         if (outer == null) return;
         outerTrail = outer;
-        outerWidth = outer.widthMultiplier;
+        if (baseTrailWidth <= 0f) baseTrailWidth = outer.widthMultiplier;
+        outerWidth = baseTrailWidth;
+        outer.widthMultiplier = outerWidth;
 
         outer.time = trailTime;
         outerNormal = MakeGradient(
@@ -625,14 +634,20 @@ public class BallVisual : MonoBehaviour
             float brightness = Mathf.Lerp(Mathf.Lerp(trailBrightness, powerTrailBrightness, power), phaseTrailBrightness, blend);
             outerTrail.colorGradient = LerpGradient(LerpGradient(outerNormal, outerPower, power), outerPhase, blend);
             outerTrail.time = Mathf.Lerp(Mathf.Lerp(trailTime, trailTime * 1.15f, power), phaseTrailTime, blend);
-            outerTrail.widthMultiplier = outerWidth * Mathf.Lerp(1f, powerTrailWidth, power) * Mathf.Lerp(1f, 1.2f, blend);
             NeonGlow.SetColor(outerTrail, NeonGlow.Hdr(Color.white, brightness));
             if (coreTrail != null)
             {
                 coreTrail.colorGradient = LerpGradient(LerpGradient(coreNormal, corePower, power), corePhase, blend);
-                coreTrail.widthMultiplier = outerWidth * coreTrailWidth * Mathf.Lerp(1f, powerTrailWidth, power);
                 NeonGlow.SetColor(coreTrail, NeonGlow.Hdr(Color.white, brightness * 1.3f));
             }
+        }
+
+        // Widths follow the buff blends and the life fade every frame, so they ease back to plain when a buff ends.
+        if (outerTrail != null)
+        {
+            float powerWidth = Mathf.Lerp(1f, powerTrailWidth, power);
+            outerTrail.widthMultiplier = outerWidth * powerWidth * Mathf.Lerp(1f, 1.2f, blend) * LifeFade;
+            if (coreTrail != null) coreTrail.widthMultiplier = outerWidth * coreTrailWidth * powerWidth * LifeFade;
         }
 
         // Afterimages: fading squares left along the path, so the ghost reads even at the pixelated resolution.

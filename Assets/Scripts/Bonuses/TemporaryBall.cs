@@ -19,6 +19,7 @@ public class TemporaryBall : MonoBehaviour
     /// <summary>A new id for one multi-ball pickup, to pass to <see cref="Begin"/> for each of its extras.</summary>
     public static string NewProcId() => "multiball#" + nextHudId++;
     private float totalTime;
+    private BallVisual visual;
     private TrailRenderer[] trails;
     private float[] trailWidths;
     private Vector3 startScale;
@@ -34,7 +35,9 @@ public class TemporaryBall : MonoBehaviour
         fadeTime = Mathf.Max(0.01f, fadeSeconds);
         startScale = transform.localScale;
 
-        trails = GetComponentsInChildren<TrailRenderer>();
+        // A ball with a BallVisual fades its trails through LifeFade (they also change width with the wall buffs).
+        visual = GetComponent<BallVisual>();
+        trails = visual != null ? System.Array.Empty<TrailRenderer>() : GetComponentsInChildren<TrailRenderer>();
         trailWidths = new float[trails.Length];
         for (int i = 0; i < trails.Length; i++) trailWidths[i] = trails[i].widthMultiplier;
 
@@ -53,6 +56,7 @@ public class TemporaryBall : MonoBehaviour
     public void Cancel()
     {
         transform.localScale = startScale;
+        if (visual != null) visual.LifeFade = 1f;
         for (int i = 0; i < trails.Length; i++) trails[i].widthMultiplier = trailWidths[i];
         Destroy(this);
     }
@@ -81,6 +85,7 @@ public class TemporaryBall : MonoBehaviour
         float k = remaining / fadeTime;
         float eased = k * k * (3f - 2f * k); // smoothstep
         transform.localScale = startScale * eased;
+        if (visual != null) visual.LifeFade = eased;
         for (int i = 0; i < trails.Length; i++) trails[i].widthMultiplier = trailWidths[i] * eased;
     }
 }

@@ -34,7 +34,19 @@ public class BallBuffAura : MonoBehaviour
         aura.Begin(target, buff);
     }
 
-    private void Begin(BallController target, WallBuff newBuff)
+    /// <summary>
+    /// Copies the buff of <paramref name="source"/> onto <paramref name="copy"/> (a multi-ball extra) with the same
+    /// time left and no timer reset. The copy shares the source's HUD ring. Does nothing if the source has no buff.
+    /// </summary>
+    public static void Inherit(BallController source, BallController copy)
+    {
+        if (!source.TryGetComponent(out BallBuffAura from) || from.buff == null) return;
+        BallBuffAura aura = copy.GetComponent<BallBuffAura>();
+        if (aura == null) aura = copy.gameObject.AddComponent<BallBuffAura>();
+        aura.Begin(copy, from.buff, from.remaining, from.hudId);
+    }
+
+    private void Begin(BallController target, WallBuff newBuff, float timeLeft = -1f, string sharedHudId = null)
     {
         if (buff != null && buff != newBuff) buff.Remove(ball);
         else if (buff == null) liveCount++;
@@ -42,8 +54,8 @@ public class BallBuffAura : MonoBehaviour
         ball = target;
         visual = target.GetComponent<BallVisual>();
         buff = newBuff;
-        remaining = newBuff.duration;
-        hudId = "wallbuff#" + nextId++;
+        remaining = timeLeft > 0f ? timeLeft : newBuff.duration;
+        hudId = sharedHudId ?? "wallbuff#" + nextId++;
         buff.Apply(ball);
     }
 
