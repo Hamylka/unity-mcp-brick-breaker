@@ -76,18 +76,19 @@ public class BrickGrid : MonoBehaviour
     [SerializeField, Min(1)] private int clearWaveRows = 4;
     [Tooltip("Each row spawned after the starting wall makes tougher bricks more likely. 0 = no ramp.")]
     [SerializeField, Min(0f)] private float difficultyPerRow = 0.03f;
-    [Header("HP Scaling")]
-    [Tooltip("Weakest brick HP at the start of a run.")]
-    [SerializeField, Min(1)] private int baseMinHp = 1;
-    [Tooltip("Toughest brick HP at the start of a run. Also the end of the palette gradient.")]
-    [SerializeField, Min(1)] private int baseMaxHp = 5;
-    [Tooltip("Every this many rows spawned after the starting wall, the HP window scales up. 0 = never.")]
-    [SerializeField, Min(0)] private int rowsPerScaling = 10;
-    [Tooltip("Each scaling multiplies the min and max HP by this (compounding, rounded). 1.25 = +25% per proc.")]
-    [SerializeField, Min(1f)] private float hpMultiplier = 1.25f;
-
-    [Tooltip("Bricks spawned at HP tier T give XP per HP x hpMultiplier^(-T x this). 0 = flat 1 XP per HP, 1 = XP per row stays constant as HP scales, 0.25 = a gentle drop.")]
-    [SerializeField, Range(0f, 1f)] private float xpScalingExponent = 0.25f;
+    [Header("HP Window (follows ball damage)")]
+    [Tooltip("Hits the toughest new brick takes at the start of a run.")]
+    [SerializeField, Min(1f)] private float targetHitsStart = 5f;
+    [Tooltip("Hits added to the toughest brick's target per minute of play (5 at the start, 12 at 5 minutes with 1.4).")]
+    [SerializeField, Min(0f)] private float targetHitsPerMinute = 1.4f;
+    [Tooltip("The weakest brick has this fraction of the toughest one's HP (0.2 = 1:5).")]
+    [SerializeField, Range(0.01f, 1f)] private float minHpRatio = 0.2f;
+    [Tooltip("Time constant (s) of the average of the ball's base damage. A fresh damage upgrade makes the existing wall easy until new rows catch up.")]
+    [SerializeField, Min(0.1f)] private float damageSmoothing = 20f;
+    [Tooltip("The toughest HP can grow by at most this factor per row (avoids spikes after a streak of level-ups).")]
+    [SerializeField, Min(1f)] private float maxGrowthPerRow = 2f;
+    [Tooltip("\"Difficulty increased\" fires when the window max has grown by this factor since the last notice.")]
+    [SerializeField, Min(1.01f)] private float noticeGrowth = 1.75f;
 
     [Header("Endless Spawn Timing")]
     [Tooltip("Pop-in delay between neighbouring bricks of a new row (ripple from the center).")]
@@ -113,15 +114,21 @@ public class BrickGrid : MonoBehaviour
     public event Action BricksReachedPaddle;
     /// <summary>Raised when a step starts. Hook up camera shake or sound here.</summary>
     public event Action StepStarted;
-    /// <summary>Raised when the HP window scales up (min, max). Hook up the soft "it got harder" warning here.</summary>
+    /// <summary>Raised when the HP window has grown by <c>Notice Growth</c> since the last time (min, max). Hook up the soft "it got harder" warning here.</summary>
     public event Action<int, int> HpScaled;
+    /// <summary>Raised whenever the HP window grows (min, max), at most once per row.</summary>
+    public event Action<int, int> HpWindowGrew;
 
     /// <summary>Weakest brick HP that currently spawns.</summary>
     public int CurrentMinHp { get; private set; } = 1;
     /// <summary>Toughest brick HP that currently spawns.</summary>
     public int CurrentMaxHp { get; private set; } = 5;
-    /// <summary>How many times the HP window has scaled up this run.</summary>
-    public int HpScaleTier { get; private set; }
+    /// <summary>Seconds of play this run (only counts while the ball is in play, scaled time).</summary>
+    public float RunTime => runTime;
+    /// <summary>Smoothed base damage of the ball, the input of the HP window.</summary>
+    public float SmoothedDamage => smoothedDamage;
+    /// <summary>Hits the toughest brick spawning now is aimed at, <c>5 + 1.4 x minutes</c>.</summary>
+    public float TargetHits => targetHitsStart + targetHitsPerMinute * runTime / 60f;
 
     /// <summary>Multiplies the time between steps (upgrades). 1.25 = the wall is 25% slower.</summary>
     public void MultiplyStepInterval(float factor) => stepInterval *= Mathf.Max(0.1f, factor);
@@ -168,6 +175,10 @@ public class BrickGrid : MonoBehaviour
     private float stepFrom;
     private float stepTo;
     private bool stepping;
+    private float runTime;
+    private float smoothedDamage = 1f;
+    private bool windowReady;
+    private int lastNoticeMax;
 
     private void Awake()
     {
@@ -185,7 +196,16 @@ public class BrickGrid : MonoBehaviour
 
     // Brick colors show the hits left with the current ball damage: recolor them when it changes
     // (damage upgrade, wall buff, main ball lost to an extra). Does nothing while it stays the same.
-    private void Update() => Brick.SetHitDamage(BallController.MainDamage);
+    private void Update()
+    {
+        Brick.SetHitDamage(BallController.MainDamage);
+
+        // The HP window input: run clock (ball in play only, like the wall advance) and the smoothed base damage.
+        if (IsGameOver || (ball != null && !ball.IsFlying)) return;
+        float dt = Time.deltaTime;
+        runTime += dt;
+        smoothedDamage += (BallController.MainBaseDamage - smoothedDamage) * (1f - Mathf.Exp(-dt / damageSmoothing));
+    }
 
     private void OnValidate()
     {
@@ -282,8 +302,10 @@ public class BrickGrid : MonoBehaviour
         }
         RemainingBricks = 0;
         rowsSpawned = 0;
-        HpScaleTier = 0;
-        ApplyHpWindow(0);
+        runTime = 0f;
+        smoothedDamage = BallController.MainBaseDamage;
+        windowReady = false;
+        UpdateHpWindow();
         Brick.ResetColorScale(CurrentMaxHp);
         Brick.ResetHitDamage(BallController.MainDamage);
 
@@ -319,15 +341,8 @@ public class BrickGrid : MonoBehaviour
 
         int rowNumber = rowsSpawned++;
 
-        // Scale before the row spawns: bricks already on the wall recolor, the new row starts on the new scale.
-        int tier = rowsPerScaling > 0 ? Mathf.Max(0, rowNumber - (rows - 1)) / rowsPerScaling : 0;
-        if (tier > HpScaleTier)
-        {
-            HpScaleTier = tier;
-            ApplyHpWindow(tier);
-            Brick.SetColorScale(CurrentMaxHp);
-            HpScaled?.Invoke(CurrentMinHp, CurrentMaxHp);
-        }
+        // Update the window before the row spawns: bricks already on the wall recolor, the new row uses the new window.
+        UpdateHpWindow();
 
         int buildColumns = mirror ? (columns + 1) / 2 : columns;
 
@@ -369,7 +384,6 @@ public class BrickGrid : MonoBehaviour
             brick.name = $"Brick_{layer}";
             brick.ApplySize(size);
             brick.Initialize(layerHitPoints[layer], palette);
-            brick.XpPerHp = Mathf.Pow(hpMultiplier, -xpScalingExponent * HpScaleTier);
             stack.AddBrick(brick);
             brick.Destroyed += HandleBrickDestroyed;
             brick.Hit += HandleBrickHit;
@@ -439,12 +453,36 @@ public class BrickGrid : MonoBehaviour
         return max;
     }
 
-    // Min and max HP for a scaling tier: base values times hpMultiplier^tier, rounded.
-    private void ApplyHpWindow(int tier)
+    // HP window for the next row: max = ceil(smoothed ball damage x target hits), min = max x ratio.
+    // It never goes down and grows at most x maxGrowthPerRow per row.
+    private void UpdateHpWindow()
     {
-        float factor = Mathf.Pow(hpMultiplier, tier);
-        CurrentMinHp = Mathf.Max(1, Mathf.RoundToInt(baseMinHp * factor));
-        CurrentMaxHp = Mathf.Max(CurrentMinHp, Mathf.RoundToInt(baseMaxHp * factor));
+        int wanted = Mathf.Max(1, Mathf.CeilToInt(smoothedDamage * TargetHits));
+        int max = wanted;
+        if (windowReady)
+        {
+            max = Mathf.Max(CurrentMaxHp, wanted);
+            max = Mathf.Min(max, Mathf.Max(CurrentMaxHp, Mathf.FloorToInt(CurrentMaxHp * maxGrowthPerRow)));
+        }
+
+        int min = Mathf.Clamp(Mathf.RoundToInt(max * minHpRatio), 1, max);
+        bool grew = windowReady && max > CurrentMaxHp;
+        CurrentMinHp = min;
+        CurrentMaxHp = max;
+
+        if (!windowReady)
+        {
+            windowReady = true;
+            lastNoticeMax = max;
+            return;
+        }
+        if (!grew) return;
+
+        bool notice = max >= lastNoticeMax * noticeGrowth;
+        if (notice) lastNoticeMax = max;
+        Brick.SetColorScale(max, notice);
+        HpWindowGrew?.Invoke(min, max);
+        if (notice) HpScaled?.Invoke(min, max);
     }
 
     // Fewer gaps the deeper into the run we are.

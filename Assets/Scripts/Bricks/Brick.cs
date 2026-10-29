@@ -75,13 +75,17 @@ public class Brick : MonoBehaviour
 
     private static event Action ColorScaleChanged;
 
-    /// <summary>Changes the gradient scale. Every living brick recolors with a small pulse.</summary>
-    public static void SetColorScale(int maxHitPoints)
+    /// <summary>
+    /// Changes the gradient scale. Every living brick recolors, with a small pulse when <paramref name="pulse"/>
+    /// is set (the "difficulty increased" moment), otherwise with a quiet fade (the window grows a little every row).
+    /// </summary>
+    public static void SetColorScale(int maxHitPoints, bool pulse = true)
     {
         int clamped = Mathf.Max(1, maxHitPoints);
         if (clamped == ColorScaleMaxHp) return;
         ColorScaleMaxHp = clamped;
-        ColorScaleChanged?.Invoke();
+        if (pulse) ColorScaleChanged?.Invoke();
+        else HitDamageChanged?.Invoke();
     }
 
     /// <summary>Sets the scale without recoloring anyone (new run).</summary>
@@ -118,8 +122,6 @@ public class Brick : MonoBehaviour
     public bool IsAlive => HitPoints > 0;
     /// <summary>Fractional damage waiting to become a whole HP (splash power-ups at low damage).</summary>
     public float DamageCarry { get; set; }
-    /// <summary>XP granted per HP removed. Shrinks for bricks spawned after the HP window scaled up (set by <see cref="BrickGrid"/>).</summary>
-    public float XpPerHp { get; set; } = 1f;
 
     private MaterialPropertyBlock block;
     private Vector3 size = new(1f, 0.4f, 0.5f);
