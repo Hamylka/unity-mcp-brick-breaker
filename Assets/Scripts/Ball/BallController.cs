@@ -25,6 +25,7 @@ public class BallController : MonoBehaviour
     [Header("Combat")]
     [Tooltip("Hit points removed from a brick per hit. Upgrades can raise it.")]
     [SerializeField, Min(1)] private int damage = 1;
+    [SerializeField, HideInInspector] private float cardDamageMultiplier = 1f; // serialized so SpawnExtra clones keep it
 
     [Header("Safety")]
     [Tooltip("Minimum angle from the horizontal (X) axis. Prevents endless side-to-side bouncing.")]
@@ -61,10 +62,16 @@ public class BallController : MonoBehaviour
     public bool AutoReset { get; set; } = true;
 
     /// <summary>Hit points removed from a brick per hit.</summary>
-    public int Damage => Mathf.Max(1, Mathf.RoundToInt(damage * DamageMultiplier));
+    public int Damage => WholeDamage(damage * cardDamageMultiplier * DamageMultiplier);
 
-    /// <summary>Permanent damage per hit, without temporary wall buffs (what the wall HP window follows).</summary>
-    public int BaseDamage => damage;
+    /// <summary>Permanent damage per hit (level-ups and cards), without temporary wall buffs (what the wall HP window follows).</summary>
+    public int BaseDamage => WholeDamage(damage * cardDamageMultiplier);
+
+    /// <summary>Permanent damage factor from cards (Power Ball, Meteor Ball), compounding. Clones inherit it.</summary>
+    public float CardDamageMultiplier => cardDamageMultiplier;
+
+    // Rounded up so damage stays whole; the epsilon stops float noise (11.0000001) from adding a point.
+    private static int WholeDamage(float value) => Mathf.Max(1, Mathf.CeilToInt(value - 0.001f));
 
     /// <summary>Temporary damage factor (wall buffs). 1 = normal.</summary>
     public float DamageMultiplier { get; set; } = 1f;
@@ -183,6 +190,9 @@ public class BallController : MonoBehaviour
     /// <summary>Permanently changes the damage per hit (upgrades, perks).</summary>
     public void AddDamage(int amount) => damage = Mathf.Max(1, damage + amount);
 
+    /// <summary>Permanently multiplies the damage per hit by <paramref name="factor"/> (cards), on top of earlier picks.</summary>
+    public void MultiplyDamage(float factor) => cardDamageMultiplier *= factor;
+
     private Rigidbody body;
     private State state = State.Waiting;
     private float boost;
@@ -291,7 +301,7 @@ public class BallController : MonoBehaviour
             // removes an HP every second brick it passes through.
             Brick bottom = stack.Bottom;
             if (bottom == null) continue;
-            bottom.DamageCarry += damage * DamageMultiplier;
+            bottom.DamageCarry += damage * cardDamageMultiplier * DamageMultiplier;
             int whole = Mathf.FloorToInt(bottom.DamageCarry + 0.001f);
             if (whole <= 0) continue;
             bottom.DamageCarry = Mathf.Max(0f, bottom.DamageCarry - whole);

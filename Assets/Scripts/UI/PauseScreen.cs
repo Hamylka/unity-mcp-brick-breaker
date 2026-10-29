@@ -242,9 +242,14 @@ public class PauseScreen : MonoBehaviour
         statValues[1].Text = $"{seconds / 60}:{seconds % 60:00}";
         statValues[2].Text = game != null ? game.BricksDestroyed.ToString() : "0";
         statValues[DamageStat].Text = damage.ToString();
-        // The label also tells how much damage each level-up adds (passive + cards).
+        // The label also tells how much base damage each level-up adds, and the card multiplier on top of it.
         if (damageLabel != null)
-            damageLabel.Text = powerUps != null ? $"DAMAGE +{powerUps.DamagePerLevel}/LV" : "DAMAGE";
+        {
+            float cardFactor = 1f;
+            foreach (BallController ball in BallController.Active) cardFactor = Mathf.Max(cardFactor, ball.CardDamageMultiplier);
+            string factor = cardFactor > 1.001f ? $" X{cardFactor:0.0#}" : "";
+            damageLabel.Text = powerUps != null ? $"DAMAGE +{powerUps.DamagePerLevel}/LV{factor}" : "DAMAGE";
+        }
         statValues[4].Text = grid != null ? $"{grid.CurrentMinHp}-{grid.CurrentMaxHp}" : "-";
         statValues[5].Text = experience != null ? $"{experience.CurrentXp}/{experience.XpToNextLevel}" : "-";
 

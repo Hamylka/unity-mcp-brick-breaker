@@ -24,7 +24,7 @@ public class PowerUpManager : MonoBehaviour
     [Tooltip("How many times the cards can be rerolled on each level-up.")]
     [SerializeField, Min(0)] private int baseRerolls = 1;
     [Tooltip("Relative chance of each rarity: Common, Uncommon, Rare, Epic, Legendary.")]
-    [SerializeField] private float[] rarityWeights = { 60f, 25f, 10f, 4f, 1f };
+    [SerializeField] private float[] rarityWeights = { 55f, 25f, 11f, 6f, 3f };
     [Tooltip("Base ball damage every level-up gives for free, before any card.")]
     [SerializeField, Min(0)] private int passiveDamagePerLevel = 1;
     [Tooltip("Seconds the game takes to slow down to a full stop when a level is gained.")]
@@ -38,10 +38,8 @@ public class PowerUpManager : MonoBehaviour
     /// <summary>Extra rerolls per level-up on top of the base count (meta-progression, perks...).</summary>
     public int BonusRerolls { get; set; }
     public int RerollCount => Mathf.Max(0, baseRerolls + BonusRerolls);
-    /// <summary>Extra base damage per level-up from cards (see <see cref="DamagePerLevelEffect"/>).</summary>
-    public int BonusDamagePerLevel { get; set; }
-    /// <summary>Base ball damage gained on each level-up: the passive part plus the cards.</summary>
-    public int DamagePerLevel => passiveDamagePerLevel + BonusDamagePerLevel;
+    /// <summary>Base ball damage gained on each level-up (cards multiply the total instead, see <see cref="DamageMultiplierEffect"/>).</summary>
+    public int DamagePerLevel => passiveDamagePerLevel;
     public bool IsChoosing { get; private set; }
 
     /// <summary>Raised after a power-up was applied: the power-up and how many times it has now been taken.</summary>

@@ -311,6 +311,7 @@ MonoBehaviour:
   boostDecayTime: 1
   maxBoost: 1
   damage: 1
+  cardDamageMultiplier: 1
   minAngleFromHorizontal: 12
   paddle: {fileID: 541308909}
   restOffset: {x: 0, y: 0, z: 0.55}
@@ -604,6 +605,7 @@ MonoBehaviour:
   crackleInterval: 0.06
   boltInterval: 0.3
   warnTime: 2
+  baseTrailWidth: 0
 --- !u!1 &75570440
 GameObject:
   m_ObjectHideFlags: 0
@@ -1403,7 +1405,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 60
-  field of view: 56.445835
+  field of view: 50.941975
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -4636,6 +4638,7 @@ MonoBehaviour:
   grid: {fileID: 1367461215}
   baseXp: 12
   power: 1.2
+  bricksPerLevel: 8
   clearBonus: 0.25
   orbOriginRange: 1.5
   logLevelUps: 1
@@ -5197,11 +5200,12 @@ MonoBehaviour:
   waveDelay: 0
   clearWaveRows: 4
   difficultyPerRow: 0.05
-  baseMinHp: 1
-  baseMaxHp: 5
-  rowsPerScaling: 5
-  hpMultiplier: 1.75
-  xpScalingExponent: 0.25
+  targetHitsStart: 5
+  targetHitsPerMinute: 1.4
+  minHpRatio: 0.2
+  damageSmoothing: 20
+  maxGrowthPerRow: 2
+  noticeGrowth: 1.75
   spawnRipple: 0.04
   waveRowDelay: 0.06
   dangerZ: 1.8
@@ -5456,11 +5460,11 @@ MonoBehaviour:
   baseChoiceCount: 3
   baseRerolls: 1
   rarityWeights:
-  - 60
+  - 55
   - 25
-  - 10
-  - 4
-  - 1
+  - 11
+  - 6
+  - 3
   passiveDamagePerLevel: 1
   slowDownTime: 0.8
   openDelay: 0.3
