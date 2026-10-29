@@ -71,7 +71,10 @@ Single source of truth for what is left. Update it at the end of every task (tic
 2. ~~**Shield: let the ball through the paddle.**~~ Done (branch `fix/shield-ball-through-paddle`), to playtest.
 3. ~~**Multi-Ball timing and telegraph.**~~ Done (branch `fix/multiball-timing-telegraph`, 3-tick countdown on the ball, split only while it heads upfield), to playtest.
 4. ~~**Wall buff zone picks the main ball.**~~ Done (branch `fix/wall-buff-main-ball`), to playtest.
-5. ~~**Multi-Ball inherits the wall buff.**~~ Done (branch `fix/multiball-inherits-wall-buff`), to playtest. Then cut the v0.2 release.
+5. ~~**Multi-Ball inherits the wall buff.**~~ Done (branch `fix/multiball-inherits-wall-buff`), to playtest.
+6. **Fading Multi-Ball extras must not trigger the Shield.** An extra that is shrinking away in its last 2 s (`TemporaryBall` fade) should pass through the shield barrier without bouncing or breaking it: the shield is only for balls that still count (the main ball, and extras that are not fading). Check `ShieldBarrier.OnBallHit` / the barrier collider against `TemporaryBall` (e.g. ignore collision once the fade starts), then playtest with a shield up and a fading extra crossing it.
+
+Then cut the v0.2 release.
 
 **v0.3: progression rework** (data and reasoning in the changelog entries of 2026-10-29; do 3 and 2 together, 1 can go first or alone)
 
