@@ -35,6 +35,8 @@ public class AreaDamage : MonoBehaviour
     [Header("Meltdown")]
     [Tooltip("Damage of one tick, as a share of the burning brick's maximum HP (0.2 = 20%).")]
     [SerializeField, Min(0f)] private float burnPercentMaxHp = 0.2f;
+    [Tooltip("A tick never deals more than this many hits of the ball's current damage (stops the burn from scaling with the HP window).")]
+    [SerializeField, Min(0.1f)] private float burnMaxBallHits = 4f;
     [SerializeField, Min(1)] private int burnTicks = 3;
     [SerializeField, Min(0.1f)] private float burnTickInterval = 1f;
 
@@ -432,7 +434,8 @@ public class AreaDamage : MonoBehaviour
 
                 NeonFx.Embers(burn.Brick.transform.position, BurnColor, 3, 0.07f, 0.6f);
                 SoundManager.Play(Sfx.BurnTick);
-                DealFraction(burn.Brick, burn.Brick.MaxHitPoints * burnPercentMaxHp);
+                // Percent of max HP, but never more than a few ball hits: otherwise the burn scales with the HP window and does all the killing.
+                DealFraction(burn.Brick, Mathf.Min(burn.Brick.MaxHitPoints * burnPercentMaxHp, HitDamage() * burnMaxBallHits));
 
                 if (!burn.Brick.IsAlive)
                 {

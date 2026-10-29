@@ -97,7 +97,9 @@ public class BrickGrid : MonoBehaviour
     [SerializeField, Min(0.5f)] private float killRateSmoothing = 8f;
     [Tooltip("The pace factor multiplying the window grows by at most this factor per row while the kill rate is over target.")]
     [SerializeField, Min(1f)] private float maxPaceGrowthPerRow = 1.3f;
-    [Tooltip("Below this share of the target kill rate the pace factor slowly relaxes back toward 1 (x0.95 per update, every 2 s). It only grows above 1.25x the target.")]
+    [Tooltip("The pace factor never goes above this. Also, when the toughest brick already needs more than (smoothed damage x target hits x this) HP, it stops growing and relaxes.")]
+    [SerializeField, Min(1f)] private float maxPaceFactor = 4f;
+    [Tooltip("Below this share of the target kill rate the pace factor relaxes back toward 1 (x0.9 per update, every 2 s). It only grows above 1.25x the target.")]
     [SerializeField, Range(0.1f, 1f)] private float relaxBelow = 0.6f;
 
     [Header("Endless Spawn Timing")]
@@ -483,8 +485,10 @@ public class BrickGrid : MonoBehaviour
         {
             lastPaceTime = runTime;
             float ratio = KillRate / targetKillsPerSecond;
-            if (ratio > 1.25f) paceFactor *= Mathf.Min(ratio, maxPaceGrowthPerRow);
-            else if (ratio < relaxBelow) paceFactor = Mathf.Max(1f, paceFactor * 0.95f);
+            // Already far tougher than the ball can handle (e.g. a percent-HP burn does the killing): stop pushing and relax.
+            bool tooTough = CurrentMaxHp > smoothedDamage * TargetHits * maxPaceFactor;
+            if (ratio > 1.25f && !tooTough) paceFactor = Mathf.Min(maxPaceFactor, paceFactor * Mathf.Min(ratio, maxPaceGrowthPerRow));
+            else if (ratio < relaxBelow || tooTough) paceFactor = Mathf.Max(1f, paceFactor * 0.9f);
         }
 
         int wanted = Mathf.Max(1, Mathf.CeilToInt(smoothedDamage * TargetHits * paceFactor));
