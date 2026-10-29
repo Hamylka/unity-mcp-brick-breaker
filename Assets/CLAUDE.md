@@ -68,7 +68,6 @@ Single source of truth for what is left. Update it at the end of every task (tic
 
 *1. Fixes and card edits (Sonnet).*
 - **Echo feedback:** keep the small ring and pulse, add a short bright tick on the ball at the proc, rate limit when several balls proc in one frame.
-- **Run timer** at the end of the run should start when the ball first launches.
 - **Brick colors / pips / skulls use ball damage only** while AoE does most of the damage: the late wall shows many skulls (the user plays in NUMBERS mode and finds it fine).
 
 *2. UI.* Card descriptions overlap the card name with 4 cards (`PowerUpScreen`): fit, wrap or shorten. Pause screen / Game Over numbers abbreviated with K, M, B (`NumberFormat.Short`).
@@ -512,3 +511,7 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Done (branch `fix/paddle-frozen-game-over`):** `PaddleController` reads `GameManager.IsGameOver`; once the run is lost it ignores pointer and keyboard input and sets its targets to the current position, so the paddle stays put during the finale and the Game Over screen. Input comes back after a restart (scene reload).
 - **Checked:** edits only, not compiled in Unity nor played.
 - **Open issues:** the paddle may glide a few centimetres as its smoothing settles. Roadmap fix "Paddle must not move" is done.
+
+### [2026-10-30] - Run timer starts at first launch (by Claude)
+- **Done (branch `fix/run-timer-first-launch`):** `GameManager.RunTime` (pause screen, Game Over screen, profiler) now starts counting when a ball first flies (`runStarted`), not at scene load, so time spent before the first tap is no longer included. Roadmap fix "Run timer" is done.
+- **Checked:** edits only, not compiled in Unity nor played.
