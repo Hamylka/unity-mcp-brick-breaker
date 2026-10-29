@@ -26,6 +26,9 @@ public class TemporaryBall : MonoBehaviour
     private float remaining;
     private float fadeTime;
 
+    /// <summary>True while the ball is shrinking away in the last seconds of its life: it no longer counts.</summary>
+    public bool IsFading => ball != null && remaining <= fadeTime;
+
     /// <summary>Starts the countdown. The ball fades out during the last <paramref name="fadeSeconds"/>.</summary>
     public void Begin(float lifetime, float fadeSeconds, string procId, float fullTime = -1f)
     {
