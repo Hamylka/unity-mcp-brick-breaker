@@ -9,8 +9,8 @@ public class ShieldEffect : BonusEffect
 {
     [Tooltip("Material of the barrier (a glowing neon one).")]
     [SerializeField] private Material barrierMaterial;
-    [Tooltip("World Z of the barrier. Must be between the paddle and the ball's lose line.")]
-    [SerializeField] private float barrierZ = -2.6f;
+    [Tooltip("World Z of the barrier. Behind the paddle at full pull-back (-1.5) and above the screen bottom edge (about -2.4 at 9:16), so it stays visible.")]
+    [SerializeField] private float barrierZ = -2.0f;
     [Tooltip("Total width, a bit wider than the playfield so no ball slips around it.")]
     [SerializeField, Min(1f)] private float width = 9f;
     [SerializeField, Min(0.01f)] private float thickness = 0.12f;

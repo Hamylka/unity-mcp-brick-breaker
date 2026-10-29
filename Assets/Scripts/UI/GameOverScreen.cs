@@ -399,6 +399,7 @@ public class GameOverScreen : MonoBehaviour
         RectTransform dataRoot = NewRect("RunData", root);
         Place(dataRoot, new Vector2(0f, -520f), new Vector2(900f, 110f));
         dataGroup = dataRoot.gameObject.AddComponent<CanvasGroup>();
+        dataRoot.gameObject.SetActive(RunProfiler.Available); // developer tool: hidden in release builds
         keepButton = AddSmallButton(dataRoot, "Keep", new Vector2(-170f, 0f), new Vector2(520f, 100f), out keepImage, out keepLabel);
         keepButton.Clicked += HandleKeepClicked;
         shareButton = AddSmallButton(dataRoot, "Share", new Vector2(270f, 0f), new Vector2(260f, 100f), out shareImage, out shareLabel);
