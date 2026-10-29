@@ -79,6 +79,7 @@ Single source of truth for what is left. Update it at the end of every task (tic
 
 *6. Playtests.*
 - **Rampage text:** built 2026-10-30 (card and pause screen: "+2% DMG FOR EACH BRICK HIT, RESETS ON PADDLE"). Check on a phone that the pause screen line fits at size 3; the current streak bonus is not shown.
+- **Label damage (hits left):** built 2026-10-30 (`BrickGrid > Label damage`: colors, pips, skulls and numbers use base damage x measured total/ball damage ratio). Check on a phone that the late wall shows fewer skulls, labels do not flicker and a new AoE card does not surprise the player; tune window (15 s), rise time and the 8% step.
 
 *Decided with the user (2026-10-29):* Time Warp is out of the pool (asset kept). Level-up cooldown / batching and Power Ball / Meteor Ball caps are dropped (level-ups are 10 to 15 s, a 6-minute run takes about 2 of each card).
 
