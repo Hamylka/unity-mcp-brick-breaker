@@ -167,7 +167,7 @@ Design/Logo/           logo source (SVG drawn by code) and the PNG export script
 4. To play on Android: **File > Build Profiles > Android**, connect a phone with USB debugging enabled, then **Build And Run**.
 
 The **Tools > Brick Breaker** menu regenerates the sound effects and the music, and opens or clears the saved run data.
-Run files are written to the persistent data path (`RunData` folder); on a phone, the Game Over screen can share them.
+Run recording is a developer tool, only in the editor and development builds: files go to the persistent data path (`RunData` folder), and the Game Over screen can share them.
 
 ## Status
 
