@@ -68,7 +68,6 @@ Single source of truth for what is left. Update it at the end of every task (tic
 
 *1. Fixes and card edits (Sonnet).*
 - **Echo feedback:** keep the small ring and pulse, add a short bright tick on the ball at the proc, rate limit when several balls proc in one frame.
-- **Brick colours inconsistent while ball damage changes:** needs analysis first.
 - **Paddle must not move during the Game Over animation.**
 - **Run timer** at the end of the run should start when the ball first launches.
 - **Brick colors / pips / skulls use ball damage only** while AoE does most of the damage: the late wall shows many skulls (the user plays in NUMBERS mode and finds it fine).
@@ -503,3 +502,9 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Done (branch `fix/rampage-text`):** the Rampage card reads "+2% damage for each brick hit, resets on paddle" (`Rampage.asset`) and the pause screen total (`RampageEffect.Describe`) "+N% DMG FOR EACH BRICK HIT, RESETS ON PADDLE".
 - **Checked:** edits only, not compiled in Unity nor seen on screen.
 - **Open issues:** the current streak bonus is not shown (no ball context in `Describe`); the pause line is longer, check it fits at size 3. Roadmap fix "Rampage text" is done.
+
+### [2026-10-30] - Stable brick colors (by Claude)
+- **Analysis:** the hits-left colors used `BallController.MainAttackDamage`, which includes the temporary 2x wall buff and drops to 1 when no ball is active. So the whole wall re-faded every time a zone buff started or ended, and when the last ball disappeared (Phoenix revive, run end). Colors are a ratio `(hits-1)/(maxHits-1)` where both use the same damage, so they are mostly damage-independent; what changes is the rounding (`ceil`), which shifts bricks unevenly at low hit counts (damage 1 to 2 on a 5-hit scale: HP 2 goes cyan to white, HP 3 stays lime, HP 4 goes amber to lime).
+- **Done (branch `fix/brick-color-stable`):** `BrickGrid` feeds `Brick.SetHitDamage` with `MainBaseDamage` (level-ups and cards only, no temporary buffs) and keeps the last value while no ball is active.
+- **Checked:** edits only, not compiled in Unity nor played.
+- **Open issues:** the rounding shifts on a permanent damage change remain (a real change in hits left, but uneven looking); if still disliked, color from the continuous ratio `hp / windowMax` and keep hits only for labels. Pips and numbers now ignore the 2x buff too.
