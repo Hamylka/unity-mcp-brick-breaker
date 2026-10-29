@@ -86,6 +86,37 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - The Laser uses the ball's damage without the Phase downscale while the ball is phasing.
 - The paddle must not move during the Game Over animation.
 
+*3. Long-run playtest findings (2026-10-29, level 190 at 7:40, level 90 at ~5 min).* Grouped by kind; do the quick fixes first, then balance, then the Corruption system.
+
+Quick fixes and card edits
+- **Shield Plus:** max stack 1 and Legendary (was Rare, max 3). Update `PowerUpStats.ShieldExtraBounces` use and its `Describe`.
+- **Shield on the active-bonus HUD:** Shield Plus must show on the ring at the right of the screen as a **segmented ring**, one segment per bounce left (`ActiveBonusTracker.Report` for the shield, segments drop as bounces are used).
+- **Shield pickup resets the charges:** already the case in practice (the Shield bonus cannot drop while one is up, and a new barrier starts at `1 + ShieldExtraBounces`). Check it stays true if the drop rule changes.
+- **Laser ignores the Phase malus:** `LaserCannon.CurrentDamage` must use the ball's damage without `DamageMultiplier` below 1 (use `BaseDamage` or the buff multiplier clamped to at least 1). Same item as the roadmap line in item 2.
+- **Paddle Cannon:** stack cap of 5. Rework the lane table to fit (for example 1, 3, 5, 7 lanes, or lanes up to 5 then bolt damage), `PaddleCannon.LanesFor` / `DamageFactorFor` and `Describe`.
+- **Rampage text:** unclear ("X% DMG PER HIT SINCE PADDLE"). Suggested: "+2% DMG FOR EACH BRICK HIT, RESETS ON PADDLE" and show the current streak bonus if there is room.
+- **Echo feedback:** a proc should be visible without clutter. Suggested: keep the small ring and pulse on the brick (already there), add a short bright tick on the ball at the moment of the proc, no screen-wide flash, and rate limit it when several balls proc in the same frame. Judge it in a long run before adding more.
+- **Disable Time Warp for now** (the wall-slowing Epic card, `WallSlowEffect`, judged too strong): remove it from the `PowerUpManager` pool in `Game.unity`, keep the assets so it can come back.
+
+UI
+- **Card descriptions overlap the card name** when 4 cards are offered (Chain Lightning, Catch Zone, Paddle Speed and others): fit or wrap the description, or shorten the texts, in `PowerUpScreen`.
+- **Pause screen stats unreadable** when numbers get big: abbreviate with K, M, B (one decimal at most, only when needed, above 1000). One shared helper (`NumberFormat.Short`) also useful for the damage stat, bricks destroyed and XP; check the row texts and the Game Over screen.
+
+Feel
+- **Smoother return to full speed after the card screen:** the time scale should ease back from 0 to 1 over about a second instead of snapping (`PowerUpManager.ChoiceLoop` end), so a new upgrade does not catch the player with a ball coming at the paddle. Consider also a short grace: the paddle input stays usable while the world speeds up.
+
+Balance (use the run profiler, then change)
+- **Ball speed:** Quick Ball reads as both a bonus and a malus. Proposal: remove it from the card pool (or keep it as a pure positive with a downside-free effect) and make the **base ball speed rise with the difficulty** (a step each time "DIFFICULTY INCREASED!" fires, capped, with the speed boost visible in the ball's look). Same idea for the wall: its **step interval shrinks slowly with difficulty** (for example 5 s down to a floor of about 2.5 s), so the pressure grows even when the player's damage snowballs. Decide, then tune on the profiler.
+- **Late game does not threaten:** around level 100 the player cannot die and keeps snowballing (level 190 at 7:40). HP window and XP are both too weak late. Levers to test: a steeper `targetHits` (`5 + 1.4 x minutes` is too flat), the HP window growth cap per row, a rising `Bricks Per Level` or a steeper level curve power, and the faster wall above.
+- **Too many level-ups:** level 90 in about 5 minutes makes the downtime (slow-down and card screen) frequent and less satisfying. Aim for fewer, more meaningful level-ups: the XP pace should stay near one level-up every 15 to 25 s late in a run. Options: raise the curve power, raise `Bricks Per Level` with the level, or batch several level-ups into one screen later on.
+
+New system: Corruption and the Exquisite rarity
+- **Corruption** (name to confirm: "Corruption" for the card, "CORRUPT" for the button). A new Epic card, unlimited stacks, grants one corruption charge per pick. In the level-up screen a red **CORRUPT** button (danger look) sits centered below Reroll and Confirm, shown only when the player has at least one charge. Using it spends one charge on the **selected** card: the other cards shatter, the chosen card slowly drifts to the center with a "computer virus" effect (glitch, RGB split, scanlines, shake, flickering text) to make it dramatic, then reveals the outcome: either **Exquisite** (new rarity, red) or **Malus** (new rarity, dark grey, a downside). The new card is then confirmed with a single tap: it cannot be re-rolled, re-selected or swapped.
+- **Exquisite rarity (red):** above Legendary, never offered by the normal roll (weight 0): only reachable through corruption. Needs its own color, frame and sounds in `PowerUpRarity`, the card screen and the pause screen. **Greed becomes Exquisite** once this exists.
+- **Malus rarity (dark grey):** a card with a real downside, also corruption-only. Each corruptible card needs an Exquisite and a Malus version (or a rule that derives them), so the design pass must decide which cards can be corrupted (suggested: any card with a stack, not the one-shots).
+- **More Exquisite cards:** add a few new ones and review the current Legendary cards for ones that are too strong and should move up (candidates to examine with the profiler: Paddle Cannon, Satellite, Meltdown, Phoenix Ball).
+- Needs a plan before building (Opus: art direction, shader/glitch effect, audio; Sonnet: data and rules).
+
 **Later**
 - More bonus item effects (each a new `BonusEffect` subclass plus a `BonusDefinition` asset).
 - More wall effects beyond the buff zones (ideas to be thought out).
@@ -430,3 +461,7 @@ Single source of truth for what is left. Update it at the end of every task (tic
 ### [2026-10-29] - Dev "END RUN" button on the pause screen (by Claude)
 - **Done (branch `feature/powerup-pool-rework`):** the pause screen has an amber "END RUN (DEV)" button under Restart / Resume, built only when `RunProfiler.Available` (editor or development build). It closes the pause screen and calls `GameManager.EndRun(BallLost)`: the usual finale, then the Game Over screen with its "RUN DATA / SHARE" row. It lets a long playtest end on purpose on a phone. Release builds do not have it.
 - **Checked:** compiles clean. Not seen on screen (position y -890 under the buttons row, size 460x90).
+
+### [2026-10-29] - Roadmap from a long-run playtest (by Claude, no code)
+- **Done:** the findings of a long run (level 190 at 7:40) were written into the roadmap as item 3 of v0.3: quick card fixes (Shield Plus to Legendary max 1 with a segmented HUD ring, Laser ignoring the Phase malus, Paddle Cannon cap 5, Rampage text, Echo feedback, Time Warp disabled), UI (description overlap with 4 cards, K / M / B number format), a smoother time scale after the card screen, balance (ball speed and wall pace following the difficulty, late game that cannot kill, too many level-ups) and the Corruption system with the Exquisite (red) and Malus (dark grey) rarities. Design answers recorded there: Quick Ball removed or made pure positive and base speed rising with difficulty; Echo feedback kept small.
+- **Open issues:** nothing built from item 3 yet; the pool rework (item 1) still needs its playtest and profiler check.
