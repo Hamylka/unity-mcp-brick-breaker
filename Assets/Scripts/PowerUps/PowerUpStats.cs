@@ -1,0 +1,137 @@
+using UnityEngine;
+
+/// <summary>
+/// Run-wide numbers that power-up cards change and that other systems read (falling bonuses, shield, laser,
+/// multi-ball...). Reset when a run starts (<see cref="PowerUpManager"/> enables). Each card's effect writes its
+/// own field; the system it affects reads it, so neither needs to know the other.
+/// </summary>
+public static class PowerUpStats
+{
+    /// <summary>Speed factor of falling bonus items (Slow Fall).</summary>
+    public static float BonusFallSpeed { get; set; } = 1f;
+
+    /// <summary>Width factor of the area in which the paddle catches bonus items (Catch Zone).</summary>
+    public static float CatchZoneScale { get; set; } = 1f;
+
+    /// <summary>Extra damage fraction on bricks at or under <see cref="ExecutionerThreshold"/> of their HP (Executioner).</summary>
+    public static float ExecutionerBonus { get; set; }
+    public const float ExecutionerThreshold = 0.25f;
+
+    /// <summary>Extra bounces a new shield absorbs before it breaks (Shield Plus).</summary>
+    public static int ShieldExtraBounces { get; set; }
+
+    /// <summary>Laser fire-rate factor (Laser Focus). 1.2 = a shot every 1/1.2 of the base interval.</summary>
+    public static float LaserFireRate { get; set; } = 1f;
+
+    /// <summary>Extra balls every Multi-Ball pickup adds (Twin Fission).</summary>
+    public static int ExtraMultiBalls { get; set; }
+
+    /// <summary>Duration factor of timed bonuses (Bonus Extender): Laser and Multi-Ball.</summary>
+    public static float BonusDuration { get; set; } = 1f;
+
+    /// <summary>Damage added per brick hit since the ball last touched the paddle (Rampage), as a fraction.</summary>
+    public static float RampagePercent { get; set; }
+
+    /// <summary>Damage added per wall bounce since the ball's last brick hit (Ricochet), as a fraction.</summary>
+    public static float RicochetPercent { get; set; }
+
+    /// <summary>Echo picks: every <see cref="EchoInterval"/> ball hits repeat once for free.</summary>
+    public static int EchoPicks { get; set; }
+
+    /// <summary>Share of the damage beyond a brick's HP that passes to the brick behind (Overkill Spill).</summary>
+    public static float OverkillPercent { get; set; }
+
+    /// <summary>Orbs circling each ball (Satellite).</summary>
+    public static int SatelliteOrbs { get; set; }
+
+    /// <summary>Paddle Cannon picks: lanes, then extra bolt damage (see <see cref="PaddleCannon"/>).</summary>
+    public static int CannonPicks { get; set; }
+
+    /// <summary>Added to the bonus drop chance (Greed), as a fraction. The total is capped by <see cref="MaxDropChance"/>.</summary>
+    public static float BonusDropBonus { get; set; }
+    public const float MaxDropChance = 0.30f;
+
+    /// <summary>Falling bonus items drift toward the paddle (Bonus Magnet).</summary>
+    public static bool BonusMagnet { get; set; }
+
+    /// <summary>A lost last ball is replaced once by a new one on the paddle (Phoenix Ball).</summary>
+    public static bool PhoenixReady { get; set; }
+
+    private static int echoCounter;
+    private static readonly int[] EchoIntervals = { 10, 8, 6, 5, 4, 3 };
+    private static readonly Color EchoColor = new(0.75f, 0.9f, 1f);
+
+    /// <summary>Ball hits between two Echo repeats after this many picks (0 = no Echo).</summary>
+    public static int EchoInterval(int picks) => picks <= 0 ? 0 : EchoIntervals[Mathf.Min(picks, EchoIntervals.Length) - 1];
+
+    public static void Reset()
+    {
+        SatelliteOrbs = 0;
+        CannonPicks = 0;
+        BonusDropBonus = 0f;
+        BonusMagnet = false;
+        PhoenixReady = false;
+        RampagePercent = 0f;
+        RicochetPercent = 0f;
+        EchoPicks = 0;
+        OverkillPercent = 0f;
+        echoCounter = 0;
+        BonusFallSpeed = 1f;
+        CatchZoneScale = 1f;
+        ExecutionerBonus = 0f;
+        ShieldExtraBounces = 0;
+        LaserFireRate = 1f;
+        ExtraMultiBalls = 0;
+        BonusDuration = 1f;
+    }
+
+    /// <summary>
+    /// Damage of this ball's next hit on <paramref name="brick"/>: the ball's damage with Rampage, Ricochet and
+    /// Executioner counted (rounded up).
+    /// </summary>
+    public static int BallHitDamage(BallController ball, Brick brick)
+    {
+        float factor = 1f + RampagePercent * ball.HitsSincePaddle + RicochetPercent * ball.WallBounces;
+        int damage = factor > 1f ? Mathf.CeilToInt(ball.Damage * factor - 0.001f) : ball.Damage;
+        return WithExecutioner(brick, damage);
+    }
+
+    /// <summary>
+    /// Bookkeeping after a ball hit landed: streak counters, then the extra hits that ride on it (Overkill Spill, Echo).
+    /// </summary>
+    public static void AfterBallHit(BallController ball, Brick brick, int damage, int hpBefore)
+    {
+        ball.RegisterBrickHit();
+
+        if (OverkillPercent > 0f && damage > hpBefore)
+        {
+            BrickGrid grid = brick.GetComponentInParent<BrickGrid>();
+            if (grid != null && grid.TryGetComponent(out AreaDamage area))
+                area.OverkillSpill(brick, (damage - hpBefore) * OverkillPercent);
+        }
+
+        int every = EchoInterval(EchoPicks);
+        if (every > 0 && ++echoCounter >= every)
+        {
+            echoCounter = 0;
+            if (!brick.IsAlive) return;
+            float echoFactor = 1f + 0.25f * Mathf.Max(0, EchoPicks - EchoIntervals.Length);
+            int echo = Mathf.CeilToInt(damage * echoFactor - 0.001f);
+
+            // The hit rings again on the same brick; it still triggers area effects like any ball hit.
+            brick.Pulse(EchoColor * 1.6f, 0.22f, 0.08f);
+            NeonFx.Ring(brick.transform.position, EchoColor, 16, 2.5f, 0.08f, 0.25f);
+            SoundManager.Play(Sfx.ChainZap, 0.8f);
+            using var tag = DamageTag.Begin(DamageSource.Echo);
+            brick.TakeHit(echo);
+        }
+    }
+
+    /// <summary>Damage a ball hit deals to <paramref name="brick"/> once Executioner is counted (rounded up).</summary>
+    public static int WithExecutioner(Brick brick, int damage)
+    {
+        if (ExecutionerBonus <= 0f || brick == null) return damage;
+        if (brick.HitPoints > brick.MaxHitPoints * ExecutionerThreshold) return damage;
+        return Mathf.CeilToInt(damage * (1f + ExecutionerBonus) - 0.001f);
+    }
+}

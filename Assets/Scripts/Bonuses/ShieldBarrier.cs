@@ -34,6 +34,10 @@ public class ShieldBarrier : BallSurface
     private float breakT = -1f;
     private float sparkTimer;
     private float age;
+    private int bouncesLeft = 1;
+
+    /// <summary>Lets the shield absorb more bounces before it breaks (Shield Plus picked while it is up).</summary>
+    public void AddBounces(int count) => bouncesLeft += count;
 
     public static ShieldBarrier Create(Material material, float z, float width, float thickness)
     {
@@ -50,6 +54,7 @@ public class ShieldBarrier : BallSurface
         barrier.startScale = cube.transform.localScale;
         barrier.ApplyGlow(Glow + RaiseGlowBoost);
         cube.transform.localScale = new Vector3(0f, barrier.startScale.y, barrier.startScale.z);
+        barrier.bouncesLeft = 1 + PowerUpStats.ShieldExtraBounces;
         Current = barrier;
 
         // A flash and a line of sparks along the barrier as it appears.
@@ -63,9 +68,21 @@ public class ShieldBarrier : BallSurface
     public override void OnBallHit(BallController ball, Collision collision)
     {
         if (breakT >= 0f) return;
+        ball.PassThroughPaddle(); // the rebound goes back up through the paddle instead of bouncing off its back
+
+        // Shield Plus: it survives until the last bounce, with a small flash for each one absorbed.
+        if (--bouncesLeft > 0)
+        {
+            Vector3 spot = ball.Position;
+            spot.z = transform.position.z;
+            NeonFx.Flash(spot, ShieldColor, 0.8f, 0.1f);
+            NeonFx.Burst(spot, ShieldColor, 10, 4f, 0.08f, 0.3f);
+            SoundManager.Play(Sfx.ShieldUp);
+            return;
+        }
+
         barrierCollider.enabled = false; // the bounce was already computed, so this is safe
         breakT = 0f;
-        ball.PassThroughPaddle(); // the rebound goes back up through the paddle instead of bouncing off its back
         SoundManager.Play(Sfx.ShieldBreak);
 
         // Shatter: a flash where the ball struck, then shards spraying forward along the whole barrier.

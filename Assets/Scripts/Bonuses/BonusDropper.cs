@@ -37,6 +37,8 @@ public class BonusDropper : MonoBehaviour
     private void HandleBrickDestroyed(Brick brick)
     {
         float chance = dropChance + (brick.MaxHitPoints - 1) * extraChancePerHitPoint;
+        if (PowerUpStats.BonusDropBonus > 0f) // Greed
+            chance = Mathf.Min(chance + PowerUpStats.BonusDropBonus, Mathf.Max(chance, PowerUpStats.MaxDropChance));
         if (UnityEngine.Random.value > chance) return;
 
         BonusDefinition definition = PickBonus();

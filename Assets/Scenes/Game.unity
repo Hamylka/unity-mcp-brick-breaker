@@ -311,6 +311,7 @@ MonoBehaviour:
   boostDecayTime: 1
   maxBoost: 1
   damage: 1
+  cardDamageMultiplier: 1
   minAngleFromHorizontal: 12
   paddle: {fileID: 541308909}
   restOffset: {x: 0, y: 0, z: 0.55}
@@ -604,6 +605,7 @@ MonoBehaviour:
   crackleInterval: 0.06
   boltInterval: 0.3
   warnTime: 2
+  baseTrailWidth: 0
 --- !u!1 &75570440
 GameObject:
   m_ObjectHideFlags: 0
@@ -1403,7 +1405,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 60
-  field of view: 56.445835
+  field of view: 50.941975
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -4636,6 +4638,7 @@ MonoBehaviour:
   grid: {fileID: 1367461215}
   baseXp: 12
   power: 1.2
+  bricksPerLevel: 8
   clearBonus: 0.25
   orbOriginRange: 1.5
   logLevelUps: 1
@@ -5197,11 +5200,12 @@ MonoBehaviour:
   waveDelay: 0
   clearWaveRows: 4
   difficultyPerRow: 0.05
-  baseMinHp: 1
-  baseMaxHp: 5
-  rowsPerScaling: 5
-  hpMultiplier: 1.75
-  xpScalingExponent: 0.25
+  targetHitsStart: 5
+  targetHitsPerMinute: 1.4
+  minHpRatio: 0.2
+  damageSmoothing: 20
+  maxGrowthPerRow: 2
+  noticeGrowth: 1.75
   spawnRipple: 0.04
   waveRowDelay: 0.06
   dangerZ: 1.8
@@ -5453,14 +5457,32 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 4cb75c260a2e0d741a4b3b17633f985f, type: 2}
   - {fileID: 11400000, guid: d6b26d4c7d49c704a82f16ec85c19b60, type: 2}
   - {fileID: 11400000, guid: 20acfaee587e9674cb36115261148392, type: 2}
+  - {fileID: 11400000, guid: 3a93e1ab1ba10894c8cfb6382fb46439, type: 2}
+  - {fileID: 11400000, guid: 3ac0f7d0411c2034b911cfdaf5365e32, type: 2}
+  - {fileID: 11400000, guid: 96e5b0d4476c84140853aa9daad0c339, type: 2}
+  - {fileID: 11400000, guid: c600012268911e843980fe2e4b2a702f, type: 2}
+  - {fileID: 11400000, guid: 3f33debc5e41ca94ba1b20c4cc9132c5, type: 2}
+  - {fileID: 11400000, guid: 8e918e7a82dbdbd4b9809c6f60b91002, type: 2}
+  - {fileID: 11400000, guid: b2961b5fe51249243b0fecb09cbb7076, type: 2}
+  - {fileID: 11400000, guid: 8e62ce5bc761a384da68ea206aaed35f, type: 2}
+  - {fileID: 11400000, guid: 490daccce5397b84ebd3f1c2c3aef4bf, type: 2}
+  - {fileID: 11400000, guid: 56c754817719e1842a5e5cbac2f65ec9, type: 2}
+  - {fileID: 11400000, guid: 433f482b25fe9374f8cc9cffc8eaacc9, type: 2}
+  - {fileID: 11400000, guid: 738a4683c82a09847a53e401792c14b1, type: 2}
+  - {fileID: 11400000, guid: ccbad9005a1b1fa4d8c2d92e18057af2, type: 2}
+  - {fileID: 11400000, guid: de1b1c4e494820a4d82179e703878da6, type: 2}
+  - {fileID: 11400000, guid: 2948f801bf0d4364dacc92756fa29099, type: 2}
+  - {fileID: 11400000, guid: e7a072294286e7f418fad67dc7d6094e, type: 2}
+  - {fileID: 11400000, guid: 7b6f6bdc56a917e4ca8135e748f50832, type: 2}
+  - {fileID: 11400000, guid: 52438e06076635d41a28dff3a507a8d2, type: 2}
   baseChoiceCount: 3
   baseRerolls: 1
   rarityWeights:
-  - 60
+  - 55
   - 25
-  - 10
-  - 4
-  - 1
+  - 11
+  - 6
+  - 3
   passiveDamagePerLevel: 1
   slowDownTime: 0.8
   openDelay: 0.3

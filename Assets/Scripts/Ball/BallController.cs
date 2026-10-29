@@ -25,6 +25,7 @@ public class BallController : MonoBehaviour
     [Header("Combat")]
     [Tooltip("Hit points removed from a brick per hit. Upgrades can raise it.")]
     [SerializeField, Min(1)] private int damage = 1;
+    [SerializeField, HideInInspector] private float cardDamageMultiplier = 1f; // serialized so SpawnExtra clones keep it
 
     [Header("Safety")]
     [Tooltip("Minimum angle from the horizontal (X) axis. Prevents endless side-to-side bouncing.")]
@@ -61,10 +62,16 @@ public class BallController : MonoBehaviour
     public bool AutoReset { get; set; } = true;
 
     /// <summary>Hit points removed from a brick per hit.</summary>
-    public int Damage => Mathf.Max(1, Mathf.RoundToInt(damage * DamageMultiplier));
+    public int Damage => WholeDamage(damage * cardDamageMultiplier * DamageMultiplier);
 
-    /// <summary>Permanent damage per hit, without temporary wall buffs (what the wall HP window follows).</summary>
-    public int BaseDamage => damage;
+    /// <summary>Permanent damage per hit (level-ups and cards), without temporary wall buffs (what the wall HP window follows).</summary>
+    public int BaseDamage => WholeDamage(damage * cardDamageMultiplier);
+
+    /// <summary>Permanent damage factor from cards (Power Ball, Meteor Ball), compounding. Clones inherit it.</summary>
+    public float CardDamageMultiplier => cardDamageMultiplier;
+
+    // Rounded up so damage stays whole; the epsilon stops float noise (11.0000001) from adding a point.
+    private static int WholeDamage(float value) => Mathf.Max(1, Mathf.CeilToInt(value - 0.001f));
 
     /// <summary>Temporary damage factor (wall buffs). 1 = normal.</summary>
     public float DamageMultiplier { get; set; } = 1f;
@@ -183,6 +190,22 @@ public class BallController : MonoBehaviour
     /// <summary>Permanently changes the damage per hit (upgrades, perks).</summary>
     public void AddDamage(int amount) => damage = Mathf.Max(1, damage + amount);
 
+    /// <summary>Brick hits since the ball last touched the paddle (Rampage).</summary>
+    public int HitsSincePaddle { get; private set; }
+
+    /// <summary>Wall bounces since the ball's last brick hit (Ricochet).</summary>
+    public int WallBounces { get; private set; }
+
+    /// <summary>Called by the brick after a ball hit landed: the streak grows, the wall bounces are spent.</summary>
+    public void RegisterBrickHit()
+    {
+        HitsSincePaddle++;
+        WallBounces = 0;
+    }
+
+    /// <summary>Permanently multiplies the damage per hit by <paramref name="factor"/> (cards), on top of earlier picks.</summary>
+    public void MultiplyDamage(float factor) => cardDamageMultiplier *= factor;
+
     private Rigidbody body;
     private State state = State.Waiting;
     private float boost;
@@ -291,7 +314,7 @@ public class BallController : MonoBehaviour
             // removes an HP every second brick it passes through.
             Brick bottom = stack.Bottom;
             if (bottom == null) continue;
-            bottom.DamageCarry += damage * DamageMultiplier;
+            bottom.DamageCarry += damage * cardDamageMultiplier * DamageMultiplier;
             int whole = Mathf.FloorToInt(bottom.DamageCarry + 0.001f);
             if (whole <= 0) continue;
             bottom.DamageCarry = Mathf.Max(0f, bottom.DamageCarry - whole);
@@ -321,6 +344,8 @@ public class BallController : MonoBehaviour
         // 2) Let the surface customise the result (paddle angles, wall zones, ...).
         BallSurface surface = collision.collider.GetComponentInParent<BallSurface>();
         if (surface != null) surface.OnBallHit(this, collision);
+        if (surface is PaddleBallSurface) HitsSincePaddle = 0;   // Rampage streak ends
+        else if (surface is Wall) WallBounces++;                 // Ricochet charge
 
         // 3) Apply, including the anti-horizontal-loop safeguard.
         Direction = ClampDirection(Direction);

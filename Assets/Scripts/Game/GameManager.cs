@@ -86,6 +86,11 @@ public class GameManager : MonoBehaviour
         BallController successor = FindSuccessor(lostBall);
         if (successor == null)
         {
+            if (PowerUpStats.PhoenixReady)
+            {
+                RevivePhoenix(lostBall);
+                return;
+            }
             EndRun(LoseReason.BallLost);
             return;
         }
@@ -95,6 +100,22 @@ public class GameManager : MonoBehaviour
         successor.PromoteToMain();
         SetMainBall(successor);
         PlayPromoteCue(successor);
+    }
+
+    // Phoenix Ball: once per run the last ball comes back on the paddle instead of ending the run.
+    private void RevivePhoenix(BallController lostBall)
+    {
+        PowerUpStats.PhoenixReady = false;
+        lostBall.ResetToPaddle();
+        foreach (TrailRenderer trail in lostBall.GetComponentsInChildren<TrailRenderer>()) trail.Clear();
+
+        Color fire = new(1f, 0.55f, 0.15f, 1f);
+        Vector3 at = lostBall.Position;
+        SoundManager.Play(Sfx.BallPromote, 0.8f);
+        SoftFlash.Spawn(at, fire, 2.2f, 0.4f);
+        NeonFx.Ring(at, fire, 32, 6f, 0.1f, 0.45f);
+        NeonFx.Burst(at, Color.Lerp(fire, Color.white, 0.3f), 24, 3.5f, 0.08f, 0.6f);
+        NeonFx.Embers(at, fire, 10, 0.07f, 1.0f);
     }
 
     // The ball that takes a wall buff zone becomes the main ball; the former main is now an extra.

@@ -42,8 +42,12 @@ public class MultiBallEffect : BonusEffect
         int alive = 0;
         foreach (BallController ball in BallController.Active)
             if (ball != null && ball.IsExtra) alive++;
-        return Mathf.Clamp(extraBalls * pickups, 0, maxExtraBalls - alive);
+        return Mathf.Clamp(ExtrasPerPickup * pickups, 0, MaxExtras - alive);
     }
+
+    // Twin Fission adds balls to every pickup and raises the cap by the same amount per pickup slot.
+    private int ExtrasPerPickup => extraBalls + PowerUpStats.ExtraMultiBalls;
+    private int MaxExtras => maxExtraBalls + PowerUpStats.ExtraMultiBalls * 3;
 
     /// <summary>
     /// Splits <paramref name="source"/>: spawns the extras of every queued pickup, fanned out around its direction.
@@ -59,9 +63,9 @@ public class MultiBallEffect : BonusEffect
             float angle = (i % 2 == 0 ? step : -step) * spreadAngle;
             Vector3 direction = Quaternion.AngleAxis(angle, Vector3.up) * source.Direction;
 
-            string procId = procIds[Mathf.Min(i / extraBalls, procIds.Count - 1)];
+            string procId = procIds[Mathf.Min(i / ExtrasPerPickup, procIds.Count - 1)];
             BallController extra = source.SpawnExtra(direction);
-            extra.gameObject.AddComponent<TemporaryBall>().Begin(duration, fadeTime, procId);
+            extra.gameObject.AddComponent<TemporaryBall>().Begin(duration * PowerUpStats.BonusDuration, fadeTime, procId);
             BallBuffAura.Inherit(source, extra); // a wall buff on the source (2x damage, Phase) follows, same time left
             NeonFx.Sparks(source.Position, direction, TemporaryBall.HudColor, 6, 6f, 25f, 0.08f, 0.25f); // a streak along each new path
         }
