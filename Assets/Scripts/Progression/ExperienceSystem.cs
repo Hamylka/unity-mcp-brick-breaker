@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// Endless XP progression. Every ball hit grants XP equal to the hit points it removed from the brick.
+/// Endless XP progression. A brick is worth 1/Bricks Per Level of the current level's cost, paid per hit point removed.
 /// If an <see cref="IXpVisuals"/> is registered (the HUD), the XP arrives later, when its orb reaches the bar.
 /// XP needed to go from level L to L + 1 is:  Required XP = Base XP x (L ^ Power)  (rounded to a whole number).
 /// Excess XP carries over, and a big gain can raise several levels at once.
@@ -17,6 +17,10 @@ public class ExperienceSystem : MonoBehaviour
     [SerializeField, Min(1)] private int baseXp = 12;
     [Tooltip("Exponent of the curve. 1 = linear, higher = steeper.")]
     [SerializeField, Min(0.1f)] private float power = 1.2f;
+
+    [Header("XP per Brick")]
+    [Tooltip("A brick is worth (XP needed for the current level) / this, split over its HP. Higher = slower levels.")]
+    [SerializeField, Min(0.5f)] private float bricksPerLevel = 8f;
 
     [Header("Wall Clear Bonus")]
     [Tooltip("Clearing every brick grants this share of the XP needed for the current level (0.5 = 50%).")]
@@ -49,7 +53,15 @@ public class ExperienceSystem : MonoBehaviour
     /// <summary>Raises the XP gained from bricks (upgrades). 0.2 = +20%.</summary>
     public void AddXpMultiplier(float amount) => xpMultiplier += amount;
 
+    /// <summary>
+    /// XP (before the Quick Learner multiplier) for removing <paramref name="damageDealt"/> HP from a brick:
+    /// the share of its HP times the brick's worth, <c>XpToNextLevel / Bricks Per Level</c>.
+    /// </summary>
+    public float XpForHit(Brick brick, int damageDealt) =>
+        damageDealt / (float)Mathf.Max(1, brick.MaxHitPoints) * XpToNextLevel / bricksPerLevel;
+
     public int BaseXp => baseXp;
+    public float BricksPerLevel => bricksPerLevel;
     public float Power => power;
     public int Level { get; private set; } = 1;
     public int CurrentXp { get; private set; }
@@ -98,8 +110,8 @@ public class ExperienceSystem : MonoBehaviour
     {
         lastHitPosition = brick.transform.position;
 
-        // 1 XP per hit point removed (less on bricks spawned after the HP window scaled, see Brick.XpPerHp). Fractions of the multiplier carry over, so small bonuses still add up.
-        xpRemainder += damageDealt * brick.XpPerHp * xpMultiplier;
+        // A brick is worth a share of the level cost, split per HP removed (see XpForHit). Fractions carry over, so small hits still add up.
+        xpRemainder += XpForHit(brick, damageDealt) * xpMultiplier;
         int amount = Mathf.FloorToInt(xpRemainder);
         if (amount <= 0) return;
         xpRemainder -= amount;

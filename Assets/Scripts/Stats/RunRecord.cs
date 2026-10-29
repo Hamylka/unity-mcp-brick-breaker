@@ -45,7 +45,8 @@ public class RunRecord
         public int totalXp;
         public int bricksDestroyed;
         public int rowsSpawned;
-        public int hpScaleTier;
+        public float targetHits;
+        public float smoothedDamage;
         public int hpWindowMin;
         public int hpWindowMax;
         public int ballDamage;

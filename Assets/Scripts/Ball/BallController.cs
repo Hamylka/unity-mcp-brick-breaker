@@ -63,6 +63,9 @@ public class BallController : MonoBehaviour
     /// <summary>Hit points removed from a brick per hit.</summary>
     public int Damage => Mathf.Max(1, Mathf.RoundToInt(damage * DamageMultiplier));
 
+    /// <summary>Permanent damage per hit, without temporary wall buffs (what the wall HP window follows).</summary>
+    public int BaseDamage => damage;
+
     /// <summary>Temporary damage factor (wall buffs). 1 = normal.</summary>
     public float DamageMultiplier { get; set; } = 1f;
 
@@ -99,6 +102,22 @@ public class BallController : MonoBehaviour
                 if (ball == null) continue;
                 if (!ball.IsExtra) return ball.Damage;
                 best = Mathf.Max(best, ball.Damage);
+            }
+            return best;
+        }
+    }
+
+    /// <summary>Like <see cref="MainDamage"/> but without temporary wall buffs (<see cref="BaseDamage"/>).</summary>
+    public static int MainBaseDamage
+    {
+        get
+        {
+            int best = 1;
+            foreach (BallController ball in active)
+            {
+                if (ball == null) continue;
+                if (!ball.IsExtra) return ball.BaseDamage;
+                best = Mathf.Max(best, ball.BaseDamage);
             }
             return best;
         }

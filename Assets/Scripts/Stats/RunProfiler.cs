@@ -111,7 +111,7 @@ public class RunProfiler : MonoBehaviour
         record.settings.rerolls = powerUps != null ? powerUps.RerollCount : 0;
 
         grid.BrickHit += HandleBrickHit;
-        grid.HpScaled += HandleHpScaled;
+        grid.HpWindowGrew += HandleHpWindowGrew;
         game.GameOver += HandleGameOver;
         if (experience != null)
         {
@@ -161,7 +161,7 @@ public class RunProfiler : MonoBehaviour
         int i = (int)DamageTag.Current;
         hits[i]++;
         damage[i] += dealt;
-        xp[i] += dealt * brick.XpPerHp;
+        if (experience != null) xp[i] += experience.XpForHit(brick, dealt);
         if (!brick.IsAlive) kills[i]++;
     }
 
@@ -216,8 +216,9 @@ public class RunProfiler : MonoBehaviour
         AddEvent("bonus_collected", definition.DisplayName, 0f, "");
     }
 
-    private void HandleHpScaled(int min, int max) =>
-        AddEvent("hp_scale", "", grid.HpScaleTier, $"{min}-{max}");
+    // Logged every time the window grows (at most once per row): value = target hits, detail = min-max HP.
+    private void HandleHpWindowGrew(int min, int max) =>
+        AddEvent("hp_window", "", Round(grid.TargetHits), $"{min}-{max}");
 
     private void HandleClearBonus(int xpAmount)
     {
@@ -273,7 +274,8 @@ public class RunProfiler : MonoBehaviour
         s.totalXp = experience != null ? experience.TotalXp : 0;
         s.bricksDestroyed = game.BricksDestroyed;
         s.rowsSpawned = grid.RowsSpawned;
-        s.hpScaleTier = grid.HpScaleTier;
+        s.targetHits = Round(grid.TargetHits);
+        s.smoothedDamage = Round(grid.SmoothedDamage);
         s.hpWindowMin = grid.CurrentMinHp;
         s.hpWindowMax = grid.CurrentMaxHp;
         s.ballDamage = BallController.MainDamage;
