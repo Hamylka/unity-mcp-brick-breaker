@@ -11,7 +11,7 @@ public class PaddleCannonEffect : PowerUpEffect
     public override string Describe(int stacks)
     {
         int lanes = PaddleCannon.LanesFor(stacks);
-        int bonus = Mathf.RoundToInt((PaddleCannon.DamageFactorFor(stacks) - 1f) * 100f);
-        return bonus > 0 ? $"{lanes} BOLTS PER BOUNCE, +{bonus}% DMG" : $"{lanes} BOLT{(lanes > 1 ? "S" : "")} PER BOUNCE, 50% DMG";
+        int percent = Mathf.RoundToInt(50f * PaddleCannon.DamageFactorFor(stacks)); // bolt damage vs the ball's
+        return $"{lanes} BOLT{(lanes > 1 ? "S" : "")} PER BOUNCE, {percent}% DMG EACH";
     }
 }
