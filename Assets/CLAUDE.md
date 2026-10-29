@@ -68,7 +68,6 @@ Single source of truth for what is left. Update it at the end of every task (tic
 
 *1. Fixes and card edits (Sonnet).*
 - **Echo feedback:** keep the small ring and pulse, add a short bright tick on the ball at the proc, rate limit when several balls proc in one frame.
-- **Brick colors / pips / skulls use ball damage only** while AoE does most of the damage: the late wall shows many skulls (the user plays in NUMBERS mode and finds it fine).
 
 *2. UI.* Card descriptions overlap the card name with 4 cards (`PowerUpScreen`): fit, wrap or shorten. Pause screen / Game Over numbers abbreviated with K, M, B (`NumberFormat.Short`).
 
@@ -515,3 +514,8 @@ Single source of truth for what is left. Update it at the end of every task (tic
 ### [2026-10-30] - Run timer starts at first launch (by Claude)
 - **Done (branch `fix/run-timer-first-launch`):** `GameManager.RunTime` (pause screen, Game Over screen, profiler) now starts counting when a ball first flies (`runStarted`), not at scene load, so time spent before the first tap is no longer included. Roadmap fix "Run timer" is done.
 - **Checked:** edits only, not compiled in Unity nor played.
+
+### [2026-10-30] - Labels count area damage (by Claude)
+- **Done (branch `fix/effective-damage-labels`):** the damage reference of brick colors, pips, skulls and numbers (`Brick.HitDamage`) is now `MainBaseDamage x damageRatio`. `BrickGrid.RecordDamage` (from every brick hit, using `DamageTag`) keeps two decaying sums over `Label Damage Window` (15 s): all damage dealt and damage from plain ball hits (Phase is left out of both); `damageRatio` = total / ball, clamped 1 to `Label Damage Max Ratio` (25), eased (rises in `Label Rise Time` 1.5 s, falls 3x slower), kept as is while under 3 ball-hit HP in the window. `UpdateLabelDamage` only pushes a new value when it moved by 8% or more, to avoid flicker. The HP window and the XP still use `MainBaseDamage`, so difficulty is unchanged: only what the player reads changes. Fields under `BrickGrid > Label damage`.
+- **Checked:** edits only, not compiled in Unity nor played.
+- **Open issues:** playtest the late wall (fewer skulls, no label flicker, no surprise when a Cleave or Shockwave pick changes the labels), tune the window / rise time / 8% step. Meltdown and Laser damage count in the ratio (they kill bricks too). The ratio is an average: a brick far from the effects may take longer than shown.

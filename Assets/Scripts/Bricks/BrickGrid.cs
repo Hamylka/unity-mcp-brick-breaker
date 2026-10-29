@@ -95,6 +95,14 @@ public class BrickGrid : MonoBehaviour
     [SerializeField, Min(0.1f)] private float targetKillsPerSecond = 1.5f;
     [Tooltip("Time constant (s) of the kill rate average.")]
     [SerializeField, Min(0.5f)] private float killRateSmoothing = 25f;
+
+    [Header("Label damage (hits left shown on bricks)")]
+    [Tooltip("Seconds over which total damage and ball-hit damage are averaged to get the damage multiplier of the labels.")]
+    [SerializeField, Min(1f)] private float labelDamageWindow = 15f;
+    [Tooltip("Highest multiplier applied to the ball damage for the labels.")]
+    [SerializeField, Min(1f)] private float labelDamageMaxRatio = 25f;
+    [Tooltip("Seconds to follow a rising multiplier (falls 3x slower).")]
+    [SerializeField, Min(0.1f)] private float labelRiseTime = 1.5f;
     [Tooltip("When the wanted window falls (pace relaxed), the toughest HP shrinks to at most this share of itself per row (0.9 = -10% per row).")]
     [SerializeField, Range(0.5f, 1f)] private float shrinkPerRow = 0.9f;
     [Tooltip("The pace factor multiplying the window grows by at most this factor per row while the kill rate is over target.")]
@@ -201,6 +209,11 @@ public class BrickGrid : MonoBehaviour
     private bool windowReady;
     private int lastNoticeMax;
 
+    // Effective damage for the labels: recent total damage / recent ball-hit damage (Phase excluded from both).
+    private float ballDealtAccum;
+    private float totalDealtAccum;
+    private float damageRatio = 1f;
+
     private void Awake()
     {
         body = GetComponent<Rigidbody>();
@@ -220,7 +233,7 @@ public class BrickGrid : MonoBehaviour
     // few seconds, and with no ball flying the last value is kept instead of dropping to 1 (which recolored everything).
     private void Update()
     {
-        if (BallController.Active.Count > 0) Brick.SetHitDamage(BallController.MainBaseDamage);
+        if (BallController.Active.Count > 0) UpdateLabelDamage();
 
         // The HP window input: run clock (ball in play only, like the wall advance) and the smoothed base damage.
         if (IsGameOver || (ball != null && !ball.IsFlying)) return;
@@ -228,6 +241,9 @@ public class BrickGrid : MonoBehaviour
         runTime += dt;
         smoothedDamage += (BallController.MainBaseDamage - smoothedDamage) * (1f - Mathf.Exp(-dt / damageSmoothing));
         killAccum *= Mathf.Exp(-dt / killRateSmoothing);
+        float decay = Mathf.Exp(-dt / labelDamageWindow);
+        ballDealtAccum *= decay;
+        totalDealtAccum *= decay;
     }
 
     private void OnValidate()
@@ -331,6 +347,8 @@ public class BrickGrid : MonoBehaviour
         UpdateHpWindow();
         Brick.ResetColorScale(CurrentMaxHp);
         Brick.ResetHitDamage(BallController.MainBaseDamage);
+        ballDealtAccum = totalDealtAccum = 0f;
+        damageRatio = 1f;
 
         // Back to the starting position and fresh timers.
         offset = 0f;
@@ -415,7 +433,38 @@ public class BrickGrid : MonoBehaviour
         }
     }
 
-    private void HandleBrickHit(Brick brick, int damage) => BrickHit?.Invoke(brick, damage);
+    // Phase is left out of both sums: its malus is not in MainBaseDamage.
+    private void RecordDamage(int dealt)
+    {
+        DamageSource source = DamageTag.Current;
+        if (source == DamageSource.Phase) return;
+        totalDealtAccum += dealt;
+        if (source == DamageSource.Ball) ballDealtAccum += dealt;
+    }
+
+    // Labels and colors count what a ball hit really does with the area effects: base damage x recent
+    // (total damage / ball-hit damage). The ratio is smoothed (quick up, slow down) and the value is only
+    // pushed when it moved by 8% or more, so labels do not flicker. With too few ball hits it keeps its value.
+    private void UpdateLabelDamage()
+    {
+        float baseDamage = BallController.MainBaseDamage;
+        if (ballDealtAccum >= 3f)
+        {
+            float target = Mathf.Clamp(totalDealtAccum / ballDealtAccum, 1f, labelDamageMaxRatio);
+            float time = target > damageRatio ? labelRiseTime : labelRiseTime * 3f;
+            damageRatio += (target - damageRatio) * (1f - Mathf.Exp(-Time.deltaTime / time));
+        }
+
+        int wanted = Mathf.Max(1, Mathf.RoundToInt(baseDamage * damageRatio));
+        int current = Brick.HitDamage;
+        if (Mathf.Abs(wanted - current) >= Mathf.Max(1f, current * 0.08f)) Brick.SetHitDamage(wanted);
+    }
+
+    private void HandleBrickHit(Brick brick, int damage)
+    {
+        RecordDamage(damage);
+        BrickHit?.Invoke(brick, damage);
+    }
 
     private void HandleBrickDestroyed(Brick brick)
     {
