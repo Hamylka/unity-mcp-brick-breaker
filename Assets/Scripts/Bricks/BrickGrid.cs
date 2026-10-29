@@ -215,11 +215,12 @@ public class BrickGrid : MonoBehaviour
         if (generateOnStart) Generate();
     }
 
-    // Brick colors show the hits left with the current ball damage: recolor them when it changes
-    // (damage upgrade, wall buff, main ball lost to an extra). Does nothing while it stays the same.
+    // Brick colors show the hits left with the permanent ball damage (level-ups and cards): recolor them when it
+    // changes. Temporary wall buffs (2x, Phase) are ignored so the wall does not flicker through colors every
+    // few seconds, and with no ball flying the last value is kept instead of dropping to 1 (which recolored everything).
     private void Update()
     {
-        Brick.SetHitDamage(BallController.MainAttackDamage);
+        if (BallController.Active.Count > 0) Brick.SetHitDamage(BallController.MainBaseDamage);
 
         // The HP window input: run clock (ball in play only, like the wall advance) and the smoothed base damage.
         if (IsGameOver || (ball != null && !ball.IsFlying)) return;
@@ -329,7 +330,7 @@ public class BrickGrid : MonoBehaviour
         windowReady = false;
         UpdateHpWindow();
         Brick.ResetColorScale(CurrentMaxHp);
-        Brick.ResetHitDamage(BallController.MainAttackDamage);
+        Brick.ResetHitDamage(BallController.MainBaseDamage);
 
         // Back to the starting position and fresh timers.
         offset = 0f;
