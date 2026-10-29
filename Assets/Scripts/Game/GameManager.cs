@@ -56,6 +56,7 @@ public class GameManager : MonoBehaviour
     private void OnEnable()
     {
         if (ball != null) ball.BallLost += HandleBallLost;
+        BallController.MainChanged += HandleMainChanged;
         if (grid != null)
         {
             grid.BricksReachedPaddle += HandleWallReached;
@@ -66,6 +67,7 @@ public class GameManager : MonoBehaviour
     private void OnDisable()
     {
         if (ball != null) ball.BallLost -= HandleBallLost;
+        BallController.MainChanged -= HandleMainChanged;
         if (grid != null)
         {
             grid.BricksReachedPaddle -= HandleWallReached;
@@ -88,15 +90,32 @@ public class GameManager : MonoBehaviour
             return;
         }
 
-        ball.BallLost -= HandleBallLost;
         lostBall.gameObject.SetActive(false); // the lost ball stays parked below the paddle otherwise
 
         successor.PromoteToMain();
-        successor.AutoReset = false;
-        successor.BallLost += HandleBallLost;
-        ball = successor;
-        if (grid != null) grid.SetBall(successor);
+        SetMainBall(successor);
+        PlayPromoteCue(successor);
+    }
 
+    // The ball that takes a wall buff zone becomes the main ball; the former main is now an extra.
+    private void HandleMainChanged(BallController previous, BallController newMain)
+    {
+        if (IsGameOver) return;
+        SetMainBall(newMain);
+        PlayPromoteCue(newMain);
+    }
+
+    private void SetMainBall(BallController newMain)
+    {
+        if (ball != null) ball.BallLost -= HandleBallLost;
+        newMain.AutoReset = false;
+        newMain.BallLost += HandleBallLost;
+        ball = newMain;
+        if (grid != null) grid.SetBall(newMain);
+    }
+
+    private void PlayPromoteCue(BallController successor)
+    {
         // Promotion cue: the new main ball flashes gold and sends out a ring, so the player sees which one it is.
         SoundManager.Play(Sfx.BallPromote);
         Color gold = new(1f, 0.85f, 0.3f, 1f);

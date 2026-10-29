@@ -26,10 +26,10 @@ public class TemporaryBall : MonoBehaviour
     private float fadeTime;
 
     /// <summary>Starts the countdown. The ball fades out during the last <paramref name="fadeSeconds"/>.</summary>
-    public void Begin(float lifetime, float fadeSeconds, string procId)
+    public void Begin(float lifetime, float fadeSeconds, string procId, float fullTime = -1f)
     {
         remaining = lifetime;
-        totalTime = lifetime;
+        totalTime = fullTime > 0f ? fullTime : lifetime; // a transferred life keeps its HUD ring where it was
         hudId = procId;
         fadeTime = Mathf.Max(0.01f, fadeSeconds);
         startScale = transform.localScale;
@@ -40,6 +40,13 @@ public class TemporaryBall : MonoBehaviour
 
         ball = GetComponent<BallController>();
         ball.BallLost += HandleBallLost;
+    }
+
+    /// <summary>Hands this ball's remaining life to another ball (role swap with the main ball). This ball becomes permanent.</summary>
+    public void TransferTo(BallController other)
+    {
+        other.gameObject.AddComponent<TemporaryBall>().Begin(remaining, fadeTime, hudId, totalTime);
+        Cancel();
     }
 
     /// <summary>Keeps the ball for good: restores its size and trail, and removes this component.</summary>
