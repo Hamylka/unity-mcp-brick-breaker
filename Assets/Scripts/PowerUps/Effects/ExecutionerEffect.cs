@@ -4,6 +4,8 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "ExecutionerEffect", menuName = "BrickBreaker/Effects/Executioner")]
 public class ExecutionerEffect : PowerUpEffect
 {
+    public override bool IsOffensive => true;
+
     [Tooltip("0.25 = +25% damage per pick.")]
     [SerializeField, Min(0f)] private float percent = 0.25f;
 

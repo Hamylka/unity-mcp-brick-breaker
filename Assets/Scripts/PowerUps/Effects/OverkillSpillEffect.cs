@@ -4,6 +4,8 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "OverkillSpillEffect", menuName = "BrickBreaker/Effects/Overkill Spill")]
 public class OverkillSpillEffect : PowerUpEffect
 {
+    public override bool IsOffensive => true;
+
     public override void Apply(PowerUpContext context)
     {
         PowerUpStats.OverkillPercent = PowerUpStats.OverkillPercent <= 0f ? 0.5f : Mathf.Min(1f, PowerUpStats.OverkillPercent + 0.25f);

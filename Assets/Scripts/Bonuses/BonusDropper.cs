@@ -26,12 +26,20 @@ public class BonusDropper : MonoBehaviour
 
     private void OnEnable()
     {
-        if (grid != null) grid.BrickDestroyed += HandleBrickDestroyed;
+        if (grid != null)
+        {
+            grid.BrickDestroyed += HandleBrickDestroyed;
+            grid.BricksCleared += HandleBricksCleared;
+        }
     }
 
     private void OnDisable()
     {
-        if (grid != null) grid.BrickDestroyed -= HandleBrickDestroyed;
+        if (grid != null)
+        {
+            grid.BrickDestroyed -= HandleBrickDestroyed;
+            grid.BricksCleared -= HandleBricksCleared;
+        }
     }
 
     private void HandleBrickDestroyed(Brick brick)
@@ -50,6 +58,22 @@ public class BonusDropper : MonoBehaviour
         item.Initialize(definition);
         item.Collected += HandleItemCollected;
         BonusDropped?.Invoke(definition);
+    }
+
+    // A cleared wall is an event: a Multi-Ball falls from the back of the field (the favourite moment of the runs).
+    private void HandleBricksCleared()
+    {
+        if (itemPrefab == null || bonuses == null) return;
+        foreach (BonusDefinition bonus in bonuses)
+        {
+            if (bonus == null || !(bonus.Effect is MultiBallEffect)) continue;
+            var position = new Vector3(0f, itemPrefab.transform.position.y, 6f);
+            BonusItem item = Instantiate(itemPrefab, position, Quaternion.identity);
+            item.Initialize(bonus);
+            item.Collected += HandleItemCollected;
+            BonusDropped?.Invoke(bonus);
+            return;
+        }
     }
 
     /// <summary>Spawns one item of every bonus in a row near the back of the field, to test them without waiting for drops.</summary>

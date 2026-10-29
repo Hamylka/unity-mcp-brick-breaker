@@ -4,6 +4,8 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "AreaDamageEffect", menuName = "BrickBreaker/Effects/Area Damage")]
 public class AreaDamageEffect : PowerUpEffect
 {
+    public override bool IsOffensive => true;
+
     public enum Kind
     {
         /// <summary>Amount = share of the damage dealt that splashes onto the neighbours (0.25 = 25%).</summary>
@@ -44,7 +46,7 @@ public class AreaDamageEffect : PowerUpEffect
         int percent = Mathf.RoundToInt(amount * 100f);
         switch (kind)
         {
-            case Kind.Shockwave: return $"{percent * stacks}% SPLASH TO NEIGHBOURS";
+            case Kind.Shockwave: return $"{Mathf.RoundToInt(AreaDamage.SplashFor(amount, stacks) * 100f)}% SPLASH TO NEIGHBOURS";
             case Kind.ChainLightning: return $"ARCS TO {stacks + 1} BRICKS FOR {percent}% DMG";
             case Kind.Piercing:
                 int depth = Mathf.RoundToInt(amount) * stacks;

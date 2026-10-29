@@ -7,6 +7,8 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "DamageMultiplierEffect", menuName = "BrickBreaker/Effects/Damage Multiplier")]
 public class DamageMultiplierEffect : PowerUpEffect
 {
+    public override bool IsOffensive => true;
+
     [Tooltip("0.1 = +10% total ball damage per pick.")]
     [SerializeField, Min(0f)] private float percent = 0.1f;
 

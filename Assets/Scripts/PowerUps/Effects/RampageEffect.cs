@@ -4,6 +4,8 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "RampageEffect", menuName = "BrickBreaker/Effects/Rampage")]
 public class RampageEffect : PowerUpEffect
 {
+    public override bool IsOffensive => true;
+
     [Tooltip("0.02 = +2% damage per brick hit since the paddle, per pick.")]
     [SerializeField, Min(0f)] private float percent = 0.02f;
 

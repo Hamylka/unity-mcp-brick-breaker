@@ -4,6 +4,8 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "PaddleCannonEffect", menuName = "BrickBreaker/Effects/Paddle Cannon")]
 public class PaddleCannonEffect : PowerUpEffect
 {
+    public override bool IsOffensive => true;
+
     public override void Apply(PowerUpContext context) => PowerUpStats.CannonPicks++;
 
     public override string Describe(int stacks)

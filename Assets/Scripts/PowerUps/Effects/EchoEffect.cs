@@ -4,6 +4,8 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "EchoEffect", menuName = "BrickBreaker/Effects/Echo")]
 public class EchoEffect : PowerUpEffect
 {
+    public override bool IsOffensive => true;
+
     public override void Apply(PowerUpContext context) => PowerUpStats.EchoPicks++;
 
     public override string Describe(int stacks)

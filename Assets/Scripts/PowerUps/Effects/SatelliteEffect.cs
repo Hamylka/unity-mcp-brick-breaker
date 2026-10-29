@@ -4,6 +4,8 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "SatelliteEffect", menuName = "BrickBreaker/Effects/Satellite")]
 public class SatelliteEffect : PowerUpEffect
 {
+    public override bool IsOffensive => true;
+
     public override void Apply(PowerUpContext context)
     {
         PowerUpStats.SatelliteOrbs++;

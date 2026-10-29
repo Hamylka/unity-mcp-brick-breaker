@@ -4,6 +4,8 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "RicochetEffect", menuName = "BrickBreaker/Effects/Ricochet")]
 public class RicochetEffect : PowerUpEffect
 {
+    public override bool IsOffensive => true;
+
     [Tooltip("0.1 = +10% damage per wall bounce, per pick.")]
     [SerializeField, Min(0f)] private float percent = 0.1f;
 

@@ -19,6 +19,9 @@ public abstract class PowerUpEffect : ScriptableObject
 {
     public abstract void Apply(PowerUpContext context);
 
+    /// <summary>True for cards that make the player kill faster. Every card offer contains at least one when possible.</summary>
+    public virtual bool IsOffensive => false;
+
     /// <summary>
     /// Short text of what the power-up does in total after this many picks (pause screen), e.g. "+3 DAMAGE PER HIT".
     /// Null falls back to the definition's description.

@@ -25,6 +25,8 @@ public class AreaDamage : MonoBehaviour
     [SerializeField, Min(0.5f)] private float neighbourRadius = 1.15f;
     [Tooltip("Reach of Volatile Bricks: 1.5 = the full 3x3 block around the brick.")]
     [SerializeField, Min(0.5f)] private float blastRadius = 1.5f;
+    [Tooltip("Chance that a hit that does not kill also sets off a Volatile blast on its brick (the blast is the liked explosion, kills alone are too rare).")]
+    [SerializeField, Range(0f, 1f)] private float blastHitChance = 0.1f;
     [Tooltip("Furthest an arc of Chain Lightning can jump, in world units.")]
     [SerializeField, Min(0.5f)] private float chainRange = 2.2f;
 
@@ -36,7 +38,7 @@ public class AreaDamage : MonoBehaviour
     [Tooltip("Damage of one tick, as a share of the burning brick's maximum HP (0.2 = 20%).")]
     [SerializeField, Min(0f)] private float burnPercentMaxHp = 0.2f;
     [Tooltip("A tick never deals more than this many hits of the ball's current damage (stops the burn from scaling with the HP window).")]
-    [SerializeField, Min(0.1f)] private float burnMaxBallHits = 2f;
+    [SerializeField, Min(0.1f)] private float burnMaxBallHits = 1f;
     [SerializeField, Min(1)] private int burnTicks = 3;
     [SerializeField, Min(0.1f)] private float burnTickInterval = 1f;
 
@@ -85,7 +87,12 @@ public class AreaDamage : MonoBehaviour
         return grid.TryGetComponent(out AreaDamage existing) ? existing : grid.gameObject.AddComponent<AreaDamage>();
     }
 
-    public void AddSplash(float percent) => splashPercent += Mathf.Max(0f, percent);
+    /// <summary>Each pick adds the card amount up to 4 picks, then 40% of it (25% becomes +10%), so it never snowballs.</summary>
+    public void AddSplash(float percent) => splashPercent += Mathf.Max(0f, percent) * (++splashPicks > SplashFullPicks ? 0.4f : 1f);
+    private const int SplashFullPicks = 4;
+    private int splashPicks;
+    /// <summary>Total splash share after this many picks of a card worth <paramref name="percent"/> each.</summary>
+    public static float SplashFor(float percent, int picks) => percent * (Mathf.Min(picks, SplashFullPicks) + Mathf.Max(0, picks - SplashFullPicks) * 0.4f);
     /// <summary>First pick: 2 arcs. Each further pick adds one. Arc damage is a fixed share of the ball's hit damage (0.2 = 20%), it does not stack.</summary>
     public void AddChain(float percent)
     {
@@ -150,6 +157,11 @@ public class AreaDamage : MonoBehaviour
             {
                 if (blastPercent > 0f) Blast(origin);
                 if (burns.Exists(b => b.Brick == brick)) SpreadBurn(brick);
+            }
+            else if (blastPercent > 0f && Random.value < blastHitChance)
+            {
+                Blast(origin);
+                if (meltdown) Ignite(brick);
             }
             else if (meltdown)
             {
