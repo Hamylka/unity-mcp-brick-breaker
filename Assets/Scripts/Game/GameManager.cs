@@ -37,6 +37,7 @@ public class GameManager : MonoBehaviour
     public bool IsGameOver { get; private set; }
     /// <summary>Seconds of actual play (stops while paused).</summary>
     public float RunTime { get; private set; }
+    private bool runStarted;
     public int BricksDestroyed { get; private set; }
 
     private void Awake()
@@ -77,7 +78,14 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        if (!IsGameOver) RunTime += Time.deltaTime; // deltaTime is 0 while paused
+        // The clock starts when the ball first launches (not while it waits on the paddle).
+        if (!runStarted)
+        {
+            foreach (BallController b in BallController.Active)
+                if (b.IsFlying) { runStarted = true; break; }
+        }
+
+        if (runStarted && !IsGameOver) RunTime += Time.deltaTime; // deltaTime is 0 while paused
     }
 
     private void HandleBallLost(BallController lostBall)
