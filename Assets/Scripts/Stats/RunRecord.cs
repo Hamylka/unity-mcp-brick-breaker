@@ -47,6 +47,8 @@ public class RunRecord
         public int rowsSpawned;
         public float targetHits;
         public float smoothedDamage;
+        public float paceFactor;
+        public float killRate;
         public int hpWindowMin;
         public int hpWindowMax;
         public int ballDamage;

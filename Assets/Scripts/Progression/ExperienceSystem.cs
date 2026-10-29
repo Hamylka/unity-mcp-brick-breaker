@@ -19,12 +19,18 @@ public class ExperienceSystem : MonoBehaviour
     [SerializeField, Min(0.1f)] private float power = 1.2f;
 
     [Header("XP per Brick")]
-    [Tooltip("A brick is worth (XP needed for the current level) / this, split over its HP. Higher = slower levels.")]
+    [Tooltip("A typical brick is worth (XP needed for the current level) / bricks per level, split over its HP. Higher = slower levels. This is the value at level 1.")]
     [SerializeField, Min(0.5f)] private float bricksPerLevel = 8f;
+    [Tooltip("Bricks per level grow by this much for every level gained, so level-ups stay spaced out when the kill rate is high (8 + 0.4 x 49 = 27.6 at level 50).")]
+    [SerializeField, Min(0f)] private float bricksPerLevelGrowth = 0.4f;
+    [Tooltip("A brick's worth is scaled by its max HP / the middle of the HP window now spawning, clamped to this. Weak or outdated bricks pay less, tough ones more (1 = ignore HP).")]
+    [SerializeField, Min(1f)] private float maxHpWorth = 2f;
 
     [Header("Wall Clear Bonus")]
     [Tooltip("Clearing every brick grants this share of the XP needed for the current level (0.5 = 50%).")]
     [SerializeField, Range(0f, 2f)] private float clearBonus = 0.25f;
+    [Tooltip("Seconds of play since the previous clear for the bonus to be paid in full; a faster clear pays proportionally less (min 10%). Stops clear spamming from paying a level each.")]
+    [SerializeField, Min(0f)] private float clearBonusFullAfter = 20f;
 
     [Header("XP Orbs")]
     [Tooltip("XP orbs leave the ball if one is within this distance of the brick that was hit, otherwise they leave the brick.")]
@@ -43,6 +49,7 @@ public class ExperienceSystem : MonoBehaviour
 
     private float xpMultiplier = 1f;
     private float xpRemainder;
+    private float lastClearTime = -999f;
     private Vector3 lastHitPosition;
     private int pendingXp;         // XP earned this frame, waiting to be sent as merged orbs
     private Vector3 pendingBrick;  // first brick hit this frame
@@ -57,11 +64,22 @@ public class ExperienceSystem : MonoBehaviour
     /// XP (before the Quick Learner multiplier) for removing <paramref name="damageDealt"/> HP from a brick:
     /// the share of its HP times the brick's worth, <c>XpToNextLevel / Bricks Per Level</c>.
     /// </summary>
-    public float XpForHit(Brick brick, int damageDealt) =>
-        damageDealt / (float)Mathf.Max(1, brick.MaxHitPoints) * XpToNextLevel / bricksPerLevel;
+    public float XpForHit(Brick brick, int damageDealt)
+    {
+        int maxHp = Mathf.Max(1, brick.MaxHitPoints);
+        // HP worth: a brick of the middle of the current HP window pays 1x, tougher ones more, weaker or outdated ones less.
+        float worth = 1f;
+        if (grid != null)
+        {
+            float mid = Mathf.Max(1f, (grid.CurrentMinHp + grid.CurrentMaxHp) * 0.5f);
+            worth = Mathf.Clamp(maxHp / mid, 1f / maxHpWorth, maxHpWorth);
+        }
+        return damageDealt / (float)maxHp * worth * XpToNextLevel / BricksPerLevel;
+    }
 
     public int BaseXp => baseXp;
-    public float BricksPerLevel => bricksPerLevel;
+    /// <summary>Bricks a level is worth now: the base value plus the growth per level gained.</summary>
+    public float BricksPerLevel => bricksPerLevel + bricksPerLevelGrowth * (Level - 1);
     public float Power => power;
     public int Level { get; private set; } = 1;
     public int CurrentXp { get; private set; }
@@ -97,7 +115,11 @@ public class ExperienceSystem : MonoBehaviour
     // Every brick cleared: a bonus worth part of the current level, flying out of the last brick that was hit.
     private void HandleWallCleared()
     {
-        int amount = Mathf.CeilToInt(XpToNextLevel * clearBonus);
+        // Clears in quick succession pay less (a wall that dies in a second is a sign of too much power, not skill).
+        float now = grid != null ? grid.RunTime : 0f;
+        float share = clearBonusFullAfter <= 0f ? 1f : Mathf.Clamp((now - lastClearTime) / clearBonusFullAfter, 0.1f, 1f);
+        lastClearTime = now;
+        int amount = Mathf.CeilToInt(XpToNextLevel * clearBonus * share);
         if (amount <= 0) return;
 
         ClearBonusGranted?.Invoke(amount);

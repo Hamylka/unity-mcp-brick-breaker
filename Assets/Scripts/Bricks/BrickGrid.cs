@@ -90,6 +90,16 @@ public class BrickGrid : MonoBehaviour
     [Tooltip("\"Difficulty increased\" fires when the window max has grown by this factor since the last notice.")]
     [SerializeField, Min(1.01f)] private float noticeGrowth = 1.75f;
 
+    [Header("HP Window (follows the kill rate)")]
+    [Tooltip("Bricks the player should destroy per second (about the rate rows are added). Faster than this means the player has more power than the ball damage shows (splash, cleave, orbs), so new bricks get tougher.")]
+    [SerializeField, Min(0.1f)] private float targetKillsPerSecond = 1.5f;
+    [Tooltip("Time constant (s) of the kill rate average.")]
+    [SerializeField, Min(0.5f)] private float killRateSmoothing = 8f;
+    [Tooltip("The pace factor multiplying the window grows by at most this factor per row while the kill rate is over target.")]
+    [SerializeField, Min(1f)] private float maxPaceGrowthPerRow = 1.3f;
+    [Tooltip("Below this share of the target kill rate the pace factor slowly relaxes back toward 1 (x0.95 per update, every 2 s). It only grows above 1.25x the target.")]
+    [SerializeField, Range(0.1f, 1f)] private float relaxBelow = 0.6f;
+
     [Header("Endless Spawn Timing")]
     [Tooltip("Pop-in delay between neighbouring bricks of a new row (ripple from the center).")]
     [SerializeField, Min(0f)] private float spawnRipple = 0.04f;
@@ -129,6 +139,10 @@ public class BrickGrid : MonoBehaviour
     public float SmoothedDamage => smoothedDamage;
     /// <summary>Hits the toughest brick spawning now is aimed at, <c>5 + 1.4 x minutes</c>.</summary>
     public float TargetHits => targetHitsStart + targetHitsPerMinute * runTime / 60f;
+    /// <summary>Bricks destroyed per second, averaged over the last few seconds of play.</summary>
+    public float KillRate => killAccum / killRateSmoothing;
+    /// <summary>Multiplier (1 or more) on the HP window that tracks the damage the ball hit does not show; rises while the player kills faster than the target.</summary>
+    public float PaceFactor => paceFactor;
 
     /// <summary>Multiplies the time between steps (upgrades). 1.25 = the wall is 25% slower.</summary>
     public void MultiplyStepInterval(float factor) => stepInterval *= Mathf.Max(0.1f, factor);
@@ -177,6 +191,9 @@ public class BrickGrid : MonoBehaviour
     private bool stepping;
     private float runTime;
     private float smoothedDamage = 1f;
+    private float killAccum;    // decaying count of recent kills (kill rate = killAccum / killRateSmoothing)
+    private float paceFactor = 1f;
+    private float lastPaceTime;
     private bool windowReady;
     private int lastNoticeMax;
 
@@ -205,6 +222,7 @@ public class BrickGrid : MonoBehaviour
         float dt = Time.deltaTime;
         runTime += dt;
         smoothedDamage += (BallController.MainBaseDamage - smoothedDamage) * (1f - Mathf.Exp(-dt / damageSmoothing));
+        killAccum *= Mathf.Exp(-dt / killRateSmoothing);
     }
 
     private void OnValidate()
@@ -397,6 +415,7 @@ public class BrickGrid : MonoBehaviour
     private void HandleBrickDestroyed(Brick brick)
     {
         RemainingBricks--;
+        killAccum += 1f;
         BrickDestroyed?.Invoke(brick);
         if (RemainingBricks > 0) return;
 
@@ -457,7 +476,18 @@ public class BrickGrid : MonoBehaviour
     // It never goes down and grows at most x maxGrowthPerRow per row.
     private void UpdateHpWindow()
     {
-        int wanted = Mathf.Max(1, Mathf.CeilToInt(smoothedDamage * TargetHits));
+        // Pace factor: the ball's damage misses splash, cleave, orbs and bolts, so the window also follows how fast
+        // bricks actually die. Over the target kill rate it grows (at most maxPaceGrowthPerRow per row); well under, it relaxes.
+        // Updated at most once every 2 s of play, so a 4-row wave does not compound it four times.
+        if (windowReady && runTime - lastPaceTime >= 2f)
+        {
+            lastPaceTime = runTime;
+            float ratio = KillRate / targetKillsPerSecond;
+            if (ratio > 1.25f) paceFactor *= Mathf.Min(ratio, maxPaceGrowthPerRow);
+            else if (ratio < relaxBelow) paceFactor = Mathf.Max(1f, paceFactor * 0.95f);
+        }
+
+        int wanted = Mathf.Max(1, Mathf.CeilToInt(smoothedDamage * TargetHits * paceFactor));
         int max = wanted;
         if (windowReady)
         {
