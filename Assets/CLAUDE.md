@@ -64,12 +64,14 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 ## 5. Roadmap
 Single source of truth for what is left. Update it at the end of every task (tick off, add, reorder); changelog entries below only describe what was done.
 
-**v0.2 (next release)** = the current `develop`, the wall clear bonus at 25% (done, branch `fix/wall-clear-bonus-25`) and the three bonus item fixes below (each on its own `fix/...` branch). Cut the release (`release/0.2`, tag `v0.2`, bump `bundleVersion`) once all four are merged into `develop`.
+**v0.2 (next release)** = the current `develop`, the wall clear bonus at 25% (done, branch `fix/wall-clear-bonus-25`) and the five bonus item fixes below (each on its own `fix/...` branch). Cut the release (`release/0.2`, tag `v0.2`, bump `bundleVersion`) once all of them are merged into `develop`.
 
 **v0.2 bonus item fixes (from the 2026-10-29 playtest, in this order)**
 1. ~~**Laser bonus: aiming reference.**~~ Done (branch `fix/laser-aim-reference`, aim beam + closing brackets on the target brick), to playtest.
 2. **Shield: let the ball through the paddle.** A ball bouncing off the shield must pass behind/through the paddle (no paddle collision with it), otherwise it bounces between shield and paddle back and loses both the ball and the shield.
 3. **Multi-Ball timing and telegraph.** Spawn the extra balls only while the main ball travels toward the top of the screen, with a VFX / sound countdown on the ball so the player sees the split coming.
+4. **Wall buff zone picks the main ball.** A ball that takes a wall buff zone becomes the main ball over the other ones.
+5. **Multi-Ball inherits the wall buff.** Today the extras spawned from a buffed ball (e.g. 2x damage) do not get the buff, and their trail looks far too big. If the main ball has a wall buff when a Multi-Ball is picked, the extras spawn from it with the same buff and the same time remaining (no reset).
 
 **v0.3: progression rework** (data and reasoning in the changelog entries of 2026-10-29; do 3 and 2 together, 1 can go first or alone)
 
