@@ -64,9 +64,9 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 ## 5. Roadmap
 Single source of truth for what is left. Update it at the end of every task (tick off, add, reorder); changelog entries below only describe what was done.
 
-**v0.2 (next release)** = the current `develop` plus the wall clear bonus at 25% (branch `fix/wall-clear-bonus-25`). No other change; cut the release (`release/0.2`, tag `v0.2`, bump `bundleVersion`) once that branch is merged.
+**v0.2 (next release)** = the current `develop`, the wall clear bonus at 25% (done, branch `fix/wall-clear-bonus-25`) and the three bonus item fixes below (each on its own `fix/...` branch). Cut the release (`release/0.2`, tag `v0.2`, bump `bundleVersion`) once all four are merged into `develop`.
 
-**Top priorities (bonus item fixes, from the 2026-10-29 playtest)**
+**v0.2 bonus item fixes (from the 2026-10-29 playtest, in this order)**
 1. **Laser bonus: aiming reference.** Show where the bolt will hit (aim line / reticle on the brick in front of the paddle), it is too hard to aim before it fires.
 2. **Shield: let the ball through the paddle.** A ball bouncing off the shield must pass behind/through the paddle (no paddle collision with it), otherwise it bounces between shield and paddle back and loses both the ball and the shield.
 3. **Multi-Ball timing and telegraph.** Spawn the extra balls only while the main ball travels toward the top of the screen, with a VFX / sound countdown on the ball so the player sees the split coming.
@@ -365,6 +365,6 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Next:** see the roadmap "Top priorities". Card ideas: Legendary infinite (Satellite orbs, Paddle Cannon, Greed), Legendary single (Bonus Magnet, Phoenix Ball); Epic infinite (Streak, Ricochet, Echo), Epic (Overkill Spill, Wide Choice); Rare (Executioner, Shield Plus, Laser Focus, Twin Fission, Bonus Extender); Uncommon / Common fillers with a cap.
 
 ### [2026-10-29] - Wall clear bonus 25% and roadmap reset for v0.3 (by Claude)
-- **Done (branch `fix/wall-clear-bonus-25`):** the wall clear bonus is now 25% of the XP needed for the current level (`ExperienceSystem > Clear Bonus`, default and `Game.unity` value 0.25; was 0.5). The 3 profiled runs showed it paid ~27% of the XP of the early levels. It still does not use the Quick Learner multiplier. This is the only gameplay change of v0.2.
-- **Roadmap:** the "Next up" playtest list was removed (those items were played). The roadmap now has the v0.2 note, the three bonus item fixes as top priorities, and a **v0.3 progression rework** with detailed specs for another agent: (1) power-up pool rework (Power Ball / Meteor Ball become multiplicative percent damage, 15+ new or edited cards with rarity, stacks and effect), (2) XP per brick tied to the level cost, (3) HP window following the ball damage. The XP and HP changes are a big refactor, deliberately left after the v0.2 release.
+- **Done (branch `fix/wall-clear-bonus-25`):** the wall clear bonus is now 25% of the XP needed for the current level (`ExperienceSystem > Clear Bonus`, default and `Game.unity` value 0.25; was 0.5). The 3 profiled runs showed it paid ~27% of the XP of the early levels. It still does not use the Quick Learner multiplier. It is the first change of v0.2 (the three bonus item fixes follow).
+- **Roadmap:** the "Next up" playtest list was removed (those items were played). The roadmap now has the v0.2 note, the three bonus item fixes (moved into v0.2 afterwards), and a **v0.3 progression rework** with detailed specs for another agent: (1) power-up pool rework (Power Ball / Meteor Ball become multiplicative percent damage, 15+ new or edited cards with rarity, stacks and effect), (2) XP per brick tied to the level cost, (3) HP window following the ball damage. The XP and HP changes are a big refactor, deliberately left after the v0.2 release.
 - **Open issues:** the 25% value is not playtested. `Game.unity` was edited on disk (one line) while Unity was closed after a crash: check that Unity shows 0.25 on the `ExperienceSystem` component after relaunching.
