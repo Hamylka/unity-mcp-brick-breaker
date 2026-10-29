@@ -64,7 +64,7 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 ## 5. Roadmap
 Single source of truth for what is left. Update it at the end of every task (tick off, add, reorder); changelog entries below only describe what was done.
 
-**v0.3: progression rework** (data and reasoning in the changelog entries of 2026-10-29; do 3 and 2 together, 1 can go first or alone)
+**v0.3: progression rework** (data and reasoning in the changelog entries of 2026-10-29). The XP-per-brick and HP-window items are done (changelog "Progression rework")
 
 *1. Power-up pool rework.* Why: every current card is capped by level ~25, then the offer is always Shockwave / Quick Ball / Power Ball and the player spams Power Ball (32 picks in a row). Goal: a real choice at every level-up, at least 3 cards per rarity, several infinite-stack cards that are not "more damage".
 - **Damage model change (Power Ball, Meteor Ball).** Keep the passive `PowerUpManager > Passive Damage Per Level` (+1 base damage per level-up, applied after the pick as today). Remove the per-level-up card damage: `DamagePerLevelEffect` and `PowerUpManager.BonusDamagePerLevel` go away. Power Ball (Epic, unlimited) becomes **+10% total ball damage per pick, multiplicative** (10 picks = x2.6); Meteor Ball (Legendary, unlimited) becomes **+20% per pick, multiplicative**. Keep the asset GUIDs (swap the effect for a new `DamageMultiplierEffect`), apply at once on pick (no waiting for the next level-up), fold into `BallController.Damage` next to the buff `DamageMultiplier`, round up so damage stays whole, and change `Describe` ("+10% DAMAGE, TOTAL x2.6"). The damage curve of run 3 (about 68 at level 30) is the reference to land near. Update the pause screen "DAMAGE +N/LV" label to the new model.
@@ -79,7 +79,7 @@ Single source of truth for what is left. Update it at the end of every task (tic
   * Legendary, single pick: **Bonus Magnet**: falling bonus items drift toward the paddle. **Phoenix Ball**: once per run, when the last ball is lost, a new ball appears on the paddle instead of Game Over (the card is consumed).
 - Old Legendary stay: Meltdown (1), Loaded Dice (2). Check in the run profiler afterwards: pick spread per card, and no card offered more than a few times without being picked.
 
-*4. Fixes and polish found while playtesting.*
+*2. Fixes and polish found while playtesting.*
 - The run timer shown at the end of the run should start once the ball has first launched from the paddle.
 - Brick colours are sometimes inconsistent while ball damage is changing. Needs more analysis first.
 - The Phase wall buff turns most bricks into skulls (the damage x0.125 changes the hits-left estimate). Bricks must not change visually when the player grabs Phase: the hits-left estimate (colors, pips, numbers) ignores the Phase damage downscale as a special case.
