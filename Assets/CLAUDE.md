@@ -67,7 +67,6 @@ Single source of truth for what is left. Update it at the end of every task (tic
 **v0.3: progression rework, finishing.** Built and profiled on 3 phone runs (changelog entries of 2026-10-29): XP per brick, HP window following ball damage and the kill rate, the 31-card pool, multiplicative Power Ball / Meteor Ball. Progression is stable (a level every 10 to 15 s for 11 minutes). What is left of v0.3:
 
 *1. Fixes and card edits (Sonnet).*
-- **Shield Plus:** Legendary, max stack 1 (was Rare, max 3). On the active-bonus HUD it shows as a **segmented ring**, one segment per bounce left (`ActiveBonusTracker.Report`).
 - **Paddle Cannon:** stack cap of 5, rework the lane table (`PaddleCannon.LanesFor` / `DamageFactorFor`, `Describe`).
 - **Rampage text:** "+2% DMG FOR EACH BRICK HIT, RESETS ON PADDLE", show the current streak bonus if there is room.
 - **Echo feedback:** keep the small ring and pulse, add a short bright tick on the ball at the proc, rate limit when several balls proc in one frame.
@@ -488,3 +487,8 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Done (branch `fix/phase-malus-leak`):** new `BallController.AttackDamage` (and static `MainAttackDamage`): like `Damage` but a temporary multiplier below 1 (the Phase x0.125) is ignored, so the 2x buff still counts. `LaserCannon.CurrentDamage` and `PaddleCannon.Fire` use it, and `BrickGrid` feeds it to `Brick.HitDamage`, so hits-left colors, pips and numbers no longer jump to skulls when Phase is grabbed.
 - **Checked:** edits only, not compiled in Unity nor played.
 - **Open issues:** `Satellite`, `AreaDamage` (strongest-ball reads) and the pause screen DAMAGE stat still read `Damage`, so they are scaled down during Phase too; switch them to `AttackDamage` if that is not wanted. Roadmap fix 1 (first bullet) is done.
+
+### [2026-10-30] - Shield Plus Legendary and segmented shield ring (by Claude)
+- **Done (branch `fix/shield-plus`):** Shield Plus is now Legendary with max 1 stack (`ShieldPlus.asset`: rarity 4, maxStacks 1; the effect still adds +1 bounce, also to a shield already up). `ActiveBonusTracker.Report` has a new overload with `segments` and `segmentsLeft`; `ShieldBarrier` reports one segment per bounce (`bouncesTotal` / `bouncesLeft`, grows with `AddBounces`). `ActiveBonusHud.RefreshSegments` draws the ring as that many clockwise arcs (4% gap), lit in the bonus color, spent ones dark; a shield with one bounce still shows a full ring. Any future charge-based bonus can use the same overload.
+- **Checked:** edits only, not compiled in Unity nor played.
+- **Open issues:** check the arcs and gap on screen with a 2-bounce shield (Shield Plus picked), the rotation direction, and that the shield card shows as Legendary on the pause screen. Roadmap fix "Shield Plus" is done.
