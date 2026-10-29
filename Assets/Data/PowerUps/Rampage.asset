@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Rampage
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Rampage
-  description: +2% damage for every brick hit since the paddle
+  description: +2% damage for each brick hit, resets on paddle
   rarity: 3
   icon: '...#...
 

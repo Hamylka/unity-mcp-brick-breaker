@@ -11,5 +11,5 @@ public class RampageEffect : PowerUpEffect
 
     public override void Apply(PowerUpContext context) => PowerUpStats.RampagePercent += percent;
 
-    public override string Describe(int stacks) => $"+{Mathf.RoundToInt(percent * stacks * 100f)}% DMG PER HIT SINCE PADDLE";
+    public override string Describe(int stacks) => $"+{Mathf.RoundToInt(percent * stacks * 100f)}% DMG FOR EACH BRICK HIT, RESETS ON PADDLE";
 }

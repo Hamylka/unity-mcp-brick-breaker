@@ -67,7 +67,6 @@ Single source of truth for what is left. Update it at the end of every task (tic
 **v0.3: progression rework, finishing.** Built and profiled on 3 phone runs (changelog entries of 2026-10-29): XP per brick, HP window following ball damage and the kill rate, the 31-card pool, multiplicative Power Ball / Meteor Ball. Progression is stable (a level every 10 to 15 s for 11 minutes). What is left of v0.3:
 
 *1. Fixes and card edits (Sonnet).*
-- **Rampage text:** "+2% DMG FOR EACH BRICK HIT, RESETS ON PADDLE", show the current streak bonus if there is room.
 - **Echo feedback:** keep the small ring and pulse, add a short bright tick on the ball at the proc, rate limit when several balls proc in one frame.
 - **Brick colours inconsistent while ball damage changes:** needs analysis first.
 - **Paddle must not move during the Game Over animation.**
@@ -81,6 +80,9 @@ Single source of truth for what is left. Update it at the end of every task (tic
 *4. Ball speed (to implement by another worker, not built).* Quick Ball reads as both a bonus and a malus and is never picked. Replace it with **Steady Ball**: each pick slows the ball by 10% (a tradeoff the player chooses, easier to control for casual players). Make the **base ball speed rise with the run clock** to give endless runs a difficulty ramp until the v0.4 boss exists: small steps, each tied to "DIFFICULTY INCREASED!", up to about **+50%** (needs a playtest to tune), capped, with the speed visible in the ball (longer trail, brighter ball). Steady Ball multiplies on top of the ramp. A faster ball means more hits per second, so it adds pressure and power together; the kill-rate controller already absorbs the extra damage.
 
 *5. Corruption system and the Exquisite / Malus rarities* (kept as designed, after v0.4 decides how the run ends). A new Epic card grants corruption charges. On the level-up screen a red **CORRUPT** button (shown with at least one charge) spends one on the selected card: the other cards shatter, the chosen one drifts to the center with a "computer virus" effect (glitch, RGB split, scanlines, shake, flickering text), then becomes **Exquisite** (new red rarity above Legendary, weight 0, corruption only) or **Malus** (dark grey, a real downside). The result is confirmed with one tap, no reroll or swap. Needs a rarity, colors, frames and sounds in `PowerUpRarity`, the card screen and the pause screen; a rule for which cards can be corrupted (suggested: any card with a stack, not the one-shots) and an Exquisite and a Malus version of each (or a derivation rule). Greed becomes Exquisite; candidates to move up: Paddle Cannon, Satellite, Meltdown, Phoenix Ball. Plan with Opus (art, shader, audio), data and rules with Sonnet.
+
+*6. Playtests.*
+- **Rampage text:** built 2026-10-30 (card and pause screen: "+2% DMG FOR EACH BRICK HIT, RESETS ON PADDLE"). Check on a phone that the pause screen line fits at size 3; the current streak bonus is not shown.
 
 *Decided with the user (2026-10-29):* Time Warp is out of the pool (asset kept). Level-up cooldown / batching and Power Ball / Meteor Ball caps are dropped (level-ups are 10 to 15 s, a 6-minute run takes about 2 of each card).
 
@@ -496,3 +498,8 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Done (branch `fix/paddle-cannon`):** Paddle Cannon is capped at 5 stacks (`PaddleCannon.asset` maxStacks 5, `PaddleCannon.MaxPicks`). The old "1 lane per pick up to 7, then +25% damage" rule is replaced by a table in `PaddleCannon` (one entry per pick): lanes 1 / 2 / 3 / 5 / 7 and bolt damage factor x1 / 1 / 1.25 / 1.25 / 1.5 (on top of the 50% share of the ball's damage). `Describe` reads "N BOLTS PER BOUNCE, X% DMG EACH".
 - **Checked:** edits only, not compiled in Unity nor played.
 - **Open issues:** the table values are a first guess (pick 5 = 7 bolts at 75% each, about 5x the pick-1 volley): tune the two arrays at the top of `PaddleCannon`. Not played. Roadmap fix "Paddle Cannon" is done.
+
+### [2026-10-30] - Rampage text (by Claude)
+- **Done (branch `fix/rampage-text`):** the Rampage card reads "+2% damage for each brick hit, resets on paddle" (`Rampage.asset`) and the pause screen total (`RampageEffect.Describe`) "+N% DMG FOR EACH BRICK HIT, RESETS ON PADDLE".
+- **Checked:** edits only, not compiled in Unity nor seen on screen.
+- **Open issues:** the current streak bonus is not shown (no ball context in `Describe`); the pause line is longer, check it fits at size 3. Roadmap fix "Rampage text" is done.
