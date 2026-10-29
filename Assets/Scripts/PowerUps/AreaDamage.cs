@@ -214,6 +214,25 @@ public class AreaDamage : MonoBehaviour
     }
 
     /// <summary>
+    /// Damage from a continuous source (Satellite orbs): a fraction that piles up on the brick, tagged for the profiler,
+    /// and that does not trigger area effects again.
+    /// </summary>
+    public void DealSecondary(Brick target, float damage, DamageSource source)
+    {
+        if (applying || damage <= 0f || target == null) return;
+        applying = true;
+        try
+        {
+            using var tag = DamageTag.Begin(source);
+            DealFraction(target, damage);
+        }
+        finally
+        {
+            applying = false;
+        }
+    }
+
+    /// <summary>
     /// Overkill Spill: damage beyond what a killed brick had left carries on into the nearest brick behind it, in the
     /// same column. Like the other secondary damage it does not trigger area effects again.
     /// </summary>

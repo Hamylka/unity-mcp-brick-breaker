@@ -11,7 +11,9 @@ public enum DamageSource
     Cleave,
     Meltdown,
     Echo,
-    OverkillSpill
+    OverkillSpill,
+    Satellite,
+    PaddleCannon
 }
 
 /// <summary>

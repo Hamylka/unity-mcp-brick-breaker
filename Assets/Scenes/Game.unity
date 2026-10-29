@@ -5470,6 +5470,11 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 433f482b25fe9374f8cc9cffc8eaacc9, type: 2}
   - {fileID: 11400000, guid: 738a4683c82a09847a53e401792c14b1, type: 2}
   - {fileID: 11400000, guid: ccbad9005a1b1fa4d8c2d92e18057af2, type: 2}
+  - {fileID: 11400000, guid: de1b1c4e494820a4d82179e703878da6, type: 2}
+  - {fileID: 11400000, guid: 2948f801bf0d4364dacc92756fa29099, type: 2}
+  - {fileID: 11400000, guid: e7a072294286e7f418fad67dc7d6094e, type: 2}
+  - {fileID: 11400000, guid: 7b6f6bdc56a917e4ca8135e748f50832, type: 2}
+  - {fileID: 11400000, guid: 52438e06076635d41a28dff3a507a8d2, type: 2}
   baseChoiceCount: 3
   baseRerolls: 1
   rarityWeights:

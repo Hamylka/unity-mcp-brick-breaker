@@ -60,11 +60,26 @@ public class BonusItem : MonoBehaviour
     private void FixedUpdate()
     {
         // Constant velocity, re-applied every step so nothing can alter the fall.
-        body.linearVelocity = Vector3.back * (fallSpeed * PowerUpStats.BonusFallSpeed);
+        Vector3 velocity = Vector3.back * (fallSpeed * PowerUpStats.BonusFallSpeed);
+        if (PowerUpStats.BonusMagnet) velocity.x = MagnetVelocity();
+        body.linearVelocity = velocity;
         body.angularVelocity = Vector3.up * (spinSpeed * Mathf.Deg2Rad);
 
         if (body.position.z < despawnZ) { Destroy(gameObject); return; }
         if (PowerUpStats.CatchZoneScale > 1.001f) CheckWideCatch();
+    }
+
+    // Bonus Magnet: slides toward the paddle's X, quicker the further away it is (up to MagnetMaxSpeed).
+    private const float MagnetMaxSpeed = 3f;
+    private const float MagnetGain = 2.5f;
+
+    private float MagnetVelocity()
+    {
+        paddleRef ??= FindAnyObjectByType<PaddleController>();
+        if (paddleRef == null) return 0f;
+        body.constraints &= ~RigidbodyConstraints.FreezePositionX; // free to slide sideways now
+        float dx = paddleRef.transform.position.x - body.position.x;
+        return Mathf.Clamp(dx * MagnetGain, -MagnetMaxSpeed, MagnetMaxSpeed);
     }
 
     // Catch Zone: the paddle also picks the item up inside a wider strip, without touching the paddle's collider.

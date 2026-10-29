@@ -41,6 +41,22 @@ public static class PowerUpStats
     /// <summary>Share of the damage beyond a brick's HP that passes to the brick behind (Overkill Spill).</summary>
     public static float OverkillPercent { get; set; }
 
+    /// <summary>Orbs circling each ball (Satellite).</summary>
+    public static int SatelliteOrbs { get; set; }
+
+    /// <summary>Paddle Cannon picks: lanes, then extra bolt damage (see <see cref="PaddleCannon"/>).</summary>
+    public static int CannonPicks { get; set; }
+
+    /// <summary>Added to the bonus drop chance (Greed), as a fraction. The total is capped by <see cref="MaxDropChance"/>.</summary>
+    public static float BonusDropBonus { get; set; }
+    public const float MaxDropChance = 0.30f;
+
+    /// <summary>Falling bonus items drift toward the paddle (Bonus Magnet).</summary>
+    public static bool BonusMagnet { get; set; }
+
+    /// <summary>A lost last ball is replaced once by a new one on the paddle (Phoenix Ball).</summary>
+    public static bool PhoenixReady { get; set; }
+
     private static int echoCounter;
     private static readonly int[] EchoIntervals = { 10, 8, 6, 5, 4, 3 };
     private static readonly Color EchoColor = new(0.75f, 0.9f, 1f);
@@ -50,6 +66,11 @@ public static class PowerUpStats
 
     public static void Reset()
     {
+        SatelliteOrbs = 0;
+        CannonPicks = 0;
+        BonusDropBonus = 0f;
+        BonusMagnet = false;
+        PhoenixReady = false;
         RampagePercent = 0f;
         RicochetPercent = 0f;
         EchoPicks = 0;
