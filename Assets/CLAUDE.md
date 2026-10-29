@@ -45,7 +45,7 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 - **Power-ups & Items:**
   * Bonus items drop on brick destruction (6% per brick, no extra chance for tougher bricks, `BonusDropper` enabled) and fall toward the paddle. Three bonuses so far, each a `BonusDefinition` + `BonusEffect` asset in `Assets/Data`. The relative drop weight (Drop Weight field on each `Bonus_*` asset, editable) is Multi-Ball 2, Laser 6, Shield 3:
     * **Multi-Ball:** 2 extra balls fan out from the ball in play for 10 s, shrinking away in the last 2 s. Losing an extra never ends the run, and if the main ball is lost while an extra is flying, that extra is promoted to main (stops fading, run continues). The run only ends when the last ball is lost.
-    * **Laser:** 15 s, the paddle fires an instant bolt straight ahead every second, dealing the ball's current Damage to the first brick hit.
+    * **Laser:** 15 s, the paddle fires an instant bolt straight ahead every second, dealing the ball's current Damage to the first brick hit. An aim guide (`LaserSight`) shows a faint beam to the next target and corner brackets on that brick, closing in as the shot charges.
     * **Shield:** rare, one at a time. A barrier behind the paddle bounces the ball back once, then breaks.
 - **Art Direction (neon, retro, pixelated):**
   * The 3D scene renders at a fixed 640 px height and is upscaled with nearest-neighbour filtering (`RetroPixelation` on the camera). The UI stays at full resolution.
@@ -64,12 +64,14 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
 ## 5. Roadmap
 Single source of truth for what is left. Update it at the end of every task (tick off, add, reorder); changelog entries below only describe what was done.
 
-**v0.2 (next release)** = the current `develop`, the wall clear bonus at 25% (done, branch `fix/wall-clear-bonus-25`) and the three bonus item fixes below (each on its own `fix/...` branch). Cut the release (`release/0.2`, tag `v0.2`, bump `bundleVersion`) once all four are merged into `develop`.
+**v0.2 (next release)** = the current `develop`, the wall clear bonus at 25% (done, branch `fix/wall-clear-bonus-25`) and the five bonus item fixes below (each on its own `fix/...` branch). Cut the release (`release/0.2`, tag `v0.2`, bump `bundleVersion`) once all of them are merged into `develop`.
 
 **v0.2 bonus item fixes (from the 2026-10-29 playtest, in this order)**
-1. **Laser bonus: aiming reference.** Show where the bolt will hit (aim line / reticle on the brick in front of the paddle), it is too hard to aim before it fires.
+1. ~~**Laser bonus: aiming reference.**~~ Done (branch `fix/laser-aim-reference`, aim beam + closing brackets on the target brick), to playtest.
 2. **Shield: let the ball through the paddle.** A ball bouncing off the shield must pass behind/through the paddle (no paddle collision with it), otherwise it bounces between shield and paddle back and loses both the ball and the shield.
 3. **Multi-Ball timing and telegraph.** Spawn the extra balls only while the main ball travels toward the top of the screen, with a VFX / sound countdown on the ball so the player sees the split coming.
+4. **Wall buff zone picks the main ball.** A ball that takes a wall buff zone becomes the main ball over the other ones.
+5. **Multi-Ball inherits the wall buff.** Today the extras spawned from a buffed ball (e.g. 2x damage) do not get the buff, and their trail looks far too big. If the main ball has a wall buff when a Multi-Ball is picked, the extras spawn from it with the same buff and the same time remaining (no reset).
 
 **v0.3: progression rework** (data and reasoning in the changelog entries of 2026-10-29; do 3 and 2 together, 1 can go first or alone)
 
@@ -368,3 +370,8 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Done (branch `fix/wall-clear-bonus-25`):** the wall clear bonus is now 25% of the XP needed for the current level (`ExperienceSystem > Clear Bonus`, default and `Game.unity` value 0.25; was 0.5). The 3 profiled runs showed it paid ~27% of the XP of the early levels. It still does not use the Quick Learner multiplier. It is the first change of v0.2 (the three bonus item fixes follow).
 - **Roadmap:** the "Next up" playtest list was removed (those items were played). The roadmap now has the v0.2 note, the three bonus item fixes (moved into v0.2 afterwards), and a **v0.3 progression rework** with detailed specs for another agent: (1) power-up pool rework (Power Ball / Meteor Ball become multiplicative percent damage, 15+ new or edited cards with rarity, stacks and effect), (2) XP per brick tied to the level cost, (3) HP window following the ball damage. The XP and HP changes are a big refactor, deliberately left after the v0.2 release.
 - **Open issues:** the 25% value is not playtested. `Game.unity` was edited on disk (one line) while Unity was closed after a crash: check that Unity shows 0.25 on the `ExperienceSystem` component after relaunching.
+
+### [2026-10-29] - Laser aiming reference (by Claude)
+- **Done (branch `fix/laser-aim-reference`):** v0.2 bonus fix 1. While the Laser is active, the new `LaserSight` (`Assets/Scripts/Bonuses`, owned by `LaserCannon`, no scene setup) draws a faint beam in the laser color from the paddle to whatever the next bolt will hit (fainter at the paddle, stronger at the target), and four corner brackets framing the top of the targeted brick. As the next shot charges, the brackets close in from 1.7x to 1.08x the brick footprint and brighten, then blink for the last 0.2 s, so the player sees both where and when the bolt lands. The frame slides quickly to a new brick when the paddle moves (`FollowSharpness` 30). No brackets when a wall or nothing is in the lane. Everything is dimmed to 45% while no ball is flying, because the cannon holds its fire then. The sight and the bolt share one raycast (`LaserCannon.FindTarget`, now `RaycastNonAlloc` instead of `RaycastAll`). Look values are constants at the top of `LaserSight`.
+- **Checked:** compiles clean, no console errors. In play mode with the cannon active, the beam ended on the first brick in the lane and the brackets framed it. A game camera render showed the beam and brackets in the laser pink. Not seen against a real wall or in motion: Unity stayed on frame 1 while unfocused, so the bricks were still at their spawn pop-in scale.
+- **Open issues:** playtest the readability. The beam is ~2 px at the 640 px render and lies on the floor grid's center line when the paddle is centered. Raise `BeamWidth` or the alpha if it gets lost. Bracket size on a phone and the blink timing are first guesses.
