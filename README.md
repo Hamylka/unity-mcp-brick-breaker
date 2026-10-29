@@ -4,15 +4,18 @@
 
 Claude was connected to the Unity Editor through the **Model Context Protocol (MCP)**.
 From a single project brief ([`Assets/CLAUDE.md`](Assets/CLAUDE.md)), the agent generated the scene, the gameplay code,
-the visuals and the audio (**45 C# scripts, ~5,400 lines**) directly inside the editor.
+the visuals and the audio (**82 C# scripts, ~12,700 lines**) directly inside the editor.
 No line of code was written by hand: the only human input was the brief, the prompts, playtesting, and tuning
 public parameters in the Inspector.
 
-Two models were used: **Claude Sonnet 5.5** on day 1, then **Claude Opus 5.5** from day 2 onward,
-partly to compare what each one brings (see [Two models, one project](#two-models-one-project)).
+Two models were used: **Claude Sonnet 5.5** on day 1, then **both Claude Sonnet 5.5 and Claude Opus 5.5** from day 2
+onward, chosen per task: Sonnet for simple tasks and everything outside art, Opus when a task needs SFX or VFX
+enhancements (see [Two models, one project](#two-models-one-project)).
 
 **Result:** a playable prototype in **4 hours** on day 1 (work estimated at about a week by hand), then polished into
-a full game loop with a neon art direction, audio and an Android build.
+a full game loop with a neon art direction, audio and an Android build. Two tagged releases so far (**v0.1** on
+2026-10-26, **v0.2** on 2026-10-29), the second adding area-of-effect power-ups, wall buff zones, a pause screen,
+a logo and a run profiler.
 
 <!-- TODO: add a gameplay GIF or screenshot, e.g. docs/gameplay.gif
 ![Gameplay](docs/gameplay.gif)
@@ -32,15 +35,23 @@ a full game loop with a neon art direction, audio and an Android build.
   the physics rules and the systems to build, and keeps a changelog of the project. It is the main artifact of this project.
 - **Human role:** writing the brief, steering the agent with prompts, playtesting (in the editor and on an Android phone),
   and tuning values in the Inspector.
-- **Workflow:** from day 2, Gitflow: `main` for stable versions, `develop` for integration, one `feature/...` branch per feature.
+- **Workflow:** from day 2, Gitflow: `main` for stable versions (tagged `v0.1`, `v0.2`), `develop` for integration,
+  one `feature/...` or `fix/...` branch per task and a `release/...` branch to cut each version. Every session starts
+  from `CLAUDE.md` alone, and ends with a changelog entry so the next one picks up the latest state.
+- **Balancing data:** every run is recorded by a built-in profiler (damage per source, level-ups, card picks, snapshots)
+  so tuning is done from real numbers instead of impressions.
 
 ## Two models, one project
 
-The project was built in two phases with two Claude models:
+The project was built with two Claude models, and the split changed after day 1:
 
 - **Day 1 (2026-10-21): Claude Sonnet 5.5** built the playable prototype from the brief.
-- **From day 2 (2026-10-23 onward): Claude Opus 5.5** took over for polish, game flow, art direction, audio and the
-  Android build.
+- **From day 2 (2026-10-23 onward): both models, depending on the task.** I switch between **Claude Sonnet 5.5** and
+  **Claude Opus 5.5** to save tokens:
+  - **Sonnet 5.5** for simple tasks and everything outside art: gameplay features and systems, balancing, small fixes,
+    UI tweaks, refactors, docs and Git operations.
+  - **Opus 5.5** for tasks that need SFX or VFX enhancements (art direction, visual effects, shaders, audio and music),
+    and for the hard debugging that came up along the way.
 
 Same setup for both: the same brief, the same MCP connection to the Unity Editor, and the same rule that no code is
 written by hand.
@@ -59,7 +70,7 @@ written by hand.
 | UI | HUD with a runtime pixel font, rounded flat sprites, "LEVEL UP!" banner, pooled pixel particles |
 | Power-ups | Roguelite level-up card screen (rarity weights, halo and sparkles, Confirm and disabled Reroll), 6 starter power-ups, slow-down before the cards appear |
 
-### Claude Opus 5.5: polish, game flow, art, audio and mobile (day 2 onward)
+### Claude Opus 5.5: polish, game flow, art, audio and mobile (day 2)
 
 | Area | Work |
 |---|---|
@@ -91,59 +102,72 @@ Sonnet for most features.
 
 **What both did well:** I never had to explain something twice with either model.
 
+**Since then:** the per-task split described above applies (the model table is in [`CLAUDE.md`](CLAUDE.md)).
+The tables above show what each model did in the first phases, before the work was shared between them.
+
 
 ## The game
 
 | System | What it does |
 |---|---|
-| Camera | Fixed pseudo-third-person view behind the paddle, tilted down over the playfield |
+| Camera | Fixed pseudo-third-person view behind the paddle, tilted down over the playfield; on wide screens the horizontal field of view stays locked on a centered 9:16 column |
 | Paddle | Smooth touch/mouse drag, built for mobile portrait |
-| Ball | Arcade physics: constant speed, no gravity, exit angle depends on where it hits the paddle |
-| Bricks | Generated rows of multi-hit bricks, colored by remaining hit points, pushed one row toward the player every few seconds; new rows keep coming, tougher over time |
-| Clear bonus | Clearing every brick grants bonus XP, shows "CLEAR!" and spawns a fresh wave immediately |
-| Progression | Endless XP: each hit grants XP equal to the damage dealt; XP orbs fly to the HUD bar |
-| Power-ups | Roguelite level-up screen: pick one of several cards rolled by rarity (ball damage, ball speed, paddle width, wall slow, XP boost), with a Reroll button |
-| Game Over | Losing the ball or letting the wall reach the red line ends the run; results screen with best level and Restart |
-| Art | Neon retro look: low-resolution pixel rendering, glowing rounded bricks and paddle, grid floor, bloom |
-| Audio | 30 synthesized retro sound effects and a synthwave music loop, all generated in code |
+| Ball | Arcade physics: constant speed, no gravity, exit angle depends on where it hits the paddle; damage stat that grows with every level-up |
+| Bricks | Rows of multi-hit bricks (7 columns), pushed one row toward the player every 5 seconds; new rows keep coming, tougher over time. HP window scales up with the rows, and the color is a heat ramp of the hits left |
+| Brick HP display | Pause-screen setting, saved between runs: PIPS (default), COLOR or NUMBERS, always showing the hits left to break the brick |
+| Clear bonus | Clearing every brick grants 25% of the current level's XP, shows "CLEAR!" and spawns a fresh wave immediately |
+| Progression | Endless XP: each hit grants XP equal to the damage dealt; XP orbs, color-coded by value, fly to the HUD bar |
+| Power-ups | Roguelite level-up screen: pick one of three cards rolled by rarity (Common to Legendary), with a Reroll button and level pips on each card. 13 cards: ball stats, paddle width, time slow, XP boost, and area-of-effect damage (Shockwave, Piercing Ball, Chain Lightning, Volatile Bricks, Cleave, Meltdown) |
+| Bonuses | Falling bonus items (6% per brick): Multi-Ball (telegraphed split), Laser (with an aim guide) and Shield, with a timer HUD |
+| Wall buff zones | Glowing zones appear on the side walls; a ball bouncing in one gets a timed buff: 2x damage or Phase (passes through bricks) |
+| Pause | Pause button, Escape / P, or automatic when the app goes to the background; shows run stats and every power-up picked, with a 3-2-1 resume and a two-tap restart |
+| Game Over | Losing the last ball or letting the wall reach the red line ends the run, with a short blow-up animation, then a results screen with best level, Restart and run data sharing |
+| Art | Neon retro look: low-resolution pixel rendering, glowing rounded bricks and paddle, grid floor, bloom, camera shake |
+| Audio | 52 synthesized retro sound effects and a synthwave music loop, all generated in code |
 | UI | Runtime-generated 5x7 pixel font, flat sprites and pooled pixel particles: no image or font assets |
-| Bonuses | Falling bonus items (6% per brick): Multi-Ball, Laser and Shield, with a timer HUD |
+| Run profiler | Every run is saved as JSON (damage per source, level-ups, card offers and picks, events, snapshots) for balancing |
 
 ## Tech stack
 
 - Unity 6 (6000.6) · Universal Render Pipeline 17.6 · Input System 1.20
-- C# · target: Android, portrait (IL2CPP, ARM64)
+- C# · targets: Android, portrait (IL2CPP, ARM64), and Windows, landscape (first pass)
 - Claude Sonnet 5.5 and Claude Opus 5.5 · Model Context Protocol (MCP) · MCP for Unity
 
 ## Project layout
 
 ```
+CLAUDE.md              session guide for the agent (imports Assets/CLAUDE.md)
 Assets/
-  CLAUDE.md            the brief given to the agent, with the project changelog
+  CLAUDE.md            the brief given to the agent, with the roadmap and the project changelog
   Scripts/
-    Ball/  Paddle/  Bricks/  Walls/  Camera/
-    Game/              run flow and Game Over
+    Ball/  Paddle/  Bricks/  Camera/
+    Walls/             side walls, buff zones and the buffs they give
+    Game/              run flow, Game Over and its animation
     Bonuses/           falling bonus items and their effects
     Progression/       XP system
     PowerUps/          level-up power-ups and their effects
-    UI/                HUD, card screen, Game Over screen, pixel font, particles
-    Visuals/           rounded neon meshes
+    Stats/             run profiler and damage attribution
+    UI/                HUD, card screen, pause and Game Over screens, pixel font, particles
+    Visuals/           rounded neon meshes, glows and particle effects
     Audio/             sound effects and music playback
-    Editor/            sound effect and music generators
-  Art/                 neon materials, textures, post-processing profile
+    Editor/            sound effect and music generators, run data menu
+  Art/                 neon materials and shaders, textures, post-processing profile, logo and app icon
   Audio/               generated sound effects and music loop
   Data/                ScriptableObjects: brick palette, bonuses, power-ups
+  Resources/           wall buffs and shared effect assets loaded at runtime
   Prefabs/  Materials/  Physics/  Scenes/Game.unity
+Design/Logo/           logo source (SVG drawn by code) and the PNG export script
 ```
 
 ## Run it
 
 1. Open the project with **Unity 6000.6.6f1** (or a later Unity 6 release).
-2. Open `Assets/Scenes/Game.unity` and press **Play** (a portrait Game view such as 1080x1920 shows it best).
-3. Drag with the mouse (or touch on a device) to move the paddle; release to launch the ball.
+2. Open `Assets/Scenes/Game.unity` and press **Play** (a portrait Game view such as 1080x1920 shows it best; a wide Game view also works).
+3. Drag with the mouse (or touch on a device) to move the paddle; release to launch the ball. Escape or P pauses.
 4. To play on Android: **File > Build Profiles > Android**, connect a phone with USB debugging enabled, then **Build And Run**.
 
-The sound effects and the music can be regenerated with **Tools > Brick Breaker > Generate Sound Effects / Generate Music**.
+The **Tools > Brick Breaker** menu regenerates the sound effects and the music, and opens or clears the saved run data.
+Run files are written to the persistent data path (`RunData` folder); on a phone, the Game Over screen can share them.
 
 ## Status
 
