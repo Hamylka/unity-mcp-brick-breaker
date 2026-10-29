@@ -68,7 +68,6 @@ Single source of truth for what is left. Update it at the end of every task (tic
 
 *1. Fixes and card edits (Sonnet).*
 - **Echo feedback:** keep the small ring and pulse, add a short bright tick on the ball at the proc, rate limit when several balls proc in one frame.
-- **Paddle must not move during the Game Over animation.**
 - **Run timer** at the end of the run should start when the ball first launches.
 - **Brick colors / pips / skulls use ball damage only** while AoE does most of the damage: the late wall shows many skulls (the user plays in NUMBERS mode and finds it fine).
 
@@ -508,3 +507,8 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Done (branch `fix/brick-color-stable`):** `BrickGrid` feeds `Brick.SetHitDamage` with `MainBaseDamage` (level-ups and cards only, no temporary buffs) and keeps the last value while no ball is active.
 - **Checked:** edits only, not compiled in Unity nor played.
 - **Open issues:** the rounding shifts on a permanent damage change remain (a real change in hits left, but uneven looking); if still disliked, color from the continuous ratio `hp / windowMax` and keep hits only for labels. Pips and numbers now ignore the 2x buff too.
+
+### [2026-10-30] - Paddle frozen during Game Over (by Claude)
+- **Done (branch `fix/paddle-frozen-game-over`):** `PaddleController` reads `GameManager.IsGameOver`; once the run is lost it ignores pointer and keyboard input and sets its targets to the current position, so the paddle stays put during the finale and the Game Over screen. Input comes back after a restart (scene reload).
+- **Checked:** edits only, not compiled in Unity nor played.
+- **Open issues:** the paddle may glide a few centimetres as its smoothing settles. Roadmap fix "Paddle must not move" is done.
