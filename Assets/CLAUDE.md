@@ -67,7 +67,6 @@ Single source of truth for what is left. Update it at the end of every task (tic
 **v0.3: progression rework, finishing.** Built and profiled on 3 phone runs (changelog entries of 2026-10-29): XP per brick, HP window following ball damage and the kill rate, the 31-card pool, multiplicative Power Ball / Meteor Ball. Progression is stable (a level every 10 to 15 s for 11 minutes). What is left of v0.3:
 
 *1. Fixes and card edits (Sonnet).*
-- **Phase malus must not leak (confirmed in code):** both `LaserCannon.CurrentDamage` and `PaddleCannon.Fire` use `BallController.Damage`, which multiplies in `DamageMultiplier`, so while the ball is phasing (x0.125) the Laser bolts and the Paddle Cannon bolts (50% of that) are scaled down too. Both must ignore a multiplier below 1 (use `BaseDamage`, or the buff multiplier clamped to at least 1, so the 2x damage buff still counts). The hits-left estimate (colors, pips, numbers) must also ignore the Phase downscale, so bricks do not turn into skulls when the player grabs Phase.
 - **Shield Plus:** Legendary, max stack 1 (was Rare, max 3). On the active-bonus HUD it shows as a **segmented ring**, one segment per bounce left (`ActiveBonusTracker.Report`).
 - **Paddle Cannon:** stack cap of 5, rework the lane table (`PaddleCannon.LanesFor` / `DamageFactorFor`, `Describe`).
 - **Rampage text:** "+2% DMG FOR EACH BRICK HIT, RESETS ON PADDLE", show the current streak bonus if there is room.
@@ -484,3 +483,8 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Roadmap:** v0.3 rewritten (built items condensed, Time Warp removed from the pool, late-game safety nets dropped, ball speed moved to v0.3, Corruption kept), v0.4 now has B ball speed proposal, C boss, D engagement ideas.
 - **Checked:** compiles clean. Not played.
 - **Open issues:** playtest Shockwave as Uncommon, the Volatile proc rate, Meltdown strength, how often the damage-card swap fires.
+
+### [2026-10-30] - Phase malus no longer leaks (by Claude)
+- **Done (branch `fix/phase-malus-leak`):** new `BallController.AttackDamage` (and static `MainAttackDamage`): like `Damage` but a temporary multiplier below 1 (the Phase x0.125) is ignored, so the 2x buff still counts. `LaserCannon.CurrentDamage` and `PaddleCannon.Fire` use it, and `BrickGrid` feeds it to `Brick.HitDamage`, so hits-left colors, pips and numbers no longer jump to skulls when Phase is grabbed.
+- **Checked:** edits only, not compiled in Unity nor played.
+- **Open issues:** `Satellite`, `AreaDamage` (strongest-ball reads) and the pause screen DAMAGE stat still read `Damage`, so they are scaled down during Phase too; switch them to `AttackDamage` if that is not wanted. Roadmap fix 1 (first bullet) is done.

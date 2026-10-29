@@ -219,7 +219,7 @@ public class BrickGrid : MonoBehaviour
     // (damage upgrade, wall buff, main ball lost to an extra). Does nothing while it stays the same.
     private void Update()
     {
-        Brick.SetHitDamage(BallController.MainDamage);
+        Brick.SetHitDamage(BallController.MainAttackDamage);
 
         // The HP window input: run clock (ball in play only, like the wall advance) and the smoothed base damage.
         if (IsGameOver || (ball != null && !ball.IsFlying)) return;
@@ -329,7 +329,7 @@ public class BrickGrid : MonoBehaviour
         windowReady = false;
         UpdateHpWindow();
         Brick.ResetColorScale(CurrentMaxHp);
-        Brick.ResetHitDamage(BallController.MainDamage);
+        Brick.ResetHitDamage(BallController.MainAttackDamage);
 
         // Back to the starting position and fresh timers.
         offset = 0f;

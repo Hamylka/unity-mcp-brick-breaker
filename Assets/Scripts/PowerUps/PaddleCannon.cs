@@ -24,7 +24,7 @@ public static class PaddleCannon
         int lanes = LanesFor(picks);
         if (lanes == 0) return;
 
-        float damage = ball.Damage * DamageShare * DamageFactorFor(picks);
+        float damage = ball.AttackDamage * DamageShare * DamageFactorFor(picks);
         float width = paddle.size.x;
         for (int i = 0; i < lanes; i++)
         {

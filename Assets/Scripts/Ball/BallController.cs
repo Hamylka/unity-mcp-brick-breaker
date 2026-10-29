@@ -64,6 +64,12 @@ public class BallController : MonoBehaviour
     /// <summary>Hit points removed from a brick per hit.</summary>
     public int Damage => WholeDamage(damage * cardDamageMultiplier * DamageMultiplier);
 
+    /// <summary>
+    /// Damage for things that are not the ball itself (Laser, Paddle Cannon) and for hits-left estimates: like
+    /// <see cref="Damage"/> but a buff below 1 (the Phase malus) is ignored, so only boosts such as the 2x buff count.
+    /// </summary>
+    public int AttackDamage => WholeDamage(damage * cardDamageMultiplier * Mathf.Max(1f, DamageMultiplier));
+
     /// <summary>Permanent damage per hit (level-ups and cards), without temporary wall buffs (what the wall HP window follows).</summary>
     public int BaseDamage => WholeDamage(damage * cardDamageMultiplier);
 
@@ -109,6 +115,25 @@ public class BallController : MonoBehaviour
                 if (ball == null) continue;
                 if (!ball.IsExtra) return ball.Damage;
                 best = Mathf.Max(best, ball.Damage);
+            }
+            return best;
+        }
+    }
+
+    /// <summary>
+    /// Like <see cref="MainDamage"/> but ignoring the Phase malus (<see cref="AttackDamage"/>): the reference for
+    /// hits-left colors and labels, so bricks do not turn into skulls when the player grabs Phase.
+    /// </summary>
+    public static int MainAttackDamage
+    {
+        get
+        {
+            int best = 1;
+            foreach (BallController ball in active)
+            {
+                if (ball == null) continue;
+                if (!ball.IsExtra) return ball.AttackDamage;
+                best = Mathf.Max(best, ball.AttackDamage);
             }
             return best;
         }
