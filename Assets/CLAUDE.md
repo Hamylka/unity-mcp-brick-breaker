@@ -426,3 +426,7 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Roadmap item 1 is built.** Not done from it: the "pause screen DAMAGE" label is updated, but the run profiler check (pick spread per card, nothing offered a few times without being picked) needs real runs.
 - **Checked:** compiles clean, no console errors. Not played.
 - **Open issues:** playtest everything (Satellite cost with many orbs and bricks, Paddle Cannon lanes vs the paddle width and its y, Magnet speed, Phoenix with Multi-Ball), then profile 2 or 3 runs. Placeholder visuals and sounds on the new cards (Opus pass). Icons are first drafts. Python is not installed on this machine: use the file tools for edits.
+
+### [2026-10-29] - Dev "END RUN" button on the pause screen (by Claude)
+- **Done (branch `feature/powerup-pool-rework`):** the pause screen has an amber "END RUN (DEV)" button under Restart / Resume, built only when `RunProfiler.Available` (editor or development build). It closes the pause screen and calls `GameManager.EndRun(BallLost)`: the usual finale, then the Game Over screen with its "RUN DATA / SHARE" row. It lets a long playtest end on purpose on a phone. Release builds do not have it.
+- **Checked:** compiles clean. Not seen on screen (position y -890 under the buttons row, size 460x90).
