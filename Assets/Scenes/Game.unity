@@ -1020,6 +1020,11 @@ MonoBehaviour:
     volume: 0.85
     pitchJitter: 0
     minInterval: 0.5
+  - id: 51
+    clip: {fileID: 8300000, guid: ccc066faaa312f44290d2b93e34359e3, type: 3}
+    volume: 0.4
+    pitchJitter: 0
+    minInterval: 0.1
 --- !u!4 &106477069
 Transform:
   m_ObjectHideFlags: 0
@@ -1398,7 +1403,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 60
-  field of view: 50.941975
+  field of view: 56.445835
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -4185,6 +4190,8 @@ MonoBehaviour:
   labelColor: {r: 0.2, g: 0.85, b: 1, a: 1}
   bestColor: {r: 1, g: 0.85, b: 0.2, a: 1}
   buttonColor: {r: 1, g: 0.82, b: 0.2, a: 1}
+  dataKeptColor: {r: 0.2, g: 0.85, b: 1, a: 1}
+  dataDiscardedColor: {r: 0.45, g: 0.48, b: 0.6, a: 1}
   particleAmount: 1
 --- !u!4 &1033658657
 Transform:

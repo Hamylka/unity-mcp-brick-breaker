@@ -77,5 +77,8 @@ public enum Sfx
     BallPoof,
     WallTremor,
     BrickBlast,
-    WallCollapse
+    WallCollapse,
+
+    // Multi-Ball countdown before the split
+    MultiBallTick
 }

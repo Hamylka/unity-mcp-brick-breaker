@@ -59,6 +59,8 @@ public static class RetroSfxGenerator
         { Sfx.WallTremor, (0.55f, 0f, 0.5f) },
         { Sfx.BrickBlast, (0.4f, 0.08f, 0.035f) },
         { Sfx.WallCollapse, (0.85f, 0f, 0.5f) },
+        // Multi-Ball countdown: three ticks over a second, the code raises the pitch of each one.
+        { Sfx.MultiBallTick, (0.4f, 0f, 0.1f) },
     };
 
     [MenuItem("Tools/Brick Breaker/Generate Sound Effects")]
@@ -285,6 +287,12 @@ public static class RetroSfxGenerator
                                    (0f, Tone(0.9f, 230f, 35f, Wave.Saw, 0.2f, decay: 0.3f)),
                                    (0f, Tone(1.4f, 3500f, 140f, Wave.Noise, 0.7f, decay: 0.4f)),
                                    (0.15f, Tone(1.1f, 9000f, 2500f, Wave.Noise, 0.12f, decay: 0.3f, vibratoHz: 23f, vibratoDepth: 0.5f))));
+
+        // Multi-Ball tick: a bright double blip over a soft "tok", the split counting down on the ball.
+        // Same square timbre as the split blips, so the ticks lead into it.
+        Save(Sfx.MultiBallTick, Mix((0f, Tone(0.04f, 1100f, 1250f, Wave.Square, 0.45f, duty: 0.25f, decay: 0.025f)),
+                                    (0.045f, Tone(0.05f, 1650f, 1800f, Wave.Square, 0.3f, duty: 0.25f, decay: 0.03f)),
+                                    (0f, Tone(0.08f, 260f, 180f, Wave.Triangle, 0.45f, decay: 0.03f))));
 
         AssetDatabase.Refresh();
         RegisterNewSounds();
