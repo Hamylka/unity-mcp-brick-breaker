@@ -35,7 +35,7 @@ public class GameManager : MonoBehaviour
     [Tooltip("Seconds of play between two ball speed steps.")]
     [SerializeField, Min(1f)] private float speedStepInterval = 60f;
     [Tooltip("Speed added by each step, as a fraction of the start speed (0.2 = +20%). No cap for now.")]
-    [SerializeField, Min(0f)] private float speedStepAmount = 0.2f;
+    [SerializeField, Min(0f)] private float speedStepAmount = 0.15f;
 
     /// <summary>Raised once when the run ends.</summary>
     public event Action<LoseReason> GameOver;

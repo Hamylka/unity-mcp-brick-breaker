@@ -15,8 +15,15 @@ public class BallController : MonoBehaviour
 {
     private enum State { Waiting, Flying, Lost }
 
+    /// <summary>Default floor of the card speed (share of the start speed), also used by card texts.</summary>
+    public const float DefaultMinSpeedFactor = 0.7f;
+
     [Header("Speed")]
     [SerializeField, Min(0.1f)] private float baseSpeed = 10f;
+    [Tooltip("Slowest the ball can get from cards (Steady Ball), as a share of its start speed. The run ramp comes on top.")]
+    [SerializeField, Range(0.1f, 1f)] private float minSpeedFactor = DefaultMinSpeedFactor;
+    // Speed at the start of the run, kept so clones made by SpawnExtra share the same floor.
+    [SerializeField, HideInInspector] private float startSpeed;
     [Tooltip("Seconds for a 100% speed boost to fade back to the base speed.")]
     [SerializeField, Min(0.05f)] private float boostDecayTime = 1f;
     [Tooltip("Upper limit of the temporary boost (1 = +100% speed).")]
@@ -54,7 +61,10 @@ public class BallController : MonoBehaviour
     public Vector3 Direction { get; private set; } = Vector3.forward;
     /// <summary>Run-clock speed ramp (1 = start speed), set by <see cref="GameManager"/>; applies to every ball, on top of upgrades.</summary>
     public static float RunSpeedFactor { get; set; } = 1f;
-    public float CurrentSpeed => baseSpeed * RunSpeedFactor * (1f + boost);
+    /// <summary>Card speed with the run ramp applied, never below the floor (<see cref="minSpeedFactor"/> of the start speed).</summary>
+    public float CurrentSpeed => Mathf.Max(baseSpeed * RunSpeedFactor, startSpeed * minSpeedFactor) * (1f + boost);
+    /// <summary>Slowest card speed as a multiplier of the start speed (Steady Ball stops here).</summary>
+    public float MinSpeedFactor => minSpeedFactor;
     public bool IsFlying => state == State.Flying;
 
     /// <summary>
@@ -242,6 +252,7 @@ public class BallController : MonoBehaviour
     private void Awake()
     {
         body = GetComponent<Rigidbody>();
+        if (startSpeed <= 0f) startSpeed = baseSpeed;
         body.useGravity = false;
         body.linearDamping = 0f;
         body.angularDamping = 0f;

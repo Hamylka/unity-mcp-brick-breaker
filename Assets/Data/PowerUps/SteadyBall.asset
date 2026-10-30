@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Steady Ball
   description: Ball speed -10%
-  rarity: 0
+  rarity: 1
   icon: '.......
 
     ...#...
@@ -28,5 +28,5 @@ MonoBehaviour:
     ..###..
 
     ...#...'
-  maxStacks: 5
+  maxStacks: 0
   effect: {fileID: 11400000, guid: fc9be625dc5999a4282424439a9b3ca5, type: 2}
