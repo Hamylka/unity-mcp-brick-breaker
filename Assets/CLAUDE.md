@@ -82,7 +82,7 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Common cards (Brake Pads, Lucky Orbs, Buff Lasting, Zone Beacon, Marble):** built 2026-10-30. Check on a phone that each is felt after 2 to 4 picks (the typical count in a 6-minute run), that Marble at -20% to -40% still reads at 640 px and does not tunnel through bricks at x1.9 speed, that the gold Lucky Orbs read without clutter, and that the wall buff HUD ring still drains smoothly with Buff Lasting.
 
 *7. Parked rebalance ideas (decided with the user 2026-10-30 after the analysis of two phone runs; none built yet).* Run B snowballed from 205 s to 250 s (pace factor at its cap of 4, kill rate 5/s, a level every 2 to 3 s, 15 wall clears in 50 s, 58 Multi-Ball drops, Shockwave 8 picks = 34% of damage).
-- **Shockwave capped at 4 stacks** (the linear +25% per pick stays, the cap comes back).
+- ~~**Shockwave capped at 4 stacks**~~ built 2026-10-30 (changelog "Shockwave cap restored").
 - **Echo rework:** (a) when the ball's hit kills the brick, the echo jumps to the nearest living brick instead of being wasted; (b) the echo carries the overkill damage onto that brick (which makes Overkill Spill redundant: fold it in and reuse the slot); (c) open question: all echoes at 50% damage, flat, keeping +1 echo per level (needs fractional carry for low damage, and note that the Cleave counter and on-hit effects count hits, not damage).
 - **RunProfiler, Echo:** log per run the Echo procs, the wasted ones (brick already dead), the jumps and the carried overkill damage, so the overkill state of the card can be read (and the indirect AoE damage that Echo triggers, which is credited to the AoE sources today).
 - **Make the danger readable (Opus task, visual/audio):** the lose line pulses, music tempo rises and a red edge tint grows as the front row nears the paddle.
@@ -636,3 +636,8 @@ Single source of truth for what is left. Update it at the end of every task (tic
   * **Echo** reworked: every 4th ball hit (fixed, `PowerUpStats.EchoEveryHits`) repeats once per pick, each repeat a full copy of the hit, stopping when the brick dies (`EchoPicks` repeats; no damage factor). Card and pause text: "EVERY 4 HITS REPEAT NX FREE". The charge shimmer now always counts up to 4.
 - **Checked:** edits only, not compiled in Unity nor played.
 - **Open issues:** section 4 and the roadmap still mention the tiers (`Exquisite+/++`, `Cursed-/--`), Marble and the old Echo/Shockwave numbers; sync them. Unlimited Echo picks multiply the hits (pick 5 = 5 repeats every 4th hit): watch the damage share and the sound/FX load in the profiler. Pools: Exquisite is now 7 cards usable from any rarity (Supernova/Meltdown can come from a Common).
+
+### [2026-10-30] - Shockwave cap restored (by Claude)
+- **Done (branch `fix/shockwave-cap`):** roadmap section 5 item 7, first task. `Shockwave.asset` has `maxStacks` 4 again (was unlimited). The splash stays linear: +25% per pick, so 100% of the damage dealt onto the neighbours at the cap. Nothing else changed (no code).
+- **Checked:** asset edit only, not seen in Unity nor played.
+- **Open issues:** with the cap, the damage-card guarantee (`IsOffensive`) still counts Shockwave while it is offered; once maxed it leaves the pool, so check the offers stay varied. Next in item 7: Echo rework.
