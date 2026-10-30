@@ -610,6 +610,7 @@ MonoBehaviour:
   boltInterval: 0.3
   echoBallColor: {r: 0.15, g: 0.45, b: 1, a: 1}
   echoTint: 1
+  echoTrailTint: 0.85
   echoRimTint: 0.85
   echoRimIntensity: 2.5
   echoShimmer: 0.4
