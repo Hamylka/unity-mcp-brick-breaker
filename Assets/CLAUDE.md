@@ -69,7 +69,7 @@ Single source of truth for what is left. Update it at the end of every task (tic
 *1. Fixes and card edits (Sonnet).*
 - **Echo feedback:** keep the small ring and pulse, add a short bright tick on the ball at the proc, rate limit when several balls proc in one frame.
 
-*2. UI.* Card descriptions overlap the card name with 4 cards (`PowerUpScreen`): fit, wrap or shorten. Pause screen / Game Over numbers abbreviated with K, M, B (`NumberFormat.Short`).
+*2. UI.* Pause screen / Game Over numbers abbreviated with K, M, B (`NumberFormat.Short`).
 
 *4. Steady Ball (individual task, Sonnet, not built).* Quick Ball reads as both a bonus and a malus and is never picked. Replace it with **Steady Ball**: each pick slows the ball by 10% (a tradeoff the player chooses, easier to control for casual players). It multiplies on top of the ramp (`BallController.MultiplyBaseSpeed`). A faster ball means more hits per second, so it adds pressure and power together; the kill-rate controller already absorbs the extra damage. Needs the card asset and effect (rarity, max stacks, icon, `Describe` text) and the removal of Quick Ball from the pool.
 
@@ -82,6 +82,7 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Label damage (hits left):** built 2026-10-30 (`BrickGrid > Label damage`: colors, pips, skulls and numbers use base damage x measured total/ball damage ratio). Check on a phone that the late wall shows fewer skulls, labels do not flicker and a new AoE card does not surprise the player; tune window (15 s), rise time and the 8% step.
 - **Time ease after the card screen:** built 2026-10-30 (`PowerUpManager > Resume Time` 1 s). Check on a phone that the ease feels smooth, the paddle answers during it and a level-up right after the last card does not stutter.
 - **Ball speed ramp:** built 2026-10-30 (+20% of the start speed per 60 s, no cap). Check on a phone how fast the ball feels at minutes 3 to 6 (x1.6 to x2.2), whether the paddle bounce angles and the safeguards against flat loops still hold, and that the two notices queue properly with "DIFFICULTY INCREASED!".
+- **Card text fit (4 cards):** built 2026-10-30. Check on a phone with 4 choices that every name and description stays in its band and stays readable at the smaller sizes (name 3, description 2 as a last resort).
 - **Run timer on the HUD:** built 2026-10-30 (`RunTimerHud`, m:ss under the XP bar). Check on a phone that the position clears the bar, the notch and the notices, and that it reads at size 6.
 
 *Decided with the user (2026-10-29):* Time Warp is out of the pool (asset kept). Level-up cooldown / batching and Power Ball / Meteor Ball caps are dropped (level-ups are 10 to 15 s, a 6-minute run takes about 2 of each card).
@@ -546,3 +547,9 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Done (branch `feature/run-timer-hud`, from `develop`):** new `RunTimerHud` (`Assets/Scripts/UI`, builds itself like the notices, canvas order 5): the run time as m:ss, centered in the safe area at 170 reference px below the top (the XP bar ends at 124), pixel size 6, pale cyan with the same dark-navy outline and drop as the XP numbers. It reads `GameManager.RunTime` (starts at the first launch, stops while paused or choosing a card) and only rebuilds its text when the second changes.
 - **Checked:** edits only, not compiled in Unity nor seen on screen.
 - **Open issues:** position vs the "DIFFICULTY INCREASED!" / "BALL SPEED UP!" notices (at 84% of the screen height, about 300 px down) and the pause button; size and color are first guesses (constants at the top of `RunTimerHud`). `feature/ball-speed-ramp` is still unmerged and independent of this branch.
+
+### [2026-10-30] - Card text no longer overlaps with 4 cards (by Claude)
+- **Cause (from a phone screenshot):** the name and the description of a card were both centered vertically in rects that overlapped (name y 60, 130 tall; description y -60, 190 tall), so a description of 6 or 7 lines on a narrow 4-card layout grew up into the name. Long single words ("VOLATILE") could also be wider than the card.
+- **Done (branch `fix/card-text-overlap`):** `PowerUpScreen.BuildCard` gives each text its own band (name y 30 to 140, description y -160 to 20, rarity label unchanged) and `FitText` lowers the pixel size one step at a time (name 4 to 3, description 3 to 2) until the wrapped text fits both the band height and the width. New `PixelText.Measure(maxWidth)` returns the widest line and the block height of the wrapped text.
+- **Checked:** edits only, not compiled in Unity nor seen on screen.
+- **Open issues:** a text that still does not fit at the minimum size is left at that size (it would then overflow its band): shorten the card text in that case. Pause screen rows are not affected. Roadmap item 2 keeps only the K / M / B number format.
