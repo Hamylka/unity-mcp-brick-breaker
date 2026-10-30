@@ -18,6 +18,27 @@ public class BonusDropper : MonoBehaviour
     [Tooltip("Extra chance per hit point above 1, so tougher bricks drop more often.")]
     [SerializeField, Range(0f, 0.3f)] private float extraChancePerHitPoint = 0.04f;
 
+    [Header("Drop Budget")]
+    [Tooltip("Scales the chance by target kill rate / actual kill rate, so drops per minute stay roughly constant " +
+             "whatever the kill rate does.")]
+    [SerializeField] private bool budgetByKillRate = true;
+    [Tooltip("Lowest and highest multiplier the budget can apply.")]
+    [SerializeField, Range(0.1f, 1f)] private float minBudgetFactor = 0.3f;
+    [SerializeField, Range(1f, 3f)] private float maxBudgetFactor = 1.5f;
+    [Tooltip("Under this kill rate (bricks per second, the 25 s average) the budget is not applied: the run has not " +
+             "started yet or the wall is nearly empty.")]
+    [SerializeField, Min(0f)] private float budgetMinKillRate = 0.2f;
+
+    /// <summary>The multiplier the drop chance gets from the kill-rate budget right now (1 = neutral).</summary>
+    public float BudgetFactor
+    {
+        get
+        {
+            if (!budgetByKillRate || grid == null || grid.KillRate < budgetMinKillRate) return 1f;
+            return Mathf.Clamp(grid.TargetKillsPerSecond / grid.KillRate, minBudgetFactor, maxBudgetFactor);
+        }
+    }
+
     /// <summary>Raised after a bonus was caught and its effect applied.</summary>
     public event Action<BonusDefinition, PaddleController> BonusCollected;
 
@@ -47,6 +68,7 @@ public class BonusDropper : MonoBehaviour
         float chance = dropChance + (brick.MaxHitPoints - 1) * extraChancePerHitPoint;
         if (PowerUpStats.BonusDropBonus > 0f) // Greed
             chance = Mathf.Min(chance + PowerUpStats.BonusDropBonus, Mathf.Max(chance, PowerUpStats.MaxDropChance));
+        chance *= BudgetFactor; // drops per minute stay roughly constant whatever the kill rate does
         if (UnityEngine.Random.value > chance) return;
 
         BonusDefinition definition = PickBonus();
