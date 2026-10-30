@@ -11,5 +11,10 @@ public class XpBoostEffect : PowerUpEffect
         if (context.Experience != null) context.Experience.AddXpMultiplier(percent);
     }
 
-    public override string Describe(int stacks) => $"XP GAINED {Mathf.RoundToInt(percent * stacks * 100f):+0;-0}%";
+    // A negative percent lowers XP (Dim Orbs, Cursed); ExperienceSystem never goes under MinXpMultiplier.
+    public override string Describe(int stacks)
+    {
+        float total = Mathf.Max(PowerUpStats.MinXpMultiplier - 1f, percent * stacks);
+        return $"XP GAINED {Mathf.RoundToInt(total * 100f):+0;-0}%";
+    }
 }

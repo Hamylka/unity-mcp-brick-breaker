@@ -28,5 +28,5 @@ MonoBehaviour:
     .#####.
 
     ..###..'
-  maxStacks: 2
+  maxStacks: 0
   effect: {fileID: 11400000, guid: 17c7104557a143d6bfea7e9df3c426b8, type: 2}

@@ -12,5 +12,5 @@ public class RerollEffect : PowerUpEffect
         if (context.Manager != null) context.Manager.BonusRerolls += amount;
     }
 
-    public override string Describe(int stacks) => $"+{amount * stacks} REROLLS PER LEVEL-UP";
+    public override string Describe(int stacks) => $"+{amount * stacks} REROLL{(amount * stacks > 1 ? "S" : "")} PER LEVEL-UP";
 }

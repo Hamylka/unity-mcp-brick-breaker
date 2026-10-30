@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Greed
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Greed
-  description: +1% bonus drops, +10% bonus duration
+  description: +2% bonus drops, +20% bonus duration
   rarity: 5
   icon: '..###..
 
