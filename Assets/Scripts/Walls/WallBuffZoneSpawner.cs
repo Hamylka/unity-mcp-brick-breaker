@@ -78,7 +78,7 @@ public class WallBuffZoneSpawner : MonoBehaviour
     {
         Wall wall = walls[Random.Range(0, walls.Count)];
         WallBuff buff = PickBuff();
-        zone = WallBuffZone.Create(wall, buff, Random.Range(minT, maxT), zoneLength, zoneLifetime);
+        zone = WallBuffZone.Create(wall, buff, Random.Range(minT, maxT), zoneLength * PowerUpStats.ZoneLengthFactor, zoneLifetime);
         zone.Ended += HandleZoneEnded;
         zoneBuff = buff.label;
         RunProfiler.Log("zone_spawn", zoneBuff);
@@ -97,7 +97,7 @@ public class WallBuffZoneSpawner : MonoBehaviour
 
     private void Restart()
     {
-        timer = spawnInterval;
+        timer = spawnInterval * PowerUpStats.ZoneIntervalFactor; // Zone Beacon shortens the wait
         state = State.Cooldown;
     }
 

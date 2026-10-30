@@ -24,6 +24,8 @@ public class BallController : MonoBehaviour
     [SerializeField, Range(0.1f, 1f)] private float minSpeedFactor = DefaultMinSpeedFactor;
     // Speed at the start of the run, kept so clones made by SpawnExtra share the same floor.
     [SerializeField, HideInInspector] private float startSpeed;
+    // Collider radius at the start of the run; Marble scales it (clones inherit the original, not a shrunk value).
+    [SerializeField, HideInInspector] private float baseRadius;
     [Tooltip("Seconds for a 100% speed boost to fade back to the base speed.")]
     [SerializeField, Min(0.05f)] private float boostDecayTime = 1f;
     [Tooltip("Upper limit of the temporary boost (1 = +100% speed).")]
@@ -253,6 +255,8 @@ public class BallController : MonoBehaviour
     {
         body = GetComponent<Rigidbody>();
         if (startSpeed <= 0f) startSpeed = baseSpeed;
+        if (sphere == null) sphere = GetComponent<SphereCollider>();
+        if (baseRadius <= 0f) baseRadius = sphere.radius;
         body.useGravity = false;
         body.linearDamping = 0f;
         body.angularDamping = 0f;
@@ -276,6 +280,9 @@ public class BallController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        // Marble: the collider follows the run's ball size (the look follows it in BallVisual).
+        sphere.radius = baseRadius * PowerUpStats.BallSize;
+
         if (state == State.Lost) return;
 
         if (state == State.Waiting)

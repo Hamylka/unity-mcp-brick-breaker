@@ -20,6 +20,7 @@ public class BallBuffAura : MonoBehaviour
     private BallVisual visual;
     private WallBuff buff;
     private float remaining;
+    private float total;   // full length of this buff, for the HUD ring (Buff Lasting makes it longer than the asset's)
     private float nextEmber;
     private string hudId;
 
@@ -43,10 +44,10 @@ public class BallBuffAura : MonoBehaviour
         if (!source.TryGetComponent(out BallBuffAura from) || from.buff == null) return;
         BallBuffAura aura = copy.GetComponent<BallBuffAura>();
         if (aura == null) aura = copy.gameObject.AddComponent<BallBuffAura>();
-        aura.Begin(copy, from.buff, from.remaining, from.hudId);
+        aura.Begin(copy, from.buff, from.remaining, from.hudId, from.total);
     }
 
-    private void Begin(BallController target, WallBuff newBuff, float timeLeft = -1f, string sharedHudId = null)
+    private void Begin(BallController target, WallBuff newBuff, float timeLeft = -1f, string sharedHudId = null, float sharedTotal = -1f)
     {
         if (buff != null && buff != newBuff) buff.Remove(ball);
         else if (buff == null) liveCount++;
@@ -54,7 +55,8 @@ public class BallBuffAura : MonoBehaviour
         ball = target;
         visual = target.GetComponent<BallVisual>();
         buff = newBuff;
-        remaining = timeLeft > 0f ? timeLeft : newBuff.duration;
+        total = sharedTotal > 0f ? sharedTotal : newBuff.duration * PowerUpStats.WallBuffDuration;
+        remaining = timeLeft > 0f ? timeLeft : total;
         hudId = sharedHudId ?? "wallbuff#" + nextId++;
         buff.Apply(ball);
     }
@@ -67,7 +69,7 @@ public class BallBuffAura : MonoBehaviour
         remaining -= Time.deltaTime;
         if (remaining <= 0f) { Destroy(this); return; }
 
-        ActiveBonusTracker.Report(hudId, buff.label, buff.label, buff.color, remaining, buff.duration);
+        ActiveBonusTracker.Report(hudId, buff.label, buff.label, buff.color, remaining, total);
 
         if (visual != null)
         {

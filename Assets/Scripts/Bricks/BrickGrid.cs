@@ -289,7 +289,7 @@ public class BrickGrid : MonoBehaviour
         if (ball != null && !ball.IsFlying) return;
 
         stepTimer += dt;
-        if (stepTimer >= stepInterval)
+        if (stepTimer >= stepInterval * PowerUpStats.WallStepFactor)
         {
             stepTimer = 0f;
             stepFrom = offset;
