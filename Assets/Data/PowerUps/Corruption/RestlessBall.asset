@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Restless Ball
   description: Ball speed +15%
-  rarity: 9
+  rarity: 6
   icon: '...#...
 
     ..###..

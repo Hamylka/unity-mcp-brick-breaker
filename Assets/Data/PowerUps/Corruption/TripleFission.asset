@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Triple Fission
   description: +2 extra balls per Multi-Ball
-  rarity: 7
+  rarity: 5
   icon: '...#...
 
     ..###..
