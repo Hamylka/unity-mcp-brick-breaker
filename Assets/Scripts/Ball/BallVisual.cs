@@ -130,6 +130,8 @@ public class BallVisual : MonoBehaviour
     [SerializeField] private Color echoBallColor = new(0.15f, 0.45f, 1f, 1f);
     [Tooltip("How far the halo and floor light turn echo blue when the next hit echoes (0 = off).")]
     [SerializeField, Range(0f, 1f)] private float echoTint = 1f;
+    [Tooltip("How far both trails turn echo blue when the next hit echoes.")]
+    [SerializeField, Range(0f, 1f)] private float echoTrailTint = 0.85f;
     [Tooltip("How far the ball's core and rim turn echo blue when the next hit echoes.")]
     [SerializeField, Range(0f, 1f)] private float echoRimTint = 0.85f;
     [Tooltip("HDR brightness of the echo rim (bloom).")]
@@ -210,6 +212,8 @@ public class BallVisual : MonoBehaviour
     private float warn = 1f;   // brightness factor of the buffed look (strobes before the buff ends)
     private float echoBlend;   // eased PowerUpStats.EchoCharge (0 = far from an echo, 1 = the next hit echoes)
     private float echoWave;    // 0-1 flicker of the echo charge, faster as it nears
+    private Gradient outerEcho, coreEcho;
+    private float trailEcho = -1f;
     private float nextEchoSparkle;
 
     private void Awake()
@@ -370,6 +374,24 @@ public class BallVisual : MonoBehaviour
         coreTrail = core;
         BuildPhaseGradients();
         BuildPowerGradients();
+        BuildEchoGradients();
+    }
+
+    /// <summary>
+    /// Echo-charge versions of the two trails, same key layout as the normal ones: white head into the echo blue,
+    /// then a deep indigo fade, so a charging ball is blue from head to tail.
+    /// </summary>
+    private void BuildEchoGradients()
+    {
+        Color pale = Color.Lerp(Color.white, echoBallColor, 0.4f);
+        Color deep = Color.Lerp(echoBallColor, new Color(0.35f, 0.1f, 1f), 0.5f);
+        outerEcho = MakeGradient(
+            new[] { new GradientColorKey(pale, 0f), new GradientColorKey(echoBallColor, 0.25f), new GradientColorKey(deep, 1f) },
+            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0.85f, 0.3f), new GradientAlphaKey(0f, 1f) });
+        coreEcho = MakeGradient(
+            new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(pale, 1f) },
+            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0f, 1f) });
+        trailEcho = -1f; // force a refresh
     }
 
     /// <summary>
@@ -690,23 +712,26 @@ public class BallVisual : MonoBehaviour
             }
         }
 
-        // Trails: blend toward the power, then the ghost gradients (rebuilt only while a blend moves).
+        // Trails: blend toward the power, the echo charge, then the ghost gradients (rebuilt only while a blend moves).
+        float echo = echoTrailTint * echoBlend;
         bool settled = (blend == 0f || blend == 1f) && (power == 0f || power == 1f);
         speedLook = Mathf.MoveTowards(speedLook, Mathf.Min(speedLookMax, BallController.RunSpeedFactor - 1f), dt * speedLookMax / speedLookEase);
         bool speedMoved = Mathf.Abs(speedLook - trailSpeedLook) > 0.01f;
         bool moved = Mathf.Abs(blend - trailBlend) > 0.02f || Mathf.Abs(power - trailPower) > 0.02f;
-        if (outerTrail != null && (moved || speedMoved || (settled && (blend != trailBlend || power != trailPower))))
+        bool echoMoved = echo != trailEcho && (Mathf.Abs(echo - trailEcho) > 0.02f || echo == 0f);
+        if (outerTrail != null && (moved || speedMoved || echoMoved || (settled && (blend != trailBlend || power != trailPower))))
         {
             trailBlend = blend;
             trailPower = power;
+            trailEcho = echo;
             trailSpeedLook = speedLook;
             float brightness = Mathf.Lerp(Mathf.Lerp(trailBrightness, powerTrailBrightness, power), phaseTrailBrightness, blend) * (1f + speedTrailBrightnessGain * speedLook);
-            outerTrail.colorGradient = LerpGradient(LerpGradient(outerNormal, outerPower, power), outerPhase, blend);
+            outerTrail.colorGradient = LerpGradient(LerpGradient(LerpGradient(outerNormal, outerPower, power), outerEcho, echo), outerPhase, blend);
             outerTrail.time = Mathf.Lerp(Mathf.Lerp(trailTime, trailTime * 1.15f, power), phaseTrailTime, blend) * (1f + speedTrailTimeGain * speedLook);
             NeonGlow.SetColor(outerTrail, NeonGlow.Hdr(Color.white, brightness));
             if (coreTrail != null)
             {
-                coreTrail.colorGradient = LerpGradient(LerpGradient(coreNormal, corePower, power), corePhase, blend);
+                coreTrail.colorGradient = LerpGradient(LerpGradient(LerpGradient(coreNormal, corePower, power), coreEcho, echo), corePhase, blend);
                 NeonGlow.SetColor(coreTrail, NeonGlow.Hdr(Color.white, brightness * 1.3f));
             }
         }
