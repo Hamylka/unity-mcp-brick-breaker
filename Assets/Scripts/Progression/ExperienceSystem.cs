@@ -81,6 +81,9 @@ public class ExperienceSystem : MonoBehaviour
     /// <summary>Bricks a level is worth now: the base value plus the growth per level gained.</summary>
     public float BricksPerLevel => bricksPerLevel + bricksPerLevelGrowth * (Level - 1);
     public float Power => power;
+    /// <summary>Settings read by the run profiler.</summary>
+    public float BaseBricksPerLevel => bricksPerLevel;
+    public float BricksPerLevelGrowth => bricksPerLevelGrowth;
     public int Level { get; private set; } = 1;
     public int CurrentXp { get; private set; }
     public int TotalXp { get; private set; }

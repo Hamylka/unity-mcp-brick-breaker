@@ -37,6 +37,10 @@ public class GameManager : MonoBehaviour
     [Tooltip("Speed added by each step, as a fraction of the start speed (0.2 = +20%). No cap for now.")]
     [SerializeField, Min(0f)] private float speedStepAmount = 0.15f;
 
+    // Read by the run profiler (settings of the run).
+    public float SpeedStepInterval => speedStepInterval;
+    public float SpeedStepAmount => speedStepAmount;
+
     /// <summary>Raised once when the run ends.</summary>
     public event Action<LoseReason> GameOver;
 

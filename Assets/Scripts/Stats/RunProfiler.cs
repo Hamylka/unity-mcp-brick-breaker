@@ -109,6 +109,21 @@ public class RunProfiler : MonoBehaviour
         record.settings.xpPower = experience != null ? Mathf.Round(experience.Power * 1000f) / 1000f : 0f;
         record.settings.damagePerLevel = powerUps != null ? powerUps.DamagePerLevel : 0;
         record.settings.rerolls = powerUps != null ? powerUps.RerollCount : 0;
+        if (experience != null)
+        {
+            record.settings.baseBricksPerLevel = experience.BaseBricksPerLevel;
+            record.settings.bricksPerLevelGrowth = experience.BricksPerLevelGrowth;
+        }
+        record.settings.targetHitsPerMinute = grid.TargetHitsPerMinute;
+        record.settings.targetKillsPerSecond = grid.TargetKillsPerSecond;
+        record.settings.maxPaceFactor = grid.MaxPaceFactor;
+        record.settings.labelDamageWindow = grid.LabelDamageWindow;
+        record.settings.labelDamageMaxRatio = grid.LabelDamageMaxRatio;
+        record.settings.wallStepIntervalStart = Round(grid.StepInterval);
+        record.settings.speedStepInterval = game.SpeedStepInterval;
+        record.settings.speedStepAmount = game.SpeedStepAmount;
+        BallController anyBall = FindAnyObjectByType<BallController>();
+        record.settings.minSpeedFactor = anyBall != null ? anyBall.MinSpeedFactor : 0f;
 
         grid.BrickHit += HandleBrickHit;
         grid.HpWindowGrew += HandleHpWindowGrew;
@@ -252,7 +267,18 @@ public class RunProfiler : MonoBehaviour
             wallHp = hp,
             hpMax = grid.CurrentMaxHp,
             totalDamage = total,
-            flyingBalls = flying
+            flyingBalls = flying,
+            baseDamage = BallController.MainBaseDamage,
+            cardMultiplier = Round(BallController.MainCardMultiplier),
+            smoothedDamage = Round(grid.SmoothedDamage),
+            targetHits = Round(grid.TargetHits),
+            paceFactor = Round(grid.PaceFactor),
+            killRate = Round(grid.KillRate),
+            labelDamage = Brick.HitDamage,
+            speedFactor = Round(BallController.RunSpeedFactor),
+            wallStepInterval = Round(grid.StepInterval),
+            ballSize = Round(PowerUpStats.BallSize),
+            corruptionCharges = PowerUpStats.CorruptionCharges
         };
     }
 
