@@ -224,7 +224,7 @@ public class RunProfiler : MonoBehaviour
     {
         if (finished) return;
         string outcome = result.Outcome != null ? $"{result.Outcome.DisplayName} ({result.Outcome.Rarity})" : "none";
-        AddEvent("corrupt", result.Source.DisplayName, result.NewMax, outcome);
+        AddEvent("corrupt", result.Source.DisplayName, result.NewMax, $"{outcome}, {Mathf.RoundToInt(result.ExquisiteChance * 100f)}% exquisite");
     }
 
     private void HandleBonusDropped(BonusDefinition definition)

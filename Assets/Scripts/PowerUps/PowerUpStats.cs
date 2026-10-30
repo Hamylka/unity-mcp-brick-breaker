@@ -102,6 +102,13 @@ public static class PowerUpStats
     /// <summary>Corruption charges left (Glitch Core). Each one lets the player corrupt a capped card on a level-up.</summary>
     public static int CorruptionCharges { get; set; }
 
+    /// <summary>Toll (Cursed--): rows the wall is pushed toward the paddle on every level-up. 0 = no Toll.</summary>
+    public static int TollRows { get; set; }
+    /// <summary>Hungry Wall (Cursed--): multiplier on the HP window of new bricks.</summary>
+    public static float WallHpFactor { get; set; } = 1f;
+    /// <summary>Brittle Pact (Cursed--): no more Shield drops, Shield Plus or Phoenix Ball this run.</summary>
+    public static bool BrittlePact { get; set; }
+
     private static int echoCounter;
     private static readonly int[] EchoIntervals = { 10, 8, 6, 5, 4, 3 };
     public static readonly Color EchoColor = new(0.75f, 0.9f, 1f);
@@ -157,6 +164,9 @@ public static class PowerUpStats
         ZoneBeaconPicks = 0;
         BallSize = 1f;
         CorruptionCharges = 0;
+        TollRows = 0;
+        WallHpFactor = 1f;
+        BrittlePact = false;
     }
 
     /// <summary>

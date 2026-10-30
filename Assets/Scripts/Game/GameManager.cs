@@ -121,7 +121,7 @@ public class GameManager : MonoBehaviour
         BallController successor = FindSuccessor(lostBall);
         if (successor == null)
         {
-            if (PowerUpStats.PhoenixReady)
+            if (PowerUpStats.PhoenixReady && !PowerUpStats.BrittlePact)
             {
                 RevivePhoenix(lostBall);
                 return;

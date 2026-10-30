@@ -15,7 +15,7 @@ public class ShieldEffect : BonusEffect
     [SerializeField, Min(1f)] private float width = 9f;
     [SerializeField, Min(0.01f)] private float thickness = 0.12f;
 
-    public override bool CanDrop => ShieldBarrier.Current == null;
+    public override bool CanDrop => ShieldBarrier.Current == null && !PowerUpStats.BrittlePact; // Brittle Pact: no more Shield drops
 
     public override void Apply(BonusContext context)
     {

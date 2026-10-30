@@ -573,7 +573,7 @@ public partial class PowerUpScreen : MonoBehaviour
 
         Image body = NewImage("Body", rect, RarityStyle.GetBodyColor(def.Rarity, cardColor), true); // the tappable area
         Stretch(body.rectTransform);
-        if (def.Rarity == PowerUpRarity.Cursed) AddHatch(rect); // dull diagonal hatching over the body
+        if (RarityStyle.IsCursed(def.Rarity)) AddHatch(rect); // dull diagonal hatching over the body
 
         // Header diamond with the power-up icon, half outside the top edge.
         float topY = cardHeight * 0.5f;

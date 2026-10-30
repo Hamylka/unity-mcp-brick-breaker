@@ -59,6 +59,7 @@ public partial class PowerUpScreen
     private Image corruptFill;
     private PixelText corruptLabel;
     private PixelText corruptHint;
+    private PixelText corruptOdds;
     private PowerUpDefinition hintCard;
     private int hintCharges = -1;
     private bool hintDirty = true;
@@ -153,10 +154,25 @@ public partial class PowerUpScreen
             hintCard = card;
             hintCharges = charges;
             corruptHint.Text = HintFor(card);
+            corruptOdds.Text = OddsFor(card);
         }
     }
 
     private void RefreshCorruptHint() => hintDirty = true;
+
+    private bool IsCorruptible(PowerUpDefinition card) =>
+        card != null && card.MaxStacks > 0 && corruption.CanCorrupt(card) && corruption.Odds != null;
+
+    // The odds line, shown in bright red while a corruptible card is selected: "55% EXQUISITE+   45% CURSED-".
+    private string OddsFor(PowerUpDefinition card)
+    {
+        if (!IsCorruptible(card)) return "";
+        CorruptionOdds odds = corruption.Odds(card);
+        int exquisite = Mathf.RoundToInt(odds.ExquisiteChance * 100f);
+        string good = $"{exquisite}% {RarityStyle.GetLabel(odds.ExquisiteRarity)}";
+        string bad = $"{100 - exquisite}% {RarityStyle.GetLabel(odds.CursedRarity)}";
+        return exquisite >= 100 ? good : exquisite <= 0 ? bad : $"{good}   {bad}";
+    }
 
     private string HintFor(PowerUpDefinition card)
     {
@@ -167,7 +183,11 @@ public partial class PowerUpScreen
         int owned = stackLookup != null ? stackLookup(card) : 0;
         string name = card.DisplayName.ToUpperInvariant();
         string cost = max - 1 <= owned ? $"{name} GONE FOR THE RUN" : $"{name} MAX LV {max} > {max - 1}";
-        return $"BECOMES A RANDOM EXQUISITE OR CURSED CARD\n{cost}";
+        if (corruption.Odds == null) return $"BECOMES A RANDOM EXQUISITE OR CURSED CARD\n{cost}";
+
+        CorruptionOdds odds = corruption.Odds(card);
+        string dowry = odds.ExquisiteChance >= 1f ? "" : $"\n{RarityStyle.GetLabel(odds.CursedRarity)} PAYS: {CorruptionDowryInfo.Text(odds.Dowry)}";
+        return $"{cost}{dowry}";
     }
 
     // ---------------------------------------------------------------- start
@@ -199,6 +219,8 @@ public partial class PowerUpScreen
         capText = corruptResult.SourceGone
             ? $"{source.DisplayName.ToUpperInvariant()} GONE FOR THE RUN"
             : $"{source.DisplayName.ToUpperInvariant()} MAX LV {corruptResult.OldMax} > {corruptResult.NewMax}";
+        if (corruptResult.Dowry != CorruptionDowry.None)
+            capText += $"\nDOWRY: {CorruptionDowryInfo.Text(corruptResult.Dowry)}";
 
         phase = Phase.Corrupting;
         rerollButton.gameObject.SetActive(false);
@@ -470,7 +492,8 @@ public partial class PowerUpScreen
         MakeCopies(resultCard);
 
         Vector2 center = new(0f, cardCenterY + 10f);
-        stamp.Text = exquisite ? "EXQUISITE!" : "CURSED...";
+        string tierName = RarityStyle.GetLabel(outcome.Rarity);
+        stamp.Text = exquisite ? tierName + "!" : tierName + "...";
         stamp.color = exquisite ? CorruptRed : RarityStyle.CursedColor;
         stampCyan.enabled = stampMagenta.enabled = exquisite;
         stamp.enabled = true;
@@ -962,9 +985,12 @@ public partial class PowerUpScreen
         corruptLabel = NewText("Label", labelHolder, "CORRUPT", 5f, CorruptRed, PixelText.Align.Center);
         Stretch(corruptLabel.rectTransform);
 
+        // The odds of an Exquisite outcome, big and bright just under the button, then the cost and the Cursed dowry.
+        corruptOdds = NewText("Odds", container, "", 4f, new Color(1f, 0.55f, 0.62f), PixelText.Align.Center);
+        Place(corruptOdds.rectTransform, Vector2.zero, new Vector2(0f, buttonY - 232f), new Vector2(1000f, 40f));
         corruptHint = NewText("Hint", container, "", 3f, new Color(0.85f, 0.5f, 0.56f), PixelText.Align.Center);
         corruptHint.Wrap = true;
-        Place(corruptHint.rectTransform, Vector2.zero, new Vector2(0f, buttonY - 255f), new Vector2(960f, 90f));
+        Place(corruptHint.rectTransform, Vector2.zero, new Vector2(0f, buttonY - 305f), new Vector2(960f, 100f));
         container.gameObject.SetActive(false);
 
         // Overlays, on top of everything and never catching taps.
@@ -1005,7 +1031,7 @@ public partial class PowerUpScreen
         stamp.enabled = false;
 
         capNote = NewText("CapNote", root, "", 3f, Color.white, PixelText.Align.Center);
-        Place(capNote.rectTransform, Vector2.zero, new Vector2(0f, cardCenterY + 10f - (cardHeight * 0.5f) * CorruptScale - 62f), new Vector2(960f, 40f));
+        Place(capNote.rectTransform, Vector2.zero, new Vector2(0f, cardCenterY + 10f - (cardHeight * 0.5f) * CorruptScale - 62f), new Vector2(960f, 70f)); // two lines: the lowered cap, then a Cursed outcome's dowry
         capNote.enabled = false;
 
         afterglow = NewImage("Afterglow", root, Color.white, false);
