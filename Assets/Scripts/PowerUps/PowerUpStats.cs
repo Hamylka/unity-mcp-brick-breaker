@@ -198,10 +198,13 @@ public static class PowerUpStats
         if (every > 0 && ++echoCounter >= every)
         {
             echoCounter = 0;
-            if (!brick.IsAlive) return;
 
-            // The hit rings again on the same brick; it still triggers area effects like any ball hit.
-            brick.Pulse(EchoColor * 1.6f, 0.22f, 0.08f);
+            // The hit rings again; it still triggers area effects like any ball hit. If the ball's hit already
+            // killed the brick, the echo jumps to the nearest living brick and carries the overkill with it.
+            int carry = brick.IsAlive ? 0 : Mathf.Max(0, damage - hpBefore);
+            Brick first = brick.IsAlive ? brick : NearestLiveBrick(brick);
+            if (first == null) return;
+            first.Pulse(EchoColor * 1.6f, 0.22f, 0.08f);
             if (Time.frameCount != echoFxFrame)
             {
                 echoFxFrame = Time.frameCount;
@@ -209,16 +212,52 @@ public static class PowerUpStats
             }
             if (++echoFxCount <= MaxEchoFxPerFrame)
             {
-                NeonFx.Ring(brick.transform.position, EchoColor, 16, 2.5f, 0.08f, 0.25f);
+                NeonFx.Ring(first.transform.position, EchoColor, 16, 2.5f, 0.08f, 0.25f);
                 // A short bright tick on the ball, so the player sees which ball echoed.
                 NeonFx.Flash(ball.Position, NeonGlow.Hdr(EchoColor, 2.2f), 0.45f, 0.06f);
                 if (echoFxCount == 1) SoundManager.Play(Sfx.ChainZap, 0.8f);
             }
-            // One repeat per pick, each a full copy of the hit; stops early if the brick dies.
+            // One repeat per pick, each a full copy of the hit. When a repeat kills its target, the next one jumps
+            // to the nearest living brick and adds the damage beyond what the dead brick had left.
             using var tag = DamageTag.Begin(DamageSource.Echo);
-            for (int i = 0; i < EchoPicks && brick.IsAlive; i++)
-                brick.TakeHit(damage);
+            Brick target = first;
+            for (int i = 0; i < EchoPicks; i++)
+            {
+                if (target == null || !target.IsAlive)
+                {
+                    Brick from = target != null ? target : brick;
+                    target = NearestLiveBrick(from);
+                    if (target == null) break;
+                    ChainBolt.Spawn(from.transform.position, target.transform.position, EchoColor * 1.6f, 0.015f, 0.12f, 0.14f);
+                    target.Pulse(EchoColor * 1.6f, 0.22f, 0.04f);
+                }
+                int hp = target.HitPoints;
+                int dealt = damage + carry;
+                carry = 0;
+                target.TakeHit(dealt);
+                if (!target.IsAlive) carry = Mathf.Max(0, dealt - hp);
+            }
         }
+    }
+
+    private static readonly System.Collections.Generic.List<Brick> liveScratch = new();
+
+    /// <summary>The living brick closest to <paramref name="from"/> (null when the wall is empty).</summary>
+    private static Brick NearestLiveBrick(Brick from)
+    {
+        BrickGrid grid = from != null ? from.GetComponentInParent<BrickGrid>() : null;
+        if (grid == null) return null;
+        grid.GetLiveBricks(liveScratch);
+        Vector3 origin = from.transform.position;
+        Brick best = null;
+        float bestDist = float.MaxValue;
+        foreach (Brick candidate in liveScratch)
+        {
+            if (candidate == from || !candidate.IsAlive) continue;
+            float d = (candidate.transform.position - origin).sqrMagnitude;
+            if (d < bestDist) { bestDist = d; best = candidate; }
+        }
+        return best;
     }
 
     /// <summary>Damage a ball hit deals to <paramref name="brick"/> once Executioner is counted (rounded up).</summary>
