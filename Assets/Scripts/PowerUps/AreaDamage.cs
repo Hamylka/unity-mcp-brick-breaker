@@ -87,12 +87,10 @@ public class AreaDamage : MonoBehaviour
         return grid.TryGetComponent(out AreaDamage existing) ? existing : grid.gameObject.AddComponent<AreaDamage>();
     }
 
-    /// <summary>Each pick adds the card amount up to 4 picks, then 40% of it (25% becomes +10%), so it never snowballs.</summary>
-    public void AddSplash(float percent) => splashPercent += Mathf.Max(0f, percent) * (++splashPicks > SplashFullPicks ? 0.4f : 1f);
-    private const int SplashFullPicks = 4;
-    private int splashPicks;
+    /// <summary>Each pick adds the full card amount (25%), no diminishing returns.</summary>
+    public void AddSplash(float percent) => splashPercent += Mathf.Max(0f, percent);
     /// <summary>Total splash share after this many picks of a card worth <paramref name="percent"/> each.</summary>
-    public static float SplashFor(float percent, int picks) => percent * (Mathf.Min(picks, SplashFullPicks) + Mathf.Max(0, picks - SplashFullPicks) * 0.4f);
+    public static float SplashFor(float percent, int picks) => percent * picks;
     /// <summary>First pick: 2 arcs. Each further pick adds one. Arc damage is a fixed share of the ball's hit damage (0.2 = 20%), it does not stack.</summary>
     public void AddChain(float percent)
     {

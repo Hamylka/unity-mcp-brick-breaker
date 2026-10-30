@@ -10,7 +10,6 @@ public class EchoEffect : PowerUpEffect
 
     public override string Describe(int stacks)
     {
-        string text = $"EVERY {PowerUpStats.EchoInterval(stacks)} HITS REPEAT FREE";
-        return stacks > 6 ? $"{text}, ECHO +{(stacks - 6) * 25}%" : text;
+        return $"EVERY {PowerUpStats.EchoInterval(stacks)} HITS REPEAT {stacks}X FREE";
     }
 }

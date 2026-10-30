@@ -110,7 +110,7 @@ public static class PowerUpStats
     public static bool BrittlePact { get; set; }
 
     private static int echoCounter;
-    private static readonly int[] EchoIntervals = { 10, 8, 6, 5, 4, 3 };
+    private const int EchoEveryHits = 4; // fixed: every 4th ball hit echoes, once per pick
     public static readonly Color EchoColor = new(0.75f, 0.9f, 1f);
     private const int EchoChargeHits = 3; // the balls show the charge only over the last hits before an echo
 
@@ -120,7 +120,7 @@ public static class PowerUpStats
     private static int echoFxCount;
 
     /// <summary>Ball hits between two Echo repeats after this many picks (0 = no Echo).</summary>
-    public static int EchoInterval(int picks) => picks <= 0 ? 0 : EchoIntervals[Mathf.Min(picks, EchoIntervals.Length) - 1];
+    public static int EchoInterval(int picks) => picks <= 0 ? 0 : EchoEveryHits;
 
     /// <summary>
     /// How close the next Echo is, 0-1, shown on every ball (the counter is shared, any ball can fire it): 0 until
@@ -199,8 +199,6 @@ public static class PowerUpStats
         {
             echoCounter = 0;
             if (!brick.IsAlive) return;
-            float echoFactor = 1f + 0.25f * Mathf.Max(0, EchoPicks - EchoIntervals.Length);
-            int echo = Mathf.CeilToInt(damage * echoFactor - 0.001f);
 
             // The hit rings again on the same brick; it still triggers area effects like any ball hit.
             brick.Pulse(EchoColor * 1.6f, 0.22f, 0.08f);
@@ -216,8 +214,10 @@ public static class PowerUpStats
                 NeonFx.Flash(ball.Position, NeonGlow.Hdr(EchoColor, 2.2f), 0.45f, 0.06f);
                 if (echoFxCount == 1) SoundManager.Play(Sfx.ChainZap, 0.8f);
             }
+            // One repeat per pick, each a full copy of the hit; stops early if the brick dies.
             using var tag = DamageTag.Begin(DamageSource.Echo);
-            brick.TakeHit(echo);
+            for (int i = 0; i < EchoPicks && brick.IsAlive; i++)
+                brick.TakeHit(damage);
         }
     }
 

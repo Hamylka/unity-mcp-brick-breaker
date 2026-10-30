@@ -35,11 +35,11 @@ public class PowerUpManager : MonoBehaviour
     [SerializeField, Min(0f)] private float resumeTime = 1f;
 
     [Header("Corruption")]
-    [Tooltip("Cards a corruption can turn into when it goes well. Their rarity sets the tier: Exquisite (Minor), Exquisite+ (Major), Exquisite++ (Grand). Never rolled on a level-up.")]
+    [Tooltip("Cards a corruption can turn into when it goes well. Never rolled on a level-up.")]
     [SerializeField] private List<PowerUpDefinition> exquisitePool = new();
-    [Tooltip("Cards a corruption can turn into when it goes badly. Their rarity sets the tier: Cursed, Cursed-, Cursed--. Never rolled on a level-up.")]
+    [Tooltip("Cards a corruption can turn into when it goes badly. Never rolled on a level-up.")]
     [SerializeField] private List<PowerUpDefinition> cursedPool = new();
-    [Tooltip("Chance of an Exquisite outcome instead of a Cursed one, by the rarity of the corrupted card: Common, Uncommon, Rare, Epic, Legendary. The tier of the outcome follows it too: Common and Uncommon Minor, Rare and Epic Major, Legendary Grand.")]
+    [Tooltip("Chance of an Exquisite outcome instead of a Cursed one, by the rarity of the corrupted card: Common, Uncommon, Rare, Epic, Legendary. The Cursed dowry follows it too: Common and Uncommon a reroll, Rare and Epic a Rare+ card, Legendary a Legendary card.")]
     [SerializeField] private float[] exquisiteChances = { 0.30f, 0.40f, 0.55f, 0.70f, 0.80f };
 
     /// <summary>Extra cards on top of the base count (meta-progression, perks...).</summary>
@@ -117,23 +117,18 @@ public class PowerUpManager : MonoBehaviour
     public bool CanCorrupt(PowerUpDefinition definition) =>
         definition != null && PowerUpStats.CorruptionCharges > 0 && definition.MaxStacks > 0 && !IsMaxed(definition)
         && !RarityStyle.IsCorruption(definition.Rarity) && !IsBlocked(definition)
-        && (ResolveTier(exquisitePool, RarityStyle.SourceTier(definition.Rarity)) >= 0
-            || ResolveTier(cursedPool, RarityStyle.SourceTier(definition.Rarity)) >= 0);
+        && (HasOpenOutcome(exquisitePool) || HasOpenOutcome(cursedPool));
 
     /// <summary>
     /// What corrupting this card would do, as the roll will use it: the chance of an Exquisite outcome (by the card's
-    /// rarity), the two outcome rarities (by the card's tier) and what a Cursed outcome pays. If a pool has nothing
-    /// open at the card's tier the nearest tier stands in, and if one side is used up the other has 100%.
+    /// rarity) and what a Cursed outcome pays (also by that rarity). If one pool is used up the other has 100%.
     /// </summary>
     public CorruptionOdds GetOdds(PowerUpDefinition source)
     {
-        int tier = RarityStyle.SourceTier(source.Rarity);
-        int exTier = ResolveTier(exquisitePool, tier);
-        int cuTier = ResolveTier(cursedPool, tier);
-        float chance = exTier < 0 ? 0f : cuTier < 0 ? 1f : BaseExquisiteChance(source.Rarity);
-        if (exTier < 0) exTier = tier;
-        if (cuTier < 0) cuTier = tier;
-        return new CorruptionOdds(chance, RarityStyle.ExquisiteOfTier(exTier), RarityStyle.CursedOfTier(cuTier), CorruptionDowryInfo.ForTier(cuTier));
+        bool hasExquisite = HasOpenOutcome(exquisitePool), hasCursed = HasOpenOutcome(cursedPool);
+        float chance = !hasExquisite ? 0f : !hasCursed ? 1f : BaseExquisiteChance(source.Rarity);
+        var dowry = CorruptionDowryInfo.ForTier(RarityStyle.SourceTier(source.Rarity));
+        return new CorruptionOdds(chance, PowerUpRarity.Exquisite, PowerUpRarity.Cursed, dowry);
     }
 
     private float BaseExquisiteChance(PowerUpRarity rarity)
@@ -144,8 +139,7 @@ public class PowerUpManager : MonoBehaviour
 
     /// <summary>
     /// Spends a charge, takes one level off the card's cap for the rest of the run and rolls the outcome: an
-    /// Exquisite card (chance by the corrupted card's rarity, see <see cref="GetOdds"/>) or a Cursed one, both of the
-    /// tier that rarity gives. The outcome is applied when confirmed; a Cursed one pays its dowry then.
+    /// Exquisite card (chance by the corrupted card's rarity, see <see cref="GetOdds"/>) or a Cursed one. The outcome is applied when confirmed; a Cursed one pays its dowry then.
     /// </summary>
     public CorruptionResult Corrupt(PowerUpDefinition source)
     {
@@ -157,8 +151,8 @@ public class PowerUpManager : MonoBehaviour
 
         bool exquisite = UnityEngine.Random.value < odds.ExquisiteChance;
         PowerUpDefinition outcome = exquisite
-            ? PickOutcome(exquisitePool, RarityStyle.OutcomeTier(odds.ExquisiteRarity))
-            : PickOutcome(cursedPool, RarityStyle.OutcomeTier(odds.CursedRarity));
+            ? PickOutcome(exquisitePool)
+            : PickOutcome(cursedPool);
 
         CorruptionDowry dowry = !exquisite && outcome != null ? odds.Dowry : CorruptionDowry.None;
         pendingDowry = dowry;
@@ -173,25 +167,11 @@ public class PowerUpManager : MonoBehaviour
 
     private bool IsOpenOutcome(PowerUpDefinition definition) => definition != null && !IsMaxed(definition) && !IsBlocked(definition);
 
-    // The tier closest to the wanted one (the wanted one, then lower, then higher) that still has an open card in the pool; -1 if none.
-    private int ResolveTier(List<PowerUpDefinition> pool, int tier)
-    {
-        for (int distance = 0; distance <= 2; distance++)
-        {
-            for (int sign = -1; sign <= 1; sign += 2)
-            {
-                if (distance == 0 && sign == 1) continue;
-                int t = tier + sign * distance;
-                if (t < 0 || t > 2) continue;
-                if (pool.Exists(p => IsOpenOutcome(p) && RarityStyle.OutcomeTier(p.Rarity) == t)) return t;
-            }
-        }
-        return -1;
-    }
+    private bool HasOpenOutcome(List<PowerUpDefinition> pool) => pool.Exists(IsOpenOutcome);
 
-    private PowerUpDefinition PickOutcome(List<PowerUpDefinition> pool, int tier)
+    private PowerUpDefinition PickOutcome(List<PowerUpDefinition> pool)
     {
-        var open = pool.FindAll(p => IsOpenOutcome(p) && RarityStyle.OutcomeTier(p.Rarity) == tier);
+        var open = pool.FindAll(IsOpenOutcome);
         return open.Count > 0 ? open[UnityEngine.Random.Range(0, open.Count)] : null;
     }
 

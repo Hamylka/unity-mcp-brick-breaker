@@ -1598,7 +1598,7 @@ MonoBehaviour:
   gameOverAnimation: {fileID: 358591254}
   slowDownTime: 0.7
   speedStepInterval: 60
-  speedStepAmount: 0.15
+  speedStepAmount: 0.075
 --- !u!4 &358591253
 Transform:
   m_ObjectHideFlags: 0
@@ -5521,7 +5521,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: de1b1c4e494820a4d82179e703878da6, type: 2}
   - {fileID: 11400000, guid: 2948f801bf0d4364dacc92756fa29099, type: 2}
   - {fileID: 11400000, guid: 7b6f6bdc56a917e4ca8135e748f50832, type: 2}
-  - {fileID: 11400000, guid: 1f5e2b163be416f713d2fb85d4e8dc77, type: 2}
   - {fileID: 11400000, guid: 7d45aa76d9f5dbea28fc9de5a497debc, type: 2}
   - {fileID: 11400000, guid: d64f2f16517fda61438628a661b90e7c, type: 2}
   - {fileID: 11400000, guid: 19be375427933160d211a255bf063fbc, type: 2}

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Echo
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Echo
-  description: Every 10th hit repeats once for free
+  description: Every 4th hit repeats once more per level
   rarity: 3
   icon: '..###..
 
