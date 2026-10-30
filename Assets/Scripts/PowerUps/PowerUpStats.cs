@@ -45,6 +45,15 @@ public static class PowerUpStats
     /// <summary>Echo picks: every <see cref="EchoInterval"/> ball hits repeat once for free.</summary>
     public static int EchoPicks { get; set; }
 
+    // Run counters read by RunProfiler (reset every run): procs fired, repeats dealt, procs where the ball's own hit
+    // had killed the brick, jumps to another brick, repeats lost for lack of any living brick, overkill damage carried.
+    public static int EchoProcs { get; private set; }
+    public static int EchoRepeats { get; private set; }
+    public static int EchoBallKills { get; private set; }
+    public static int EchoJumps { get; private set; }
+    public static int EchoNoTarget { get; private set; }
+    public static int EchoCarried { get; private set; }
+
     /// <summary>Share of the damage beyond a brick's HP that passes to the brick behind (Overkill Spill).</summary>
     public static float OverkillPercent { get; set; }
 
@@ -149,6 +158,7 @@ public static class PowerUpStats
         RampagePercent = 0f;
         RicochetPercent = 0f;
         EchoPicks = 0;
+        EchoProcs = EchoRepeats = EchoBallKills = EchoJumps = EchoNoTarget = EchoCarried = 0;
         OverkillPercent = 0f;
         echoCounter = 0;
         BonusFallSpeed = 1f;
@@ -201,9 +211,15 @@ public static class PowerUpStats
 
             // The hit rings again; it still triggers area effects like any ball hit. If the ball's hit already
             // killed the brick, the echo jumps to the nearest living brick and carries the overkill with it.
+            EchoProcs++;
             int carry = brick.IsAlive ? 0 : Mathf.Max(0, damage - hpBefore);
+            if (!brick.IsAlive) EchoBallKills++;
             Brick first = brick.IsAlive ? brick : NearestLiveBrick(brick);
-            if (first == null) return;
+            if (first == null)
+            {
+                EchoNoTarget += EchoPicks;
+                return;
+            }
             first.Pulse(EchoColor * 1.6f, 0.22f, 0.08f);
             if (Time.frameCount != echoFxFrame)
             {
@@ -227,12 +243,19 @@ public static class PowerUpStats
                 {
                     Brick from = target != null ? target : brick;
                     target = NearestLiveBrick(from);
-                    if (target == null) break;
+                    if (target == null)
+                    {
+                        EchoNoTarget += EchoPicks - i;
+                        break;
+                    }
+                    EchoJumps++;
                     ChainBolt.Spawn(from.transform.position, target.transform.position, EchoColor * 1.6f, 0.015f, 0.12f, 0.14f);
                     target.Pulse(EchoColor * 1.6f, 0.22f, 0.04f);
                 }
                 int hp = target.HitPoints;
                 int dealt = damage + carry;
+                EchoCarried += carry;
+                EchoRepeats++;
                 carry = 0;
                 target.TakeHit(dealt);
                 if (!target.IsAlive) carry = Mathf.Max(0, dealt - hp);

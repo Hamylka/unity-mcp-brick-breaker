@@ -72,6 +72,16 @@ public class RunRecord
         public int rerollsUsed;
         public int wallClears;
         public int totalDamage;
+
+        // Echo (0 without the card, and in older files): procs fired, repeats dealt, procs where the ball's own hit
+        // had already killed the brick, jumps to another brick, repeats lost with no living brick left, and the
+        // overkill damage carried onto the next brick.
+        public int echoProcs;
+        public int echoRepeats;
+        public int echoBallKills;
+        public int echoJumps;
+        public int echoNoTarget;
+        public int echoCarriedDamage;
     }
 
     /// <summary>Damage dealt by one source over the whole run.</summary>

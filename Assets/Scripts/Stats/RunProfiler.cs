@@ -308,6 +308,12 @@ public class RunProfiler : MonoBehaviour
         s.totalXp = experience != null ? experience.TotalXp : 0;
         s.bricksDestroyed = game.BricksDestroyed;
         s.rowsSpawned = grid.RowsSpawned;
+        s.echoProcs = PowerUpStats.EchoProcs;
+        s.echoRepeats = PowerUpStats.EchoRepeats;
+        s.echoBallKills = PowerUpStats.EchoBallKills;
+        s.echoJumps = PowerUpStats.EchoJumps;
+        s.echoNoTarget = PowerUpStats.EchoNoTarget;
+        s.echoCarriedDamage = PowerUpStats.EchoCarried;
         s.targetHits = Round(grid.TargetHits);
         s.smoothedDamage = Round(grid.SmoothedDamage);
         s.paceFactor = Round(grid.PaceFactor);
