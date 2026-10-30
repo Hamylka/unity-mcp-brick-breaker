@@ -243,7 +243,7 @@ public class GameOverScreen : MonoBehaviour
             if (value != stat.shown)
             {
                 stat.shown = value;
-                stat.value.Text = stat.isTime ? $"{value / 60}:{value % 60:00}" : value.ToString();
+                stat.value.Text = stat.isTime ? $"{value / 60}:{value % 60:00}" : NumberFormat.Short(value);
                 stat.pop = 0f; // a small tick on every change
                 if (value > 0) SoundManager.Play(Sfx.CountTick, 1f + eased * 0.5f);
             }

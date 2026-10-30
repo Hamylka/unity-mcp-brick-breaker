@@ -241,10 +241,10 @@ public class PauseScreen : MonoBehaviour
         int damage = 1;
         foreach (BallController ball in BallController.Active) damage = Mathf.Max(damage, ball.Damage);
 
-        statValues[0].Text = level.ToString();
+        statValues[0].Text = NumberFormat.Short(level);
         statValues[1].Text = $"{seconds / 60}:{seconds % 60:00}";
-        statValues[2].Text = game != null ? game.BricksDestroyed.ToString() : "0";
-        statValues[DamageStat].Text = damage.ToString();
+        statValues[2].Text = game != null ? NumberFormat.Short(game.BricksDestroyed) : "0";
+        statValues[DamageStat].Text = NumberFormat.Short(damage);
         // The label also tells how much base damage each level-up adds, and the card multiplier on top of it.
         if (damageLabel != null)
         {
@@ -253,8 +253,8 @@ public class PauseScreen : MonoBehaviour
             string factor = cardFactor > 1.001f ? $" X{cardFactor:0.0#}" : "";
             damageLabel.Text = powerUps != null ? $"DAMAGE +{powerUps.DamagePerLevel}/LV{factor}" : "DAMAGE";
         }
-        statValues[4].Text = grid != null ? $"{grid.CurrentMinHp}-{grid.CurrentMaxHp}" : "-";
-        statValues[5].Text = experience != null ? $"{experience.CurrentXp}/{experience.XpToNextLevel}" : "-";
+        statValues[4].Text = grid != null ? $"{NumberFormat.Short(grid.CurrentMinHp)}-{NumberFormat.Short(grid.CurrentMaxHp)}" : "-";
+        statValues[5].Text = experience != null ? $"{NumberFormat.Short(experience.CurrentXp)}/{NumberFormat.Short(experience.XpToNextLevel)}" : "-";
 
         foreach (Row row in rows) Destroy(row.rect.gameObject);
         rows.Clear();
