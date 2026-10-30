@@ -59,7 +59,8 @@ public static class PowerUpStats
 
     private static int echoCounter;
     private static readonly int[] EchoIntervals = { 10, 8, 6, 5, 4, 3 };
-    private static readonly Color EchoColor = new(0.75f, 0.9f, 1f);
+    public static readonly Color EchoColor = new(0.75f, 0.9f, 1f);
+    private const int EchoChargeHits = 3; // the balls show the charge only over the last hits before an echo
 
     // Echo procs in one frame that get the full feedback (ring, sound, ball tick); later ones only pulse their brick.
     private const int MaxEchoFxPerFrame = 2;
@@ -68,6 +69,23 @@ public static class PowerUpStats
 
     /// <summary>Ball hits between two Echo repeats after this many picks (0 = no Echo).</summary>
     public static int EchoInterval(int picks) => picks <= 0 ? 0 : EchoIntervals[Mathf.Min(picks, EchoIntervals.Length) - 1];
+
+    /// <summary>
+    /// How close the next Echo is, 0-1, shown on every ball (the counter is shared, any ball can fire it): 0 until
+    /// the last <see cref="EchoChargeHits"/> hits, then 1/3, 2/3, and 1 when the next ball hit echoes. Short intervals
+    /// use fewer steps, so the hit right after an echo always reads 0.
+    /// </summary>
+    public static float EchoCharge
+    {
+        get
+        {
+            int every = EchoInterval(EchoPicks);
+            if (every <= 1) return 0f;
+            int steps = Mathf.Min(EchoChargeHits, every - 1);
+            int hitsToGo = every - echoCounter; // 1 = the next hit echoes
+            return Mathf.Clamp01((steps + 1 - hitsToGo) / (float)steps);
+        }
+    }
 
     public static void Reset()
     {
