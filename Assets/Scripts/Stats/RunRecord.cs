@@ -166,5 +166,7 @@ public class RunRecord
         public float wallStepInterval;
         public float ballSize;
         public int corruptionCharges;
+        // Share of the XP a brick pays under the kill-rate brake (1 = no brake). Added with the brake; 0 in older files.
+        public float xpBrake;
     }
 }

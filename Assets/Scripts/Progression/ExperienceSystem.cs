@@ -26,6 +26,12 @@ public class ExperienceSystem : MonoBehaviour
     [Tooltip("A brick's worth is scaled by its max HP / the middle of the HP window now spawning, clamped to this. Weak or outdated bricks pay less, tough ones more (1 = ignore HP).")]
     [SerializeField, Min(1f)] private float maxHpWorth = 2f;
 
+    [Header("Kill Rate Brake")]
+    [Tooltip("The brake starts when the kill rate is this many times the target (BrickGrid > Target Kills Per Second).")]
+    [SerializeField, Min(1f)] private float brakeStartsAt = 2f;
+    [Tooltip("Lowest share of the XP a brick can pay under the brake.")]
+    [SerializeField, Range(0.05f, 1f)] private float brakeFloor = 0.25f;
+
     [Header("Wall Clear Bonus")]
     [Tooltip("Clearing every brick grants this share of the XP needed for the current level (0.5 = 50%).")]
     [SerializeField, Range(0f, 2f)] private float clearBonus = 0.25f;
@@ -74,7 +80,22 @@ public class ExperienceSystem : MonoBehaviour
             float mid = Mathf.Max(1f, (grid.CurrentMinHp + grid.CurrentMaxHp) * 0.5f);
             worth = Mathf.Clamp(maxHp / mid, 1f / maxHpWorth, maxHpWorth);
         }
-        return damageDealt / (float)maxHp * worth * XpToNextLevel / BricksPerLevel;
+        return damageDealt / (float)maxHp * worth * KillRateBrake * XpToNextLevel / BricksPerLevel;
+    }
+
+    /// <summary>
+    /// Second brake on a snowballing run (invisible to the player): when the kill rate (25 s average) is far over the
+    /// target, every brick pays less XP, so level-ups stay spaced out instead of coming every 2 to 3 s. 1 up to
+    /// <c>Brake Starts At</c> x the target rate, then <c>start / ratio</c> down to the floor.
+    /// </summary>
+    public float KillRateBrake
+    {
+        get
+        {
+            if (grid == null || grid.TargetKillsPerSecond <= 0f) return 1f;
+            float ratio = grid.KillRate / grid.TargetKillsPerSecond;
+            return ratio <= brakeStartsAt ? 1f : Mathf.Max(brakeFloor, brakeStartsAt / ratio);
+        }
     }
 
     public int BaseXp => baseXp;
