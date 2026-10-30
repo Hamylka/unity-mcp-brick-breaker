@@ -87,7 +87,7 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - ~~**RunProfiler, Echo**~~ built 2026-10-30 (changelog "RunProfiler Echo counters").
 - **Make the danger readable (Opus task, visual/audio):** the lose line pulses, music tempo rises and a red edge tint grows as the front row nears the paddle.
 - **Special bricks:** Armored (ignores splash and AoE) and Healer (restores its neighbours).
-- **Bonus drop budget by time:** scale the per-brick drop chance by target kill rate / actual kill rate (clamped), so drops per minute stay roughly constant whatever the kill rate does.
+- ~~**Bonus drop budget by time**~~ built 2026-10-30 (changelog "Bonus drop budget").
 - ~~**Gate Multi-Ball**~~ built 2026-10-30 (changelog "Multi-Ball gate"); a cooldown between wall-clear bonuses is still to decide.
 - **Corruption on unlimited cards:** unlimited cards become corruptible, the cost being the loss of one owned level of that card. If none is owned, the card cannot be corrupted.
 - **Still open:** pace factor cap (4) and a second brake on the kill rate (XP falling when the rate is far over target), a minimum gap between level-ups, and the damage-card guarantee that keeps offering Shockwave.
@@ -656,3 +656,8 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Done (branch `feature/gate-multiball`):** roadmap section 5 item 7. (1) Catching a Multi-Ball deletes every other Multi-Ball item still falling (`BonusDropper.RemoveFallingMultiBalls`, a small burst marks each one). (2) While a split is pending (`MultiBallCharge.Pending`, from the pickup until the extras spawn) Multi-Ball cannot drop: `MultiBallEffect.CanDrop` is false in the weighted roll and the wall-clear Multi-Ball is skipped; a pickup that still got through is ignored in `MultiBallEffect.Apply`, so nothing joins a pending split. After the split the gate opens again (extras still alive do not block it).
 - **Checked:** compiles clean in Unity, no console errors. Not played.
 - **Open issues:** the wall-clear Multi-Ball is lost (not delayed) if the wall clears during a pending split. The cooldown between wall-clear bonuses is still to decide. Pickup sound and flash still play for an ignored pickup (cannot normally happen). Pending split queue entries in the run profiler are unchanged.
+
+### [2026-10-30] - Bonus drop budget (by Claude)
+- **Done (branch `feature/drop-budget`):** roadmap section 5 item 7. `BonusDropper` multiplies the per-brick drop chance (Greed included) by `BudgetFactor` = `BrickGrid.TargetKillsPerSecond / BrickGrid.KillRate` (the 25 s average), clamped to 0.3 to 1.5 (`BonusDropper > Drop Budget`: `Budget By Kill Rate`, `Min/Max Budget Factor`, `Budget Min Kill Rate` 0.2). Drops per minute stay about `chance x target rate` whatever the kill rate does: a snowballing run (rate 5/s) gets a factor of 0.3, a slow wall (0.75/s) gets 1.5. Under 0.2 kills/s the factor is 1 (start of the run, nearly empty wall). The wall-clear Multi-Ball is not affected.
+- **Checked:** compiles clean in Unity, no console errors. Not played.
+- **Open issues:** with the clamp, a kill rate of 5/s still gives 1.5 kills/s x 6% x 0.3 ... check in the profiler (`bonusesDropped` per minute) that runs land near 5 to 6 drops a minute; the factor is not logged yet. Greed's gain is scaled down in a fast run too.
