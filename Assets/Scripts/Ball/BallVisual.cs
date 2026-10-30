@@ -125,6 +125,15 @@ public class BallVisual : MonoBehaviour
     [Tooltip("Seconds between two tiny lightning arcs jumping off the powered ball.")]
     [SerializeField, Min(0.05f)] private float boltInterval = 0.3f;
 
+    [Header("Echo Charge")]
+    [Tooltip("How far the halo and floor light turn echo blue when the next hit echoes (0 = off).")]
+    [SerializeField, Range(0f, 1f)] private float echoTint = 0.5f;
+    [Tooltip("Extra halo brightness from the shimmer at full charge.")]
+    [SerializeField, Min(0f)] private float echoShimmer = 0.35f;
+    [Tooltip("Shimmer flicker speed at full charge, in cycles per second (slower at lower charge).")]
+    [SerializeField, Min(0f)] private float echoShimmerRate = 14f;
+    [SerializeField, Min(0.01f)] private float echoChargeEase = 0.12f;
+
     [Header("Buff Ending")]
     [Tooltip("The buffed look strobes for this many seconds before the wall buff runs out.")]
     [SerializeField, Min(0f)] private float warnTime = 2f;
@@ -187,6 +196,7 @@ public class BallVisual : MonoBehaviour
     private float nextCrackle;
     private float nextBolt;
     private float warn = 1f;   // brightness factor of the buffed look (strobes before the buff ends)
+    private float echoBlend;   // eased PowerUpStats.EchoCharge (0 = far from an echo, 1 = the next hit echoes)
 
     private void Awake()
     {
@@ -478,6 +488,16 @@ public class BallVisual : MonoBehaviour
         // While powered it turns gold, grows and throbs with the heartbeat.
         Color glow = Color.Lerp(Color.Lerp(glowColor, PowerGlow, power), ghostHue, phaseBlend);
         intensity *= Mathf.Lerp(1f, (1.15f + 0.6f * throb) * warn, power);
+        // Echo charging: every flying ball (any of them can fire the shared counter) shimmers pale blue over the last
+        // hits before an echo, faster and brighter as it nears. Drops at once when the echo fires.
+        float echoTarget = flying ? PowerUpStats.EchoCharge : 0f;
+        echoBlend = echoTarget < echoBlend ? echoTarget : Mathf.MoveTowards(echoBlend, echoTarget, dt / echoChargeEase);
+        if (echoBlend > 0.001f)
+        {
+            float shimmer = 0.5f + 0.5f * Mathf.Sin(time * echoShimmerRate * Mathf.Lerp(0.4f, 1f, echoBlend) * 2f * Mathf.PI);
+            glow = Color.Lerp(glow, PowerUpStats.EchoColor, echoTint * echoBlend);
+            intensity *= 1f + echoShimmer * echoBlend * shimmer;
+        }
         float haloScale = haloSize * Mathf.Lerp(1f, 1.3f + 0.15f * Mathf.Sin(phaseTime * 9f), phaseBlend)
                           * Mathf.Lerp(1f, powerHaloScale * (1f + 0.15f * throb), power);
         float inverseScale = 1f / Mathf.Max(0.0001f, transform.lossyScale.x);
