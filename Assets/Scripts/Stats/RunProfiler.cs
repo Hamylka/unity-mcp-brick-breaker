@@ -278,7 +278,8 @@ public class RunProfiler : MonoBehaviour
             speedFactor = Round(BallController.RunSpeedFactor),
             wallStepInterval = Round(grid.StepInterval),
             ballSize = Round(PowerUpStats.BallSize),
-            corruptionCharges = PowerUpStats.CorruptionCharges
+            corruptionCharges = PowerUpStats.CorruptionCharges,
+            xpBrake = experience != null ? Round(experience.KillRateBrake) : 1f
         };
     }
 
