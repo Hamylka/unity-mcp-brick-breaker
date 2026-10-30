@@ -122,6 +122,7 @@ public class RunProfiler : MonoBehaviour
         {
             powerUps.Offered += HandleOffered;
             powerUps.PowerUpChosen += HandlePowerUpChosen;
+            powerUps.Corrupted += HandleCorrupted;
         }
         if (bonuses != null)
         {
@@ -202,6 +203,13 @@ public class RunProfiler : MonoBehaviour
         RunRecord.OfferEntry entry = record.offers[^1];
         entry.chosen = $"{definition.DisplayName} LV{stacks}";
         entry.chosenRarity = definition.Rarity.ToString();
+    }
+
+    private void HandleCorrupted(CorruptionResult result)
+    {
+        if (finished) return;
+        string outcome = result.Outcome != null ? $"{result.Outcome.DisplayName} ({result.Outcome.Rarity})" : "none";
+        AddEvent("corrupt", result.Source.DisplayName, result.NewMax, outcome);
     }
 
     private void HandleBonusDropped(BonusDefinition definition)

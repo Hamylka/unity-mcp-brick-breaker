@@ -92,6 +92,9 @@ public static class PowerUpStats
     public static float BallSize { get; set; } = 1f;
     public const float MinBallSize = 0.6f;
 
+    /// <summary>Corruption charges left (Glitch Core). Each one lets the player corrupt a capped card on a level-up.</summary>
+    public static int CorruptionCharges { get; set; }
+
     private static int echoCounter;
     private static readonly int[] EchoIntervals = { 10, 8, 6, 5, 4, 3 };
     public static readonly Color EchoColor = new(0.75f, 0.9f, 1f);
@@ -146,6 +149,7 @@ public static class PowerUpStats
         WallBuffDuration = 1f;
         ZoneBeaconPicks = 0;
         BallSize = 1f;
+        CorruptionCharges = 0;
     }
 
     /// <summary>

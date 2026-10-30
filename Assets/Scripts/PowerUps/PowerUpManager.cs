@@ -34,6 +34,14 @@ public class PowerUpManager : MonoBehaviour
     [Tooltip("Seconds the game takes to ease from the full stop back to normal speed after the last card.")]
     [SerializeField, Min(0f)] private float resumeTime = 1f;
 
+    [Header("Corruption")]
+    [Tooltip("Cards a corruption can turn into when it goes well (Exquisite rarity, never rolled on a level-up).")]
+    [SerializeField] private List<PowerUpDefinition> exquisitePool = new();
+    [Tooltip("Cards a corruption can turn into when it goes badly (Cursed rarity, never rolled on a level-up).")]
+    [SerializeField] private List<PowerUpDefinition> cursedPool = new();
+    [Tooltip("Chance that a corruption gives an Exquisite card instead of a Cursed one.")]
+    [SerializeField, Range(0f, 1f)] private float exquisiteChance = 0.55f;
+
     /// <summary>Extra cards on top of the base count (meta-progression, perks...).</summary>
     public int BonusChoices { get; set; }
     public int ChoiceCount => Mathf.Max(1, baseChoiceCount + BonusChoices);
@@ -50,7 +58,12 @@ public class PowerUpManager : MonoBehaviour
     /// <summary>Raised when cards are shown: the cards, and whether this is a reroll of the previous ones (run profiler).</summary>
     public event Action<IReadOnlyList<PowerUpDefinition>, bool> Offered;
 
+    /// <summary>Raised when a card is corrupted (before the outcome is confirmed and applied).</summary>
+    public event Action<CorruptionResult> Corrupted;
+
     private readonly Dictionary<PowerUpDefinition, int> stacks = new();
+    private readonly Dictionary<PowerUpDefinition, int> capPenalty = new(); // levels a card lost to corruptions this run
+    private CorruptionHooks corruptionHooks;
     private int pending;
     private readonly Queue<int> pendingDamage = new(); // damage gain of each level-up still waiting for its pick
     private float savedTimeScale = 1f;
@@ -79,6 +92,56 @@ public class PowerUpManager : MonoBehaviour
 
     /// <summary>Every power-up picked this run, with how many times it was taken.</summary>
     public IReadOnlyDictionary<PowerUpDefinition, int> Owned => stacks;
+
+    /// <summary>A card's max level this run: its cap minus the levels corruptions took from it. 0 = unlimited.</summary>
+    public int GetMaxStacks(PowerUpDefinition definition)
+    {
+        if (definition.MaxStacks <= 0) return 0;
+        return Mathf.Max(0, definition.MaxStacks - (capPenalty.TryGetValue(definition, out int lost) ? lost : 0));
+    }
+
+    /// <summary>True when a capped card has reached its (possibly lowered) cap and can no longer be offered.</summary>
+    public bool IsMaxed(PowerUpDefinition definition) =>
+        definition.MaxStacks > 0 && GetStacks(definition) >= GetMaxStacks(definition);
+
+    /// <summary>
+    /// A card may be corrupted with a charge in hand when it has a cap (even a cap of 1) and an outcome is left
+    /// to give. Unlimited cards and the corruption cards themselves cannot.
+    /// </summary>
+    public bool CanCorrupt(PowerUpDefinition definition) =>
+        definition != null && PowerUpStats.CorruptionCharges > 0 && definition.MaxStacks > 0 && !IsMaxed(definition)
+        && !RarityStyle.IsCorruption(definition.Rarity) && (HasOutcome(exquisitePool) || HasOutcome(cursedPool));
+
+    /// <summary>
+    /// Spends a charge, takes one level off the card's cap for the rest of the run and rolls the outcome: a random
+    /// Exquisite card (<see cref="exquisiteChance"/>) or a random Cursed one. The outcome is applied when confirmed.
+    /// </summary>
+    public CorruptionResult Corrupt(PowerUpDefinition source)
+    {
+        PowerUpStats.CorruptionCharges = Mathf.Max(0, PowerUpStats.CorruptionCharges - 1);
+        int oldMax = GetMaxStacks(source);
+        capPenalty[source] = (capPenalty.TryGetValue(source, out int lost) ? lost : 0) + 1;
+        int newMax = GetMaxStacks(source);
+
+        bool exquisite = UnityEngine.Random.value < exquisiteChance;
+        if (!HasOutcome(exquisite ? exquisitePool : cursedPool)) exquisite = !exquisite; // that pool is used up
+        PowerUpDefinition outcome = PickOutcome(exquisite ? exquisitePool : cursedPool);
+
+        var result = new CorruptionResult(source, outcome, oldMax, newMax, IsMaxed(source));
+        Corrupted?.Invoke(result);
+        return result;
+    }
+
+    private bool HasOutcome(List<PowerUpDefinition> pool) => pool.Exists(p => p != null && !IsMaxed(p));
+
+    private PowerUpDefinition PickOutcome(List<PowerUpDefinition> pool)
+    {
+        var open = pool.FindAll(p => p != null && !IsMaxed(p));
+        return open.Count > 0 ? open[UnityEngine.Random.Range(0, open.Count)] : null;
+    }
+
+    [ContextMenu("Debug: Give Corruption Charge")]
+    private void DebugGiveCharge() => PowerUpStats.CorruptionCharges++;
 
     private void HandleLevelUp(int newLevel)
     {
@@ -120,12 +183,19 @@ public class PowerUpManager : MonoBehaviour
             {
                 bool closed = false;
                 Offered?.Invoke(choices, false);
+                corruptionHooks ??= new CorruptionHooks
+                {
+                    Charges = () => PowerUpStats.CorruptionCharges,
+                    MaxStacks = GetMaxStacks,
+                    CanCorrupt = CanCorrupt,
+                    Corrupt = Corrupt
+                };
                 screen.Show(choices, GetStacks, Apply, () => closed = true, RerollCount, () =>
                 {
                     List<PowerUpDefinition> rerolled = Roll(ChoiceCount);
                     Offered?.Invoke(rerolled, true);
                     return rerolled;
-                });
+                }, corruptionHooks);
                 while (!closed) yield return null;
             }
 
@@ -198,8 +268,8 @@ public class PowerUpManager : MonoBehaviour
         var pool = new List<PowerUpDefinition>();
         foreach (PowerUpDefinition definition in powerUps)
         {
-            if (definition == null) continue;
-            if (definition.MaxStacks > 0 && GetStacks(definition) >= definition.MaxStacks) continue;
+            if (definition == null || RarityStyle.IsCorruption(definition.Rarity)) continue;
+            if (IsMaxed(definition)) continue;
             pool.Add(definition);
         }
 

@@ -272,7 +272,7 @@ public class PauseScreen : MonoBehaviour
         // Rarest first, then the most picked.
         owned.Sort((a, b) =>
         {
-            int byRarity = b.Key.Rarity.CompareTo(a.Key.Rarity);
+            int byRarity = RarityStyle.SortRank(b.Key.Rarity).CompareTo(RarityStyle.SortRank(a.Key.Rarity));
             if (byRarity != 0) return byRarity;
             int byStacks = b.Value.CompareTo(a.Value);
             return byStacks != 0 ? byStacks : string.CompareOrdinal(a.Key.DisplayName, b.Key.DisplayName);
@@ -682,7 +682,7 @@ public class PauseScreen : MonoBehaviour
     {
         Color rarity = RarityStyle.GetColor(def.Rarity);
         Color rarityDark = new(rarity.r * 0.35f, rarity.g * 0.35f, rarity.b * 0.35f, 1f);
-        int max = def.MaxStacks;
+        int max = powerUps != null ? powerUps.GetMaxStacks(def) : def.MaxStacks; // corruptions lower caps
         bool maxed = max > 0 && stacks >= max;
         Color level = maxed ? maxLevelColor : levelColor;
         const float left = -ListWidth * 0.5f;
