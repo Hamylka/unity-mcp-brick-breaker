@@ -83,7 +83,7 @@ Single source of truth for what is left. Update it at the end of every task (tic
 
 *7. Parked rebalance ideas (decided with the user 2026-10-30 after the analysis of two phone runs; none built yet).* Run B snowballed from 205 s to 250 s (pace factor at its cap of 4, kill rate 5/s, a level every 2 to 3 s, 15 wall clears in 50 s, 58 Multi-Ball drops, Shockwave 8 picks = 34% of damage).
 - ~~**Shockwave capped at 4 stacks**~~ built 2026-10-30 (changelog "Shockwave cap restored").
-- **Echo rework:** (a) when the ball's hit kills the brick, the echo jumps to the nearest living brick instead of being wasted; (b) the echo carries the overkill damage onto that brick (which makes Overkill Spill redundant: fold it in and reuse the slot); (c) open question: all echoes at 50% damage, flat, keeping +1 echo per level (needs fractional carry for low damage, and note that the Cleave counter and on-hit effects count hits, not damage).
+- **Echo rework:** (a) and (b) built 2026-10-30 (changelog "Echo jumps and carries overkill"); folding Overkill Spill into Echo is not done yet (card kept, decide with the user); (c) open question: all echoes at 50% damage, flat, keeping +1 echo per level (needs fractional carry for low damage, and note that the Cleave counter and on-hit effects count hits, not damage).
 - **RunProfiler, Echo:** log per run the Echo procs, the wasted ones (brick already dead), the jumps and the carried overkill damage, so the overkill state of the card can be read (and the indirect AoE damage that Echo triggers, which is credited to the AoE sources today).
 - **Make the danger readable (Opus task, visual/audio):** the lose line pulses, music tempo rises and a red edge tint grows as the front row nears the paddle.
 - **Special bricks:** Armored (ignores splash and AoE) and Healer (restores its neighbours).
@@ -641,3 +641,8 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Done (branch `fix/shockwave-cap`):** roadmap section 5 item 7, first task. `Shockwave.asset` has `maxStacks` 4 again (was unlimited). The splash stays linear: +25% per pick, so 100% of the damage dealt onto the neighbours at the cap. Nothing else changed (no code).
 - **Checked:** asset edit only, not seen in Unity nor played.
 - **Open issues:** with the cap, the damage-card guarantee (`IsOffensive`) still counts Shockwave while it is offered; once maxed it leaves the pool, so check the offers stay varied. Next in item 7: Echo rework.
+
+### [2026-10-30] - Echo jumps and carries overkill (by Claude)
+- **Done (branch `feature/echo-rework`):** roadmap section 5 item 7, Echo (a) and (b), in `PowerUpStats.AfterBallHit`. If the ball's hit kills the brick, the echo no longer fizzles: its first repeat jumps to the nearest living brick (`NearestLiveBrick`, any direction, by distance) with a `ChainBolt` and pulse, and adds the damage the ball had beyond the dead brick's HP. Each following repeat that kills its target does the same (jump plus carried overkill), so a high-pick Echo chains across the wall. Repeats are still full copies of the hit and tagged `DamageSource.Echo`; nothing else changed (counter, charge shimmer, FX limits).
+- **Checked:** no console errors in Unity after the edit; not played.
+- **Open issues:** Overkill Spill (card) and Echo both carry overkill now, so a ball kill with both can spill twice; folding the card into Echo is left to decide. Part (c) (flat 50%) not built. Watch the Echo damage share in the profiler (next task logs it).
