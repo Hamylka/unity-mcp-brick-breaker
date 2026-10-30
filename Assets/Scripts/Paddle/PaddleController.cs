@@ -181,7 +181,7 @@ public class PaddleController : MonoBehaviour
         float axis = 0f;
         if (keyboard.leftArrowKey.isPressed || keyboard.aKey.isPressed) axis -= 1f;
         if (keyboard.rightArrowKey.isPressed || keyboard.dKey.isPressed) axis += 1f;
-        targetX += axis * keyboardSpeed * Time.deltaTime;
+        targetX += axis * keyboardSpeed * Time.unscaledDeltaTime; // unscaled: stays responsive while the time eases back after the cards
     }
 
 #if UNITY_EDITOR
