@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Glitch Core
   description: +1 corruption charge
-  rarity: 2
+  rarity: 1
   icon: '..###..
 
     .#.#.##

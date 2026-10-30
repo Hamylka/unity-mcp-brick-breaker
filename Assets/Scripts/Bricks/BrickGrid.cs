@@ -174,6 +174,13 @@ public class BrickGrid : MonoBehaviour
     }
 
     private float startStepInterval = -1f;
+    private int extraSteps;
+
+    /// <summary>
+    /// Queues extra wall steps (Toll): each one runs like a normal step, one after the other, as soon as a ball is in
+    /// play. The step timer is not reset. Dropped if the wall is cleared before they run.
+    /// </summary>
+    public void QueueExtraSteps(int count) => extraSteps += Mathf.Max(0, count);
 
     /// <summary>Width of one brick cell (X), for area-of-effect distances.</summary>
     public float BrickWidth => lengthInCells * cellSize;
@@ -290,6 +297,7 @@ public class BrickGrid : MonoBehaviour
 
         if (RemainingBricks <= 0)
         {
+            extraSteps = 0; // nothing to push
             if (!endless) return;
 
             // Wall cleared with a delay set (or the immediate wave came out empty): spawn the wave now.
@@ -305,9 +313,11 @@ public class BrickGrid : MonoBehaviour
         if (ball != null && !ball.IsFlying) return;
 
         stepTimer += dt;
-        if (stepTimer >= stepInterval * PowerUpStats.WallStepFactor)
+        bool tolled = extraSteps > 0; // Toll: a queued step goes right away and leaves the step timer alone
+        if (tolled || stepTimer >= stepInterval * PowerUpStats.WallStepFactor)
         {
-            stepTimer = 0f;
+            if (tolled) extraSteps--;
+            else stepTimer = 0f;
             stepFrom = offset;
             stepTo = offset - stepInRows * cellSize;
             stepT = 0f;
@@ -559,7 +569,7 @@ public class BrickGrid : MonoBehaviour
             else if (ratio < relaxBelow || tooTough) paceFactor = Mathf.Max(1f, paceFactor * 0.9f);
         }
 
-        int wanted = Mathf.Max(1, Mathf.CeilToInt(smoothedDamage * TargetHits * paceFactor));
+        int wanted = Mathf.Max(1, Mathf.CeilToInt(smoothedDamage * TargetHits * paceFactor * PowerUpStats.WallHpFactor));
         int max = wanted;
         if (windowReady)
         {

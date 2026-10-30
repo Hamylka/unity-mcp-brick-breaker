@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: LeadenBonuses
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Leaden Bonuses
-  description: Bonuses fall 30% faster
+  description: Bonuses fall 22% faster
   rarity: 6
   icon: '...#...
 
@@ -28,5 +28,5 @@ MonoBehaviour:
     ..###..
 
     ...#...'
-  maxStacks: 0
+  maxStacks: 2
   effect: {fileID: 11400000, guid: 5b2a377de4ea4bc2b6c9f4239201a1d5, type: 2}

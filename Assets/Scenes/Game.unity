@@ -5547,13 +5547,23 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 0822c893da484b258e2abc8f380b33f3, type: 2}
   - {fileID: 11400000, guid: d6b26d4c7d49c704a82f16ec85c19b60, type: 2}
   - {fileID: 11400000, guid: 52438e06076635d41a28dff3a507a8d2, type: 2}
+  - {fileID: 11400000, guid: 985804aa21ece2643b8e5187a35a3cb3, type: 2}
   cursedPool:
   - {fileID: 11400000, guid: a5234148122845e5a580158d96475a0d, type: 2}
   - {fileID: 11400000, guid: a7e498c33de845ac905643a9eac288e9, type: 2}
   - {fileID: 11400000, guid: 2ab6cf78840b49889d91faaa66ab7845, type: 2}
   - {fileID: 11400000, guid: 94106b8d13fa403f84498e8dae58fbf6, type: 2}
   - {fileID: 11400000, guid: 0fb239691d1840eaa0f6271ce4bed344, type: 2}
-  exquisiteChance: 0.55
+  - {fileID: 11400000, guid: 8b745f2073e1e8d48bc4c97daeeb665b, type: 2}
+  - {fileID: 11400000, guid: bc4aca2d00627c646ae3edfa19679723, type: 2}
+  - {fileID: 11400000, guid: 7a278131236017743baffe34ae664cd8, type: 2}
+  - {fileID: 11400000, guid: 554c95632961ca243a31c2431c461a47, type: 2}
+  exquisiteChances:
+  - 0.3
+  - 0.4
+  - 0.55
+  - 0.7
+  - 0.8
 --- !u!4 &1463217167
 Transform:
   m_ObjectHideFlags: 0
