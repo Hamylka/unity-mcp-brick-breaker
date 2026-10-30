@@ -66,9 +66,6 @@ Single source of truth for what is left. Update it at the end of every task (tic
 
 **v0.3: progression rework, finishing.** Built and profiled on 3 phone runs (changelog entries of 2026-10-29): XP per brick, HP window following ball damage and the kill rate, the 31-card pool, multiplicative Power Ball / Meteor Ball. Progression is stable (a level every 10 to 15 s for 11 minutes). What is left of v0.3:
 
-*1. Fixes and card edits (Sonnet).*
-- **Echo feedback:** keep the small ring and pulse, add a short bright tick on the ball at the proc, rate limit when several balls proc in one frame.
-
 *4b. Ball speed look, final visual pass (Opus, not done).* Make the speed readable on the ball: the first pass only scales the trail time (+20% per +100% speed) and brightness (+15%) in `BallVisual > Speed Look`, on top of the existing stretch and halo glow. Judge it in motion on a phone at x1.4 to x2.2 and polish: trail length and shape, a brighter or hotter core, maybe a color shift or speed lines, a bloom check so it does not clip to white, and a feel for each "BALL SPEED UP!" step (a pulse or flash on the ball).
 
 *5. Corruption system and the Exquisite / Malus rarities* (kept as designed, after v0.4 decides how the run ends). A new Epic card grants corruption charges. On the level-up screen a red **CORRUPT** button (shown with at least one charge) spends one on the selected card: the other cards shatter, the chosen one drifts to the center with a "computer virus" effect (glitch, RGB split, scanlines, shake, flickering text), then becomes **Exquisite** (new red rarity above Legendary, weight 0, corruption only) or **Malus** (dark grey, a real downside). The result is confirmed with one tap, no reroll or swap. Needs a rarity, colors, frames and sounds in `PowerUpRarity`, the card screen and the pause screen; a rule for which cards can be corrupted (suggested: any card with a stack, not the one-shots) and an Exquisite and a Malus version of each (or a derivation rule). Greed becomes Exquisite; candidates to move up: Paddle Cannon, Satellite, Meltdown, Phoenix Ball. Plan with Opus (art, shader, audio), data and rules with Sonnet.
@@ -82,6 +79,7 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **K / M / B numbers:** built 2026-10-30 (pause and Game Over stats). Check on a phone that the stat values fit their boxes and read well (12.3K, 4.5M).
 - **Steady Ball:** built 2026-10-30 (Common, max 5, -10% ball speed per pick). Check that the card is picked now and again, that the ball is not too slow late with 5 picks against the speed ramp, and that the icon reads as a down arrow.
 - **Run timer on the HUD:** built 2026-10-30 (`RunTimerHud`, m:ss under the XP bar). Check on a phone that the position clears the bar, the notch and the notices, and that it reads at size 6.
+- **Echo feedback:** built 2026-10-30 (ball tick, 2 full procs per frame). Check on a phone that the tick reads on the ball at 640 px without clipping to white, and that a Multi-Ball echo burst stays calm.
 
 *Decided with the user (2026-10-29):* Time Warp is out of the pool (asset kept). Level-up cooldown / batching and Power Ball / Meteor Ball caps are dropped (level-ups are 10 to 15 s, a 6-minute run takes about 2 of each card).
 
@@ -561,3 +559,8 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Done (branch `feature/steady-ball`):** Quick Ball (+10% ball speed, never picked) is now **Steady Ball**: Common, max 5 stacks, each pick makes the ball 10% slower (compound, so 5 picks = -41%). The assets were renamed in place with their GUIDs kept (`QuickBall.asset` > `SteadyBall.asset`, `QuickBallEffect.asset` > `SteadyBallEffect.asset`), so the card pool in `Game.unity` needs no change. `BallSpeedEffect.percent` now accepts negative values (-0.1) and `Describe` prints the sign ("BALL SPEED -19%"). Card text "Ball speed -10%", new down-arrow icon. It multiplies `baseSpeed` and so stacks with the run ramp (`RunSpeedFactor`) and the temporary boosts.
 - **Checked:** edits only, not compiled in Unity nor seen in play.
 - **Open issues:** a pure tradeoff card that is offered often (Common) may still be skipped: check the pick rate in the run profiler. Roadmap item 4 (v0.3) is done.
+
+### [2026-10-30] - Echo feedback (by Claude)
+- **Done (branch `fix/echo-feedback`):** an Echo proc (`PowerUpStats.AfterBallHit`) keeps its brick pulse and small ring and now also flashes a short bright tick on the ball that echoed (`NeonFx.Flash`, echo pale blue x2.2 HDR, size 0.45, 0.06 s), so the player sees which ball procced. Rate limit: only the first 2 procs in one frame (`MaxEchoFxPerFrame`) get the ring and the ball tick, and only the first plays the `ChainZap` sound; later procs in that frame only pulse their brick. Damage is unchanged.
+- **Checked:** compiles clean in Unity, no console errors. Not seen or heard in play.
+- **Open issues:** the tick may clip to white in the bloom (lower the 2.2 HDR factor) or be too small at 640 px (raise the 0.45 size). Roadmap item 1 (fixes) of v0.3 is now empty.
