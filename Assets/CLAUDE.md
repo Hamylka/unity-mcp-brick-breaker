@@ -83,7 +83,7 @@ Single source of truth for what is left. Update it at the end of every task (tic
 
 *7. Parked rebalance ideas (decided with the user 2026-10-30 after the analysis of two phone runs; none built yet).* Run B snowballed from 205 s to 250 s (pace factor at its cap of 4, kill rate 5/s, a level every 2 to 3 s, 15 wall clears in 50 s, 58 Multi-Ball drops, Shockwave 8 picks = 34% of damage).
 - ~~**Shockwave capped at 4 stacks**~~ built 2026-10-30 (changelog "Shockwave cap restored").
-- **Echo rework:** (a) and (b) built 2026-10-30 (changelog "Echo jumps and carries overkill"); folding Overkill Spill into Echo is not done yet (card kept, decide with the user); (c) open question: all echoes at 50% damage, flat, keeping +1 echo per level (needs fractional carry for low damage, and note that the Cleave counter and on-hit effects count hits, not damage).
+- ~~**Echo rework**~~ (a) and (b) built 2026-10-30 (changelog "Echo jumps and carries overkill"); (c) flat 50% echoes was left as an open question and Overkill Spill was not folded in (card kept), neither is planned now.
 - ~~**RunProfiler, Echo**~~ built 2026-10-30 (changelog "RunProfiler Echo counters").
 - **Make the danger readable (Opus task, visual/audio):** the lose line pulses, music tempo rises and a red edge tint grows as the front row nears the paddle.
 - **Special bricks:** Armored (ignores splash and AoE) and Healer (restores its neighbours).
