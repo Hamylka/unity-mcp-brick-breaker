@@ -86,5 +86,9 @@ public enum Sfx
     CorruptStart,
     CorruptGlitch,
     CorruptExquisite,
-    CorruptCursed
+    CorruptCursed,
+
+    // Wall nearing the lose line
+    DangerHeartbeat,
+    DangerAlarm
 }

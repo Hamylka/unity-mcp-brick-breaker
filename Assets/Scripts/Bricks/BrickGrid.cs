@@ -197,6 +197,33 @@ public class BrickGrid : MonoBehaviour
     /// </summary>
     public void QueueExtraSteps(int count) => extraSteps += Mathf.Max(0, count);
 
+    /// <summary>World Z of the lose line: a brick whose front edge reaches it after a step ends the run.</summary>
+    public float DangerZ => dangerZ;
+    /// <summary>The optional lose line marker (for the danger visuals).</summary>
+    public Transform DangerLine => dangerLine;
+    /// <summary>World distance the wall moves on one step.</summary>
+    public float StepDistance => stepInRows * cellSize;
+    /// <summary>0 right after a step, 1 when the next one starts (the timer only runs while a ball is in play).</summary>
+    public float StepProgress => Mathf.Clamp01(stepTimer / Mathf.Max(0.01f, stepInterval * PowerUpStats.WallStepFactor));
+    /// <summary>Wall steps queued by Toll that will run without waiting for the timer.</summary>
+    public int QueuedSteps => extraSteps;
+
+    /// <summary>World Z of the front edge of the closest living brick (follows a step slide). +infinity with no brick.</summary>
+    public float FrontZ => FrontAt(offset);
+    /// <summary>Like <see cref="FrontZ"/>, but where the wall ends up once the current slide is over.</summary>
+    public float RestingFrontZ => FrontAt(stepping ? stepTo : offset);
+
+    private float FrontAt(float wallOffset)
+    {
+        float front = float.PositiveInfinity;
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            if (!transform.GetChild(i).TryGetComponent(out BrickStack stack) || stack.Count == 0) continue;
+            front = Mathf.Min(front, stack.LocalFrontZ + wallOffset);
+        }
+        return front;
+    }
+
     /// <summary>Width of one brick cell (X), for area-of-effect distances.</summary>
     public float BrickWidth => lengthInCells * cellSize;
     /// <summary>Depth of one brick cell (Z).</summary>
