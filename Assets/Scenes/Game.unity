@@ -569,6 +569,10 @@ MonoBehaviour:
   trailBrightness: 2.6
   coreTrailWidth: 0.38
   coreTrailTime: 0.1
+  speedTrailTimeGain: 0.2
+  speedTrailBrightnessGain: 0.15
+  speedLookMax: 1.5
+  speedLookEase: 1
   sparkCount: 7
   sparkSpeed: 4
   ghostMaterial: {fileID: 0}
@@ -604,6 +608,16 @@ MonoBehaviour:
   powerTrailBrightness: 1.2
   crackleInterval: 0.06
   boltInterval: 0.3
+  echoBallColor: {r: 0.15, g: 0.45, b: 1, a: 1}
+  echoTint: 1
+  echoRimTint: 0.85
+  echoRimIntensity: 2.5
+  echoShimmer: 0.4
+  echoHaloGrow: 0.4
+  echoBodyPulse: 0.1
+  echoSparkleInterval: 0.07
+  echoShimmerRate: 14
+  echoChargeEase: 0.12
   warnTime: 2
   baseTrailWidth: 0
 --- !u!1 &75570440
@@ -1559,6 +1573,8 @@ MonoBehaviour:
   gameOverScreen: {fileID: 1033658656}
   gameOverAnimation: {fileID: 358591254}
   slowDownTime: 0.7
+  speedStepInterval: 60
+  speedStepAmount: 0.2
 --- !u!4 &358591253
 Transform:
   m_ObjectHideFlags: 0
@@ -5211,6 +5227,9 @@ MonoBehaviour:
   noticeGrowth: 1.75
   targetKillsPerSecond: 1.5
   killRateSmoothing: 8
+  labelDamageWindow: 15
+  labelDamageMaxRatio: 25
+  labelRiseTime: 1.5
   shrinkPerRow: 0.9
   maxPaceGrowthPerRow: 1.3
   maxPaceFactor: 4
@@ -5494,6 +5513,7 @@ MonoBehaviour:
   passiveDamagePerLevel: 1
   slowDownTime: 0.8
   openDelay: 0.3
+  resumeTime: 1
 --- !u!4 &1463217167
 Transform:
   m_ObjectHideFlags: 0
