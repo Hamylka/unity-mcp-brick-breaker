@@ -57,6 +57,41 @@ public static class PowerUpStats
     /// <summary>A lost last ball is replaced once by a new one on the paddle (Phoenix Ball).</summary>
     public static bool PhoenixReady { get; set; }
 
+    /// <summary>Brake Pads picks: the wall waits longer between steps (see <see cref="WallStepFactor"/>).</summary>
+    public static int BrakePicks { get; set; }
+    private const float BrakeMaxGain = 0.5f;  // the wall never waits more than +50% longer
+    private const float BrakeRate = 0.96f;    // each pick adds 4% less than the one before (the first pick is +2%)
+
+    /// <summary>Multiplier of the wall step interval: +2% for the first pick, diminishing toward +50%.</summary>
+    public static float WallStepFactor => WallStepFactorFor(BrakePicks);
+    public static float WallStepFactorFor(int picks) => 1f + BrakeMaxGain * (1f - Mathf.Pow(BrakeRate, picks));
+
+    /// <summary>Chance, 0-1, that an XP orb pays double (Lucky Orbs). Capped by <see cref="MaxLuckyOrbChance"/>.</summary>
+    public static float LuckyOrbChance { get; set; }
+    public const float MaxLuckyOrbChance = 0.30f;
+
+    /// <summary>Duration factor of wall buffs, 2x damage and Phase (Buff Lasting). Additive per pick.</summary>
+    public static float WallBuffDuration { get; set; } = 1f;
+
+    /// <summary>Zone Beacon picks: wall buff zones come sooner and are longer.</summary>
+    public static int ZoneBeaconPicks { get; set; }
+    private const float ZoneIntervalFloor = 0.45f;  // the wait between zones never drops under 45% (9 s of 20 s)
+    private const float ZoneIntervalRate = 0.9455f; // the first pick is 3% sooner, each next one gains less
+    private const float ZoneLengthPerPick = 0.04f;
+    private const float ZoneLengthMax = 2f;
+
+    /// <summary>Multiplier of the wait before a wall buff zone appears.</summary>
+    public static float ZoneIntervalFactor => ZoneIntervalFactorFor(ZoneBeaconPicks);
+    public static float ZoneIntervalFactorFor(int picks) => ZoneIntervalFloor + (1f - ZoneIntervalFloor) * Mathf.Pow(ZoneIntervalRate, picks);
+
+    /// <summary>Multiplier of the length of a wall buff zone along the wall (+4% per pick, at most x2).</summary>
+    public static float ZoneLengthFactor => ZoneLengthFactorFor(ZoneBeaconPicks);
+    public static float ZoneLengthFactorFor(int picks) => Mathf.Min(ZoneLengthMax, 1f + ZoneLengthPerPick * picks);
+
+    /// <summary>Size of every ball as a share of its start size (Marble): 1 = normal, 0.6 = the smallest.</summary>
+    public static float BallSize { get; set; } = 1f;
+    public const float MinBallSize = 0.6f;
+
     private static int echoCounter;
     private static readonly int[] EchoIntervals = { 10, 8, 6, 5, 4, 3 };
     public static readonly Color EchoColor = new(0.75f, 0.9f, 1f);
@@ -106,6 +141,11 @@ public static class PowerUpStats
         LaserFireRate = 1f;
         ExtraMultiBalls = 0;
         BonusDuration = 1f;
+        BrakePicks = 0;
+        LuckyOrbChance = 0f;
+        WallBuffDuration = 1f;
+        ZoneBeaconPicks = 0;
+        BallSize = 1f;
     }
 
     /// <summary>

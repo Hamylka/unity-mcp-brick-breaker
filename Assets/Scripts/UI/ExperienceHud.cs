@@ -56,6 +56,8 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
         new(1f, 0.82f, 0.2f),     // 100 gold
     };
     private static readonly float[] OrbScales = { 1f, 1.15f, 1.3f, 1.45f, 1.65f };
+    private static readonly Color LuckyColor = new(1f, 0.82f, 0.2f); // a lucky orb is bigger and trails gold
+    private const float LuckyScale = 1.3f;
     private Color[][] tierBurstColors;
 
     private sealed class Orb
@@ -71,6 +73,7 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
         public float duration;
         public float trailTimer;
         public int amount;
+        public bool lucky; // Lucky Orbs: this orb pays double
         public System.Action<int> onArrive;
         public bool active;
         public bool shown;
@@ -328,7 +331,8 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
         orb.duration = orbTravelTime * UnityEngine.Random.Range(0.9f, 1.15f);
         orb.time = -i * orbStagger; // negative = waiting for its turn in the burst
         orb.trailTimer = 0f;
-        orb.amount = portion;
+        orb.lucky = UnityEngine.Random.value < PowerUpStats.LuckyOrbChance;
+        orb.amount = orb.lucky ? portion * 2 : portion;
         orb.onArrive = onArrive;
         orb.active = true;
         orb.shown = false;
@@ -372,7 +376,7 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
             Vector2 p = inv * inv * orb.start + 2f * inv * e * orb.control + e * e * target;
 
             orb.rect.anchoredPosition = p;
-            orb.rect.localScale = Vector3.one * (Mathf.Min(1f, u / 0.12f) * Mathf.Lerp(1f, 0.75f, u) * OrbScales[orb.tier]);
+            orb.rect.localScale = Vector3.one * (Mathf.Min(1f, u / 0.12f) * Mathf.Lerp(1f, 0.75f, u) * OrbScales[orb.tier] * (orb.lucky ? LuckyScale : 1f));
 
             // Pixel trail.
             orb.trailTimer -= dt;
@@ -381,7 +385,7 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
                 orb.trailTimer = 0.03f;
                 Vector2 jitter = new(UnityEngine.Random.Range(-5f, 5f), UnityEngine.Random.Range(-5f, 5f));
                 Vector2 drift = new(UnityEngine.Random.Range(-20f, 20f), UnityEngine.Random.Range(-20f, 20f));
-                Color color = UnityEngine.Random.value < 0.35f ? Color.white : OrbColors[orb.tier];
+                Color color = UnityEngine.Random.value < 0.35f ? Color.white : orb.lucky ? LuckyColor : OrbColors[orb.tier];
                 particles.Emit(p + jitter, drift, color, UnityEngine.Random.Range(8f, 13f), UnityEngine.Random.Range(0.25f, 0.45f), 3f, 0f);
             }
 
@@ -400,6 +404,10 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
         particles.Burst(target, count, TierBurstColors(orb.tier), 200f, 640f, 8f, 18f, 0.35f, 0.8f, 3.5f, 260f);
         particles.Burst(target, Mathf.RoundToInt((3 + orb.tier) * particleAmount), new[] { Color.white }, 40f, 160f, 18f, 26f, 0.12f, 0.25f, 6f, 0f);
 
+        // Lucky Orbs: a gold blast on top, so the double payout is noticed.
+        if (orb.lucky)
+            particles.Burst(target, Mathf.RoundToInt(14 * particleAmount), new[] { LuckyColor, Color.white }, 200f, 640f, 8f, 18f, 0.35f, 0.8f, 3.5f, 260f);
+
         System.Action<int> callback = orb.onArrive;
         int amount = orb.amount;
         orb.onArrive = null;
@@ -408,7 +416,7 @@ public class ExperienceHud : MonoBehaviour, IXpVisuals
         // Quick successions climb in pitch, like a combo.
         orbChain = Time.unscaledTime - lastOrbArrival < 0.35f ? orbChain + 1 : 0;
         lastOrbArrival = Time.unscaledTime;
-        SoundManager.Play(Sfx.OrbCollect, 1f + Mathf.Min(orbChain, 12) * 0.05f + orb.tier * 0.1f); // richer orbs ring higher
+        SoundManager.Play(Sfx.OrbCollect, 1f + Mathf.Min(orbChain, 12) * 0.05f + orb.tier * 0.1f + (orb.lucky ? 0.25f : 0f)); // richer and lucky orbs ring higher
     }
 
     private Color[] TierBurstColors(int tier) => tierBurstColors[tier];

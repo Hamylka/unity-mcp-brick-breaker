@@ -513,7 +513,8 @@ public class BallVisual : MonoBehaviour
         float echo = UpdateEchoCharge(dt, flying);
         coreScale *= 1f + echoBodyPulse * echo * echoWave;
         body.rotation = axis;
-        body.localScale = new Vector3(across, across, along) * coreScale;
+        float size = PowerUpStats.BallSize; // Marble: the whole look shrinks with the collider
+        body.localScale = new Vector3(across, across, along) * (coreScale * size);
         UpdateGhost(dt, axis, stretch, flying);
         UpdatePower(dt, throb);
 
@@ -533,8 +534,8 @@ public class BallVisual : MonoBehaviour
                           * Mathf.Lerp(1f, powerHaloScale * (1f + 0.15f * throb), power)
                           * (1f + echoHaloGrow * echo);
         float inverseScale = 1f / Mathf.Max(0.0001f, transform.lossyScale.x);
-        halo.transform.localScale = Vector3.one * (haloScale * inverseScale);
-        floorGlow.transform.localScale = Vector3.one * (floorGlowSize * Mathf.Lerp(1f, 1.4f, power) * inverseScale);
+        halo.transform.localScale = Vector3.one * (haloScale * inverseScale * size);
+        floorGlow.transform.localScale = Vector3.one * (floorGlowSize * Mathf.Lerp(1f, 1.4f, power) * inverseScale * size);
 
         if (viewCamera == null) viewCamera = Camera.main;
         if (viewCamera != null) halo.transform.rotation = viewCamera.transform.rotation;
@@ -740,8 +741,9 @@ public class BallVisual : MonoBehaviour
         if (outerTrail != null)
         {
             float powerWidth = Mathf.Lerp(1f, powerTrailWidth, power);
-            outerTrail.widthMultiplier = outerWidth * powerWidth * Mathf.Lerp(1f, 1.2f, blend) * LifeFade;
-            if (coreTrail != null) coreTrail.widthMultiplier = outerWidth * coreTrailWidth * powerWidth * LifeFade;
+            float sizeFade = PowerUpStats.BallSize * LifeFade;
+            outerTrail.widthMultiplier = outerWidth * powerWidth * Mathf.Lerp(1f, 1.2f, blend) * sizeFade;
+            if (coreTrail != null) coreTrail.widthMultiplier = outerWidth * coreTrailWidth * powerWidth * sizeFade;
         }
 
         // Afterimages: fading squares left along the path, so the ghost reads even at the pixelated resolution.
