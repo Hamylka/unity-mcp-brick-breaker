@@ -11,5 +11,11 @@ public class BallSpeedEffect : PowerUpEffect
         foreach (BallController ball in context.Balls) ball.MultiplyBaseSpeed(1f + percent);
     }
 
-    public override string Describe(int stacks) => $"BALL SPEED {CompoundPercent(percent, stacks):+0;-0}%";
+    // Slowing stops at the ball's speed floor, so the text never promises more than that.
+    public override string Describe(int stacks)
+    {
+        int total = CompoundPercent(percent, stacks);
+        int floor = Mathf.RoundToInt((BallController.DefaultMinSpeedFactor - 1f) * 100f);
+        return $"BALL SPEED {Mathf.Max(total, floor):+0;-0}%";
+    }
 }
