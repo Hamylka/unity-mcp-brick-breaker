@@ -61,6 +61,11 @@ public static class PowerUpStats
     private static readonly int[] EchoIntervals = { 10, 8, 6, 5, 4, 3 };
     private static readonly Color EchoColor = new(0.75f, 0.9f, 1f);
 
+    // Echo procs in one frame that get the full feedback (ring, sound, ball tick); later ones only pulse their brick.
+    private const int MaxEchoFxPerFrame = 2;
+    private static int echoFxFrame = -1;
+    private static int echoFxCount;
+
     /// <summary>Ball hits between two Echo repeats after this many picks (0 = no Echo).</summary>
     public static int EchoInterval(int picks) => picks <= 0 ? 0 : EchoIntervals[Mathf.Min(picks, EchoIntervals.Length) - 1];
 
@@ -120,8 +125,18 @@ public static class PowerUpStats
 
             // The hit rings again on the same brick; it still triggers area effects like any ball hit.
             brick.Pulse(EchoColor * 1.6f, 0.22f, 0.08f);
-            NeonFx.Ring(brick.transform.position, EchoColor, 16, 2.5f, 0.08f, 0.25f);
-            SoundManager.Play(Sfx.ChainZap, 0.8f);
+            if (Time.frameCount != echoFxFrame)
+            {
+                echoFxFrame = Time.frameCount;
+                echoFxCount = 0;
+            }
+            if (++echoFxCount <= MaxEchoFxPerFrame)
+            {
+                NeonFx.Ring(brick.transform.position, EchoColor, 16, 2.5f, 0.08f, 0.25f);
+                // A short bright tick on the ball, so the player sees which ball echoed.
+                NeonFx.Flash(ball.Position, NeonGlow.Hdr(EchoColor, 2.2f), 0.45f, 0.06f);
+                if (echoFxCount == 1) SoundManager.Play(Sfx.ChainZap, 0.8f);
+            }
             using var tag = DamageTag.Begin(DamageSource.Echo);
             brick.TakeHit(echo);
         }
