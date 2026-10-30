@@ -7,8 +7,15 @@ using UnityEngine;
 /// </summary>
 public static class PowerUpStats
 {
-    /// <summary>Speed factor of falling bonus items (Slow Fall).</summary>
+    /// <summary>Speed factor of falling bonus items (Slow Fall; Leaden Bonuses raises it, up to <see cref="MaxBonusFallSpeed"/>).</summary>
     public static float BonusFallSpeed { get; set; } = 1f;
+    public const float MaxBonusFallSpeed = 2.5f;
+
+    /// <summary>XP multiplier floor: Dim Orbs (Cursed, unlimited) never takes XP below this share.</summary>
+    public const float MinXpMultiplier = 0.4f;
+
+    /// <summary>Wall step interval floor, as a share of the run's start interval (Rushing Wall, Cursed, unlimited).</summary>
+    public const float MinWallStepFactor = 0.5f;
 
     /// <summary>Width factor of the area in which the paddle catches bonus items (Catch Zone).</summary>
     public static float CatchZoneScale { get; set; } = 1f;
@@ -20,7 +27,7 @@ public static class PowerUpStats
     /// <summary>Extra bounces a new shield absorbs before it breaks (Shield Plus).</summary>
     public static int ShieldExtraBounces { get; set; }
 
-    /// <summary>Laser fire-rate factor (Laser Focus). 1.2 = a shot every 1/1.2 of the base interval.</summary>
+    /// <summary>Laser fire-rate factor (Laser Focus, Laser Frenzy; picks add up linearly). 1.2 = a shot every 1/1.2 of the base interval.</summary>
     public static float LaserFireRate { get; set; } = 1f;
 
     /// <summary>Extra balls every Multi-Ball pickup adds (Twin Fission).</summary>
@@ -92,6 +99,9 @@ public static class PowerUpStats
     public static float BallSize { get; set; } = 1f;
     public const float MinBallSize = 0.6f;
 
+    /// <summary>Corruption charges left (Glitch Core). Each one lets the player corrupt a capped card on a level-up.</summary>
+    public static int CorruptionCharges { get; set; }
+
     private static int echoCounter;
     private static readonly int[] EchoIntervals = { 10, 8, 6, 5, 4, 3 };
     public static readonly Color EchoColor = new(0.75f, 0.9f, 1f);
@@ -146,6 +156,7 @@ public static class PowerUpStats
         WallBuffDuration = 1f;
         ZoneBeaconPicks = 0;
         BallSize = 1f;
+        CorruptionCharges = 0;
     }
 
     /// <summary>

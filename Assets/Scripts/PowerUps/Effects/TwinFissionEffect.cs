@@ -8,5 +8,5 @@ public class TwinFissionEffect : PowerUpEffect
 
     public override void Apply(PowerUpContext context) => PowerUpStats.ExtraMultiBalls += balls;
 
-    public override string Describe(int stacks) => $"MULTI-BALL SPAWNS +{balls * stacks} BALL";
+    public override string Describe(int stacks) => $"MULTI-BALL SPAWNS +{balls * stacks} BALL{(balls * stacks > 1 ? "S" : "")}";
 }

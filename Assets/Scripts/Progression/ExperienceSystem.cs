@@ -133,7 +133,7 @@ public class ExperienceSystem : MonoBehaviour
         lastHitPosition = brick.transform.position;
 
         // A brick is worth a share of the level cost, split per HP removed (see XpForHit). Fractions carry over, so small hits still add up.
-        xpRemainder += XpForHit(brick, damageDealt) * xpMultiplier;
+        xpRemainder += XpForHit(brick, damageDealt) * Mathf.Max(PowerUpStats.MinXpMultiplier, xpMultiplier); // Dim Orbs floor
         int amount = Mathf.FloorToInt(xpRemainder);
         if (amount <= 0) return;
         xpRemainder -= amount;

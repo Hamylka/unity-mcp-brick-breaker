@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ba469483d74c944795693bab084b02a, type: 3}
   m_Name: GreedEffect
   m_EditorClassIdentifier: Assembly-CSharp::GreedEffect
-  dropChance: 0.01
-  duration: 0.1
+  dropChance: 0.02
+  duration: 0.2

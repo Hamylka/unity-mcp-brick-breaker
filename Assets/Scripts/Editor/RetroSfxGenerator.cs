@@ -61,6 +61,10 @@ public static class RetroSfxGenerator
         { Sfx.WallCollapse, (0.85f, 0f, 0.5f) },
         // Multi-Ball countdown: three ticks over a second, the code raises the pitch of each one.
         { Sfx.MultiBallTick, (0.4f, 0f, 0.1f) },
+        { Sfx.CorruptStart, (0.6f, 0f, 0.1f) },
+        { Sfx.CorruptGlitch, (0.5f, 0f, 0.1f) },
+        { Sfx.CorruptExquisite, (0.7f, 0f, 0.1f) },
+        { Sfx.CorruptCursed, (0.65f, 0f, 0.1f) },
     };
 
     [MenuItem("Tools/Brick Breaker/Generate Sound Effects")]
@@ -293,6 +297,54 @@ public static class RetroSfxGenerator
         Save(Sfx.MultiBallTick, Mix((0f, Tone(0.04f, 1100f, 1250f, Wave.Square, 0.45f, duty: 0.25f, decay: 0.025f)),
                                     (0.045f, Tone(0.05f, 1650f, 1800f, Wave.Square, 0.3f, duty: 0.25f, decay: 0.03f)),
                                     (0f, Tone(0.08f, 260f, 180f, Wave.Triangle, 0.45f, decay: 0.03f))));
+
+        // Corruption. Start: a digital stab. A square dropping off a cliff, a crunchy noise hit and a low saw thump,
+        // then three tiny data chirps and a fast warble: something got into the card.
+        Save(Sfx.CorruptStart, Mix((0f, Tone(0.05f, 2400f, 180f, Wave.Square, 0.5f, duty: 0.25f, decay: 0.03f)),
+                                   (0f, Tone(0.25f, 9000f, 1500f, Wave.Noise, 0.5f, decay: 0.06f)),
+                                   (0f, Tone(0.35f, 95f, 38f, Wave.Saw, 0.55f, decay: 0.12f)),
+                                   (0.06f, Tone(0.03f, 3100f, 3100f, Wave.Square, 0.25f, duty: 0.125f, decay: 0.015f)),
+                                   (0.1f, Tone(0.03f, 1700f, 1700f, Wave.Square, 0.22f, duty: 0.125f, decay: 0.015f)),
+                                   (0.14f, Tone(0.03f, 2600f, 2600f, Wave.Square, 0.2f, duty: 0.125f, decay: 0.015f)),
+                                   (0.05f, Tone(0.4f, 300f, 900f, Wave.Square, 0.15f, attack: 0.01f, decay: 0.15f, vibratoHz: 37f, vibratoDepth: 0.4f))));
+        // Glitch: the virus building up for 1.9 s (it is timed to the card screen's sequence). A rising buzz, a
+        // warbling square and a noise swell, under stuttering blips that come faster and faster, then the CRT
+        // switch-off zap. The sequence cuts to black right after it, so the end stays abrupt.
+        var glitch = new List<(float, float[])>
+        {
+            (0f, Tone(1.9f, 55f, 220f, Wave.Saw, 0.45f, attack: 1.4f)),
+            (0f, Tone(1.9f, 110f, 880f, Wave.Square, 0.22f, duty: 0.125f, attack: 1.6f, vibratoHz: 23f, vibratoDepth: 0.25f)),
+            (0f, Tone(1.9f, 300f, 7000f, Wave.Noise, 0.35f, attack: 1.7f)),
+            (1.9f, Tone(0.16f, 2600f, 50f, Wave.Triangle, 0.7f, decay: 0.05f)),
+            (1.9f, Tone(0.06f, 8000f, 8000f, Wave.Noise, 0.4f, decay: 0.02f))
+        };
+        float[] blipNotes = { 1800f, 600f, 2400f, 950f, 3200f, 1300f, 700f, 2900f };
+        int blip = 0;
+        for (float t = 0.05f; t < 1.85f; t += Mathf.Lerp(0.16f, 0.035f, t / 1.9f))
+        {
+            float hz = blipNotes[blip++ % blipNotes.Length];
+            glitch.Add((t, Tone(0.025f, hz, hz * 0.8f, Wave.Square, 0.18f + 0.2f * t / 1.9f, duty: 0.25f, decay: 0.012f)));
+        }
+        Save(Sfx.CorruptGlitch, Mix(glitch.ToArray()));
+        // Exquisite: out of the silence, a boom and a blast, a fast rising A minor run, then a held A-C-E shimmer
+        // with a sparkle of air. Dark, but a prize.
+        const float A5 = 880f;
+        Save(Sfx.CorruptExquisite, Mix((0f, Tone(0.5f, 140f, 38f, Wave.Triangle, 1f, decay: 0.18f)),
+                                       (0f, Tone(0.4f, 9000f, 700f, Wave.Noise, 0.55f, decay: 0.1f)),
+                                       (0f, Arp(new[] { A4, C5, E5, A5, B5, E6 }, 0.045f, Wave.Square, 0.3f, 0.25f)),
+                                       (0.27f, Tone(1.1f, A5, A5, Wave.Triangle, 0.4f, decay: 0.5f, vibratoHz: 6f, vibratoDepth: 0.01f)),
+                                       (0.27f, Tone(1.1f, E6, E6, Wave.Triangle, 0.3f, decay: 0.5f, vibratoHz: 6.5f, vibratoDepth: 0.012f)),
+                                       (0.27f, Tone(1.1f, C6 * 1.003f, C6, Wave.Square, 0.08f, duty: 0.125f, decay: 0.45f)),
+                                       (0.27f, Tone(0.6f, 5000f, 12000f, Wave.Noise, 0.08f, decay: 0.2f))));
+        // Cursed: a short falling whistle, then (0.2 s, when the card lands) a dull thud in a puff of dust and
+        // two detuned saws sagging down a fourth over a tritone bell. A sad "wah".
+        Save(Sfx.CorruptCursed, Mix((0f, Tone(0.2f, 1400f, 300f, Wave.Square, 0.18f, duty: 0.125f, attack: 0.1f)),
+                                    (0.2f, Tone(0.6f, 85f, 30f, Wave.Triangle, 1f, decay: 0.2f)),
+                                    (0.2f, Tone(0.35f, 1200f, 120f, Wave.Noise, 0.6f, decay: 0.08f)),
+                                    (0.22f, Tone(1.2f, A3, A3 * 0.75f, Wave.Saw, 0.22f, attack: 0.05f, decay: 0.5f, vibratoHz: 5f, vibratoDepth: 0.02f)),
+                                    (0.22f, Tone(1.2f, Gs3, Gs3 * 0.75f, Wave.Saw, 0.2f, attack: 0.05f, decay: 0.5f, vibratoHz: 4.3f, vibratoDepth: 0.02f)),
+                                    (0.3f, Tone(0.9f, D5, D5, Wave.Triangle, 0.18f, decay: 0.35f)),
+                                    (0.3f, Tone(0.9f, Gs3 * 2f, Gs3 * 2f, Wave.Triangle, 0.16f, decay: 0.35f))));
 
         AssetDatabase.Refresh();
         RegisterNewSounds();

@@ -157,7 +157,14 @@ public class BrickGrid : MonoBehaviour
     public float PaceFactor => paceFactor;
 
     /// <summary>Multiplies the time between steps (upgrades). 1.25 = the wall is 25% slower.</summary>
-    public void MultiplyStepInterval(float factor) => stepInterval *= Mathf.Max(0.1f, factor);
+    public void MultiplyStepInterval(float factor)
+    {
+        // Cards can shorten the interval (Rushing Wall), but never under MinWallStepFactor of the run's start value.
+        if (startStepInterval < 0f) startStepInterval = stepInterval;
+        stepInterval = Mathf.Max(startStepInterval * PowerUpStats.MinWallStepFactor, stepInterval * Mathf.Max(0.1f, factor));
+    }
+
+    private float startStepInterval = -1f;
 
     /// <summary>Width of one brick cell (X), for area-of-effect distances.</summary>
     public float BrickWidth => lengthInCells * cellSize;

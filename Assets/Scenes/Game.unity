@@ -308,6 +308,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BallController
   baseSpeed: 10
+  minSpeedFactor: 0.7
+  startSpeed: 0
+  baseRadius: 0
   boostDecayTime: 1
   maxBoost: 1
   damage: 1
@@ -1042,6 +1045,26 @@ MonoBehaviour:
     volume: 0.4
     pitchJitter: 0
     minInterval: 0.1
+  - id: 52
+    clip: {fileID: 8300000, guid: 6e6131c5bd9cd4a499e4aa4ffaab5ca6, type: 3}
+    volume: 0.6
+    pitchJitter: 0
+    minInterval: 0.1
+  - id: 53
+    clip: {fileID: 8300000, guid: 6bb9ab821ed0d854a8485df0b823e86a, type: 3}
+    volume: 0.5
+    pitchJitter: 0
+    minInterval: 0.1
+  - id: 54
+    clip: {fileID: 8300000, guid: 714f853513bd6b74283bbbe0223f5331, type: 3}
+    volume: 0.7
+    pitchJitter: 0
+    minInterval: 0.1
+  - id: 55
+    clip: {fileID: 8300000, guid: 65ebee41e4baba24080635742087dd27, type: 3}
+    volume: 0.65
+    pitchJitter: 0
+    minInterval: 0.1
 --- !u!4 &106477069
 Transform:
   m_ObjectHideFlags: 0
@@ -1420,7 +1443,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 60
-  field of view: 56.445835
+  field of view: 50.941975
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -5483,31 +5506,27 @@ MonoBehaviour:
   - {fileID: 11400000, guid: d3eb935b8fa98bc4a95c28fc20527f0b, type: 2}
   - {fileID: 11400000, guid: a7a8c92c8738091458e96dcc5a1e5ba6, type: 2}
   - {fileID: 11400000, guid: 4cb75c260a2e0d741a4b3b17633f985f, type: 2}
-  - {fileID: 11400000, guid: d6b26d4c7d49c704a82f16ec85c19b60, type: 2}
   - {fileID: 11400000, guid: 20acfaee587e9674cb36115261148392, type: 2}
   - {fileID: 11400000, guid: 3a93e1ab1ba10894c8cfb6382fb46439, type: 2}
   - {fileID: 11400000, guid: 3ac0f7d0411c2034b911cfdaf5365e32, type: 2}
   - {fileID: 11400000, guid: 96e5b0d4476c84140853aa9daad0c339, type: 2}
   - {fileID: 11400000, guid: c600012268911e843980fe2e4b2a702f, type: 2}
   - {fileID: 11400000, guid: 3f33debc5e41ca94ba1b20c4cc9132c5, type: 2}
-  - {fileID: 11400000, guid: 8e918e7a82dbdbd4b9809c6f60b91002, type: 2}
   - {fileID: 11400000, guid: b2961b5fe51249243b0fecb09cbb7076, type: 2}
   - {fileID: 11400000, guid: 8e62ce5bc761a384da68ea206aaed35f, type: 2}
   - {fileID: 11400000, guid: 490daccce5397b84ebd3f1c2c3aef4bf, type: 2}
   - {fileID: 11400000, guid: 56c754817719e1842a5e5cbac2f65ec9, type: 2}
   - {fileID: 11400000, guid: 433f482b25fe9374f8cc9cffc8eaacc9, type: 2}
   - {fileID: 11400000, guid: 738a4683c82a09847a53e401792c14b1, type: 2}
-  - {fileID: 11400000, guid: ccbad9005a1b1fa4d8c2d92e18057af2, type: 2}
   - {fileID: 11400000, guid: de1b1c4e494820a4d82179e703878da6, type: 2}
   - {fileID: 11400000, guid: 2948f801bf0d4364dacc92756fa29099, type: 2}
-  - {fileID: 11400000, guid: e7a072294286e7f418fad67dc7d6094e, type: 2}
   - {fileID: 11400000, guid: 7b6f6bdc56a917e4ca8135e748f50832, type: 2}
-  - {fileID: 11400000, guid: 52438e06076635d41a28dff3a507a8d2, type: 2}
   - {fileID: 11400000, guid: 1f5e2b163be416f713d2fb85d4e8dc77, type: 2}
   - {fileID: 11400000, guid: 7d45aa76d9f5dbea28fc9de5a497debc, type: 2}
   - {fileID: 11400000, guid: d64f2f16517fda61438628a661b90e7c, type: 2}
   - {fileID: 11400000, guid: 19be375427933160d211a255bf063fbc, type: 2}
   - {fileID: 11400000, guid: 7903c13ed914c18584f1abb8ba74ea6b, type: 2}
+  - {fileID: 11400000, guid: e3f453e493c0401b8517e58470e26d85, type: 2}
   baseChoiceCount: 3
   baseRerolls: 1
   rarityWeights:
@@ -5520,6 +5539,21 @@ MonoBehaviour:
   slowDownTime: 0.8
   openDelay: 0.3
   resumeTime: 1
+  exquisitePool:
+  - {fileID: 11400000, guid: e7a072294286e7f418fad67dc7d6094e, type: 2}
+  - {fileID: 11400000, guid: a21daa34fd35494490cbe79a68830394, type: 2}
+  - {fileID: 11400000, guid: 2ea8a983fe52478db873805ebf1c8814, type: 2}
+  - {fileID: 11400000, guid: 462a8533490948deb9d803167738d6fe, type: 2}
+  - {fileID: 11400000, guid: 0822c893da484b258e2abc8f380b33f3, type: 2}
+  - {fileID: 11400000, guid: d6b26d4c7d49c704a82f16ec85c19b60, type: 2}
+  - {fileID: 11400000, guid: 52438e06076635d41a28dff3a507a8d2, type: 2}
+  cursedPool:
+  - {fileID: 11400000, guid: a5234148122845e5a580158d96475a0d, type: 2}
+  - {fileID: 11400000, guid: a7e498c33de845ac905643a9eac288e9, type: 2}
+  - {fileID: 11400000, guid: 2ab6cf78840b49889d91faaa66ab7845, type: 2}
+  - {fileID: 11400000, guid: 94106b8d13fa403f84498e8dae58fbf6, type: 2}
+  - {fileID: 11400000, guid: 0fb239691d1840eaa0f6271ce4bed344, type: 2}
+  exquisiteChance: 0.55
 --- !u!4 &1463217167
 Transform:
   m_ObjectHideFlags: 0

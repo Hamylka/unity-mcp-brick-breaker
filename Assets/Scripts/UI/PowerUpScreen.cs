@@ -10,9 +10,9 @@ using UnityEngine.UI;
 /// (it gets a pulsing halo and pixel sparkles) and presses Confirm. The Reroll button swaps the cards for a new roll while rerolls remain.
 /// Built in code, animated with unscaled time so it works while the game is paused.
 /// </summary>
-public class PowerUpScreen : MonoBehaviour
+public partial class PowerUpScreen : MonoBehaviour
 {
-    private enum Phase { Hidden, Showing, Visible, Hiding }
+    private enum Phase { Hidden, Showing, Visible, Corrupting, Revealed, Hiding }
 
     [Header("Look")]
     [Tooltip("How dark the game gets behind the cards (1 = black).")]
@@ -37,7 +37,7 @@ public class PowerUpScreen : MonoBehaviour
     [Tooltip("Scales how many pixel sparkles appear. 0 = none.")]
     [SerializeField, Range(0f, 2f)] private float particleAmount = 1f;
 
-    private const int ParticleCapacity = 180;
+    private const int ParticleCapacity = 340;
     private const float ReferenceWidth = 1080f;
     // Halo (38) plus the selected card's 6% zoom and breathing, so the side cards' glow is never cut by the screen edge.
     private const float SideMargin = 60f;
@@ -57,6 +57,9 @@ public class PowerUpScreen : MonoBehaviour
         public float size;
         public float drag;
         public Color color;
+        public float gravity;      // pulls down, in units per second squared
+        public float attract;      // pull toward particleAttractor (corruption), 0 = none
+        public float attractDelay; // seconds of free flight before the pull starts
     }
 
     private RectTransform root;
@@ -98,9 +101,10 @@ public class PowerUpScreen : MonoBehaviour
     /// <summary>Opens the screen with these choices. onConfirm runs when the player confirms; onClosed after the fade-out.</summary>
     /// <param name="rerolls">How many times the player may reroll the cards on this screen.</param>
     /// <param name="reroll">Returns a fresh set of choices; called each time Reroll is pressed.</param>
+    /// <param name="corruptionHooks">Corruption charges, lowered caps and the corruption itself (null = no CORRUPT button).</param>
     public void Show(IReadOnlyList<PowerUpDefinition> options, Func<PowerUpDefinition, int> stackCount,
         Action<PowerUpDefinition> confirmed, Action closed, int rerolls = 0,
-        Func<IReadOnlyList<PowerUpDefinition>> reroll = null)
+        Func<IReadOnlyList<PowerUpDefinition>> reroll = null, CorruptionHooks corruptionHooks = null)
     {
         stackLookup = stackCount;
         onConfirm = confirmed;
@@ -108,6 +112,8 @@ public class PowerUpScreen : MonoBehaviour
         rerollsLeft = reroll != null ? Mathf.Max(0, rerolls) : 0;
         rerollSource = reroll;
         keepDim = false;
+        corruption = corruptionHooks;
+        ResetCorruption();
         BuildChoices(options);
 
         root.gameObject.SetActive(true);
@@ -168,11 +174,12 @@ public class PowerUpScreen : MonoBehaviour
         // Draw the chosen card last so its halo is not covered by the neighbouring cards.
         cards[index].transform.SetAsLastSibling();
         Burst(cards[index], 18, 1f);
+        RefreshCorruptHint();
     }
 
     private void ConfirmSelection()
     {
-        if (phase != Phase.Visible || selected < 0) return;
+        if ((phase != Phase.Visible && phase != Phase.Revealed) || selected < 0) return;
 
         CardView card = cards[selected];
         Burst(card, 45, 1.6f);
@@ -195,6 +202,12 @@ public class PowerUpScreen : MonoBehaviour
     {
         float time = Time.unscaledTime;
         phaseTime += dt;
+
+        if (phase == Phase.Corrupting || phase == Phase.Revealed)
+        {
+            AnimateCorruption(dt, time); // owns the whole screen until CONFIRM
+            return;
+        }
 
         float dimAlpha;
         float titleAlpha;
@@ -220,6 +233,7 @@ public class PowerUpScreen : MonoBehaviour
                 dimAlpha = (1f - k) * dimAmount;
                 titleAlpha = 1f - k;
                 foreach (CardView card in cards) card.Appear = 1f - k;
+                FadeCorruptionUi(1f - k);
                 if (k >= 1f)
                 {
                     FinishHiding();
@@ -244,6 +258,12 @@ public class PowerUpScreen : MonoBehaviour
 
     private void AnimateCard(CardView card, int index, float dt, float time)
     {
+        if (card == resultCard)
+        {
+            AnimateResultCardOut(card); // the corruption outcome leaves from its own spot and size
+            return;
+        }
+
         bool isSelected = index == selected;
         card.SelectT = Mathf.MoveTowards(card.SelectT, isSelected ? 1f : 0f, dt * 6f);
 
@@ -277,7 +297,8 @@ public class PowerUpScreen : MonoBehaviour
 
         // Sparkles: lots around the chosen card, a few on rare finds.
         float rate = isSelected ? 40f : 0f;
-        if (!isSelected && card.Rarity >= PowerUpRarity.Epic) rate = card.Rarity == PowerUpRarity.Legendary ? 14f : 6f;
+        if (!isSelected && (card.Rarity == PowerUpRarity.Epic || card.Rarity == PowerUpRarity.Legendary))
+            rate = card.Rarity == PowerUpRarity.Legendary ? 14f : 6f;
         if (phase != Phase.Hiding && rate > 0f && card.Appear > 0.8f)
         {
             card.EmitAccumulator += rate * particleAmount * dt;
@@ -306,10 +327,13 @@ public class PowerUpScreen : MonoBehaviour
         rerollImage.color = canReroll ? rerollColor : disabledColor;
         rerollLabel.color = canReroll ? new Color(0.02f, 0.1f, 0.14f) : new Color(0.45f, 0.5f, 0.62f);
         rerollLabel.Text = rerollsLeft > 0 ? $"REROLL x{rerollsLeft}" : "REROLL";
+
+        AnimateCorruptButton(time);
     }
 
     private void FinishHiding()
     {
+        ResetCorruption();
         ClearCards();
         foreach (Particle p in particles)
         {
@@ -326,7 +350,7 @@ public class PowerUpScreen : MonoBehaviour
 
     private void SetDim(float alpha)
     {
-        dim.color = new Color(0f, 0f, 0f, alpha);
+        dim.color = new Color(dimTint.r, dimTint.g, dimTint.b, alpha); // black, or the corruption's blood red / cold grey
     }
 
     private static float EaseOutBack(float t)
@@ -373,7 +397,8 @@ public class PowerUpScreen : MonoBehaviour
         }
     }
 
-    private void Spawn(Vector2 position, Vector2 velocity, Color color, float size, float life, float drag)
+    private void Spawn(Vector2 position, Vector2 velocity, Color color, float size, float life, float drag,
+        float gravity = 0f, float attract = 0f, float attractDelay = 0f)
     {
         // Reuse the next free slot, scanning from a rolling cursor.
         for (int n = 0; n < particles.Count; n++)
@@ -388,6 +413,9 @@ public class PowerUpScreen : MonoBehaviour
             p.size = size;
             p.life = p.maxLife = life;
             p.drag = drag;
+            p.gravity = gravity;
+            p.attract = attract;
+            p.attractDelay = attractDelay;
             p.image.enabled = true;
             return;
         }
@@ -405,6 +433,22 @@ public class PowerUpScreen : MonoBehaviour
                 p.image.enabled = false;
                 continue;
             }
+
+            // Corruption: after a moment of free flight the particle is sucked into the corrupted card and vanishes there.
+            if (p.attract > 0f && p.maxLife - p.life >= p.attractDelay)
+            {
+                Vector2 toTarget = particleAttractor - p.pos;
+                float distance = toTarget.magnitude;
+                if (distance < 30f)
+                {
+                    p.life = 0f;
+                    p.image.enabled = false;
+                    OnParticleAbsorbed(p.color);
+                    continue;
+                }
+                p.vel += toTarget / distance * (p.attract * dt);
+            }
+            p.vel.y -= p.gravity * dt;
 
             p.vel *= 1f - Mathf.Min(1f, p.drag * dt);
             p.pos += p.vel * dt;
@@ -490,6 +534,9 @@ public class PowerUpScreen : MonoBehaviour
         confirmButton.DeniedClick += () => SoundManager.Play(Sfx.Denied); // no card chosen yet
         rerollButton.Clicked += RerollCards;
         rerollButton.DeniedClick += () => SoundManager.Play(Sfx.Denied);  // no rerolls left
+        confirmHome = confirmButton.GetComponent<RectTransform>().anchoredPosition;
+
+        BuildCorruptionUi(buttonY);
 
         root.gameObject.SetActive(false);
     }
@@ -524,8 +571,9 @@ public class PowerUpScreen : MonoBehaviour
         border.rectTransform.offsetMin = new Vector2(-8f, -8f);
         border.rectTransform.offsetMax = new Vector2(8f, 8f);
 
-        Image body = NewImage("Body", rect, cardColor, true); // the tappable area
+        Image body = NewImage("Body", rect, RarityStyle.GetBodyColor(def.Rarity, cardColor), true); // the tappable area
         Stretch(body.rectTransform);
+        if (def.Rarity == PowerUpRarity.Cursed) AddHatch(rect); // dull diagonal hatching over the body
 
         // Header diamond with the power-up icon, half outside the top edge.
         float topY = cardHeight * 0.5f;
@@ -565,6 +613,12 @@ public class PowerUpScreen : MonoBehaviour
         view.Group = group;
         view.Halo = halo;
         view.Border = border;
+        view.Body = body;
+        view.BodyColor = body.color;
+        view.Icon = icon;
+        view.DiamondBorder = diamondBorder;
+        view.Texts = new[] { nameText, description, rarityText };
+        view.TextsOriginal = new[] { nameText.Text, description.Text, rarityText.Text };
         view.Rarity = def.Rarity;
         view.RarityColor = rarity;
         view.Width = width;
@@ -577,7 +631,7 @@ public class PowerUpScreen : MonoBehaviour
     // the one this pick grants blinking), and a corner tag: NEW! on a first pick, MAX! when this pick reaches the cap.
     private void BuildLevelDisplay(RectTransform card, CardView view, PowerUpDefinition def, int stacks, float width, float topY)
     {
-        int max = def.MaxStacks;
+        int max = corruption?.MaxStacks != null ? corruption.MaxStacks(def) : def.MaxStacks; // corruptions lower caps
         int next = stacks + 1;
         bool capped = max > 0;
         bool reachesMax = capped && next >= max;

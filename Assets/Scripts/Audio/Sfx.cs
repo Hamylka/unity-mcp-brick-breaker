@@ -80,5 +80,11 @@ public enum Sfx
     WallCollapse,
 
     // Multi-Ball countdown before the split
-    MultiBallTick
+    MultiBallTick,
+
+    // Corruption on the card screen
+    CorruptStart,
+    CorruptGlitch,
+    CorruptExquisite,
+    CorruptCursed
 }
