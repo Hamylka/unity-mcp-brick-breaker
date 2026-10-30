@@ -156,6 +156,15 @@ public class BrickGrid : MonoBehaviour
     /// <summary>Multiplier (1 or more) on the HP window that tracks the damage the ball hit does not show; rises while the player kills faster than the target.</summary>
     public float PaceFactor => paceFactor;
 
+    // Read by the run profiler (settings of the run).
+    public float TargetHitsPerMinute => targetHitsPerMinute;
+    public float TargetKillsPerSecond => targetKillsPerSecond;
+    public float MaxPaceFactor => maxPaceFactor;
+    public float LabelDamageWindow => labelDamageWindow;
+    public float LabelDamageMaxRatio => labelDamageMaxRatio;
+    /// <summary>Current seconds between wall steps (cards included).</summary>
+    public float StepInterval => stepInterval;
+
     /// <summary>Multiplies the time between steps (upgrades). 1.25 = the wall is 25% slower.</summary>
     public void MultiplyStepInterval(float factor)
     {

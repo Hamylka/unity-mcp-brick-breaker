@@ -9,7 +9,7 @@ using System.Collections.Generic;
 [Serializable]
 public class RunRecord
 {
-    public int schema = 1;
+    public int schema = 2;
     public string runId;
     public string startedUtc;
     public string appVersion;
@@ -34,6 +34,19 @@ public class RunRecord
         public float xpPower;
         public int damagePerLevel;
         public int rerolls;
+
+        // Added in schema 2: the tuning values of the run (0 in older files).
+        public float baseBricksPerLevel;
+        public float bricksPerLevelGrowth;
+        public float targetHitsPerMinute;
+        public float targetKillsPerSecond;
+        public float maxPaceFactor;
+        public float labelDamageWindow;
+        public float labelDamageMaxRatio;
+        public float wallStepIntervalStart;
+        public float speedStepInterval;
+        public float speedStepAmount;
+        public float minSpeedFactor;
     }
 
     [Serializable]
@@ -129,5 +142,19 @@ public class RunRecord
         public int hpMax;
         public int totalDamage;
         public int flyingBalls;
+
+        // Added in schema 2 (0 in older files). ballDamage above is the live value (wall buffs and the Phase malus
+        // included); baseDamage is what the HP window follows.
+        public int baseDamage;
+        public float cardMultiplier;
+        public float smoothedDamage;
+        public float targetHits;
+        public float paceFactor;
+        public float killRate;
+        public int labelDamage;
+        public float speedFactor;
+        public float wallStepInterval;
+        public float ballSize;
+        public int corruptionCharges;
     }
 }

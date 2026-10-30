@@ -169,6 +169,22 @@ public class BallController : MonoBehaviour
         }
     }
 
+    /// <summary>Card damage multiplier (Power Ball / Meteor Ball) of the main ball, 1 with no ball. Used by the run profiler.</summary>
+    public static float MainCardMultiplier
+    {
+        get
+        {
+            float best = 1f;
+            foreach (BallController ball in active)
+            {
+                if (ball == null) continue;
+                if (!ball.IsExtra) return ball.cardDamageMultiplier;
+                best = Mathf.Max(best, ball.cardDamageMultiplier);
+            }
+            return best;
+        }
+    }
+
     /// <summary>True for temporary copies made by <see cref="SpawnExtra"/>. Losing one never ends the run.</summary>
     public bool IsExtra { get; private set; }
 
