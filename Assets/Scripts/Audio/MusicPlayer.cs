@@ -17,6 +17,12 @@ public class MusicPlayer : MonoBehaviour
     [Tooltip("Volume multiplier when the game is fully paused.")]
     [SerializeField, Range(0f, 1f)] private float muffledVolume = 0.6f;
 
+    [Header("Danger")]
+    [Tooltip("Extra playback speed at full danger (DangerMeter.Level = 1). The pitch rises with it, arcade style: 0.08 is about a semitone.")]
+    [SerializeField, Range(0f, 0.3f)] private float dangerTempo = 0.08f;
+    [Tooltip("Seconds for the tempo to follow the danger.")]
+    [SerializeField, Min(0.01f)] private float dangerTempoEase = 1.5f;
+
     [Header("Game Over")]
     [SerializeField] private GameManager gameManager;
     [SerializeField, Min(0.1f)] private float gameOverFadeTime = 1.5f;
@@ -79,6 +85,9 @@ public class MusicPlayer : MonoBehaviour
 
         source.volume = volume * fade * Mathf.Lerp(muffledVolume, 1f, speed);
 
-        if (ending) source.pitch = Mathf.Lerp(source.pitch, gameOverPitch, 1f - Mathf.Exp(-dt * 2f));
+        // The wall nearing the lose line speeds the loop up; the game over drop takes over from whatever speed it had.
+        float targetPitch = ending ? gameOverPitch : 1f + dangerTempo * DangerMeter.Level;
+        float pitchEase = ending ? 0.5f : dangerTempoEase;
+        source.pitch = Mathf.Lerp(source.pitch, targetPitch, 1f - Mathf.Exp(-dt / pitchEase));
     }
 }

@@ -65,6 +65,9 @@ public static class RetroSfxGenerator
         { Sfx.CorruptGlitch, (0.5f, 0f, 0.1f) },
         { Sfx.CorruptExquisite, (0.7f, 0f, 0.1f) },
         { Sfx.CorruptCursed, (0.65f, 0f, 0.1f) },
+        // Danger: the heartbeat repeats for a long time, so it sits low; the code scales it with the danger.
+        { Sfx.DangerHeartbeat, (0.5f, 0f, 0.2f) },
+        { Sfx.DangerAlarm, (0.4f, 0f, 0.3f) },
     };
 
     [MenuItem("Tools/Brick Breaker/Generate Sound Effects")]
@@ -345,6 +348,17 @@ public static class RetroSfxGenerator
                                     (0.22f, Tone(1.2f, Gs3, Gs3 * 0.75f, Wave.Saw, 0.2f, attack: 0.05f, decay: 0.5f, vibratoHz: 4.3f, vibratoDepth: 0.02f)),
                                     (0.3f, Tone(0.9f, D5, D5, Wave.Triangle, 0.18f, decay: 0.35f)),
                                     (0.3f, Tone(0.9f, Gs3 * 2f, Gs3 * 2f, Wave.Triangle, 0.16f, decay: 0.35f))));
+
+        // Danger heartbeat: a single deep "lub" (sub thump dropping in pitch, a soft knock on top). The code plays one
+        // per beat, so it never drifts from the line's pulse; the "dub" is left to the visuals.
+        Save(Sfx.DangerHeartbeat, Mix((0f, Tone(0.22f, 75f, 42f, Wave.Triangle, 1f, attack: 0.008f, decay: 0.09f)),
+                                      (0f, Tone(0.06f, 220f, 90f, Wave.Square, 0.18f, duty: 0.25f, decay: 0.025f)),
+                                      (0.11f, Tone(0.16f, 62f, 40f, Wave.Triangle, 0.55f, attack: 0.006f, decay: 0.06f))));
+        // Danger alarm: the next step ends the run. Two short falling square blips a tritone apart, klaxon style,
+        // thin enough to cut through the music without masking it.
+        Save(Sfx.DangerAlarm, Mix((0f, Tone(0.09f, 990f, 940f, Wave.Square, 0.35f, duty: 0.25f, decay: 0.05f)),
+                                  (0.11f, Tone(0.12f, 700f, 660f, Wave.Square, 0.35f, duty: 0.25f, decay: 0.07f)),
+                                  (0f, Tone(0.24f, 495f, 470f, Wave.Triangle, 0.25f, decay: 0.1f))));
 
         AssetDatabase.Refresh();
         RegisterNewSounds();

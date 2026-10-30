@@ -1065,6 +1065,16 @@ MonoBehaviour:
     volume: 0.65
     pitchJitter: 0
     minInterval: 0.1
+  - id: 56
+    clip: {fileID: 8300000, guid: e63a6b51084674744ad58e7459d88e9f, type: 3}
+    volume: 0.5
+    pitchJitter: 0
+    minInterval: 0.2
+  - id: 57
+    clip: {fileID: 8300000, guid: 729917ffe34b63b4e8828d62bd7a1071, type: 3}
+    volume: 0.4
+    pitchJitter: 0
+    minInterval: 0.3
 --- !u!4 &106477069
 Transform:
   m_ObjectHideFlags: 0
@@ -1681,6 +1691,8 @@ MonoBehaviour:
   fadeInTime: 2
   muffledCutoff: 900
   muffledVolume: 0.6
+  dangerTempo: 0.08
+  dangerTempoEase: 1.5
   gameManager: {fileID: 358591252}
   gameOverFadeTime: 1.5
   gameOverPitch: 0.75
@@ -2069,6 +2081,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 3d1bf5ca0acce5243b3f79aa0be4917a, type: 2}
   dropChance: 0.06
   extraChancePerHitPoint: 0
+  budgetByKillRate: 1
+  minBudgetFactor: 0.3
+  maxBudgetFactor: 1.5
+  budgetMinKillRate: 0.2
 --- !u!1 &450154526
 GameObject:
   m_ObjectHideFlags: 0
@@ -4681,6 +4697,8 @@ MonoBehaviour:
   bricksPerLevel: 8
   bricksPerLevelGrowth: 0.4
   maxHpWorth: 2
+  brakeStartsAt: 2
+  brakeFloor: 0.25
   clearBonus: 0.25
   clearBonusFullAfter: 20
   orbOriginRange: 1.5
@@ -5234,6 +5252,13 @@ MonoBehaviour:
   emptyChanceDropPerRow: 0.02
   mirror: 1
   seed: 0
+  armoredFromRow: 6
+  armoredMaxChance: 0.1
+  healerFromRow: 10
+  healerMaxChance: 0.06
+  specialRampRows: 20
+  healInterval: 4
+  healPercent: 0.25
   advance: 1
   ball: {fileID: 42821532}
   stepInterval: 5
