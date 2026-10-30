@@ -86,7 +86,7 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - ~~**Echo rework**~~ (a) and (b) built 2026-10-30 (changelog "Echo jumps and carries overkill"); (c) flat 50% echoes was left as an open question and Overkill Spill was not folded in (card kept), neither is planned now.
 - ~~**RunProfiler, Echo**~~ built 2026-10-30 (changelog "RunProfiler Echo counters").
 - **Make the danger readable (Opus task, visual/audio):** the lose line pulses, music tempo rises and a red edge tint grows as the front row nears the paddle.
-- **Special bricks:** Armored (ignores splash and AoE) and Healer (restores its neighbours).
+- ~~**Special bricks: Armored and Healer**~~ built 2026-10-30 (changelog "Special bricks"). Bomb and Rusher bricks stay in v0.4 C.
 - ~~**Bonus drop budget by time**~~ built 2026-10-30 (changelog "Bonus drop budget").
 - ~~**Gate Multi-Ball**~~ built 2026-10-30 (changelog "Multi-Ball gate"); a cooldown between wall-clear bonuses is still to decide.
 - ~~**Corruption on unlimited cards**~~ built 2026-10-30 (changelog "Corruption on unlimited cards").
@@ -667,3 +667,8 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - Also fixed: the deprecated `FindObjectsSortMode` warning in `BonusDropper`.
 - **Checked:** compiles clean in Unity (no errors). Not played.
 - **Open issues:** playtest (the corrupted card is not owned yet when it is in the offer, so a first copy cannot be corrupted: it needs a level already owned; hint "NEEDS AN OWNED LEVEL"). Corrupting Glitch Core with a spare charge takes one more charge. Section 4 still says unlimited cards cannot be corrupted: sync it.
+
+### [2026-10-30] - Special bricks: Armored and Healer (by Claude)
+- **Done (branch `feature/special-bricks`):** roadmap section 5 item 7. New `BrickKind` (`Brick.Kind`, set by `BrickGrid` before `Initialize`). **Armored** (steel-blue tint, 60% toward the heat color): `Brick.TakeHit` ignores damage tagged Shockwave, Chain, Volatile, Cleave, Meltdown and Overkill Spill (a couple of steel sparks, no damage); the ball, Phase, Piercing, Echo, Laser, Satellite and Paddle Cannon still hit it. **Healer** (green tint): `BrickHealer` (added by the grid) heals the damaged direct neighbours by 25% of their max HP (at least 1) every 4 s of play (only while a ball flies, random start offset), with a green beam, pulse and ring; `Brick.Heal` never goes above max. Spawn: per brick, `BrickGrid > Special Bricks`: Armored from row 6 up to 10%, Healer from row 10 up to 6%, both climbing over 20 rows (a mirrored stack rolls on its own); interval, percent and chances are Inspector fields. The heat color is only partly kept under the tint (labels carry the exact count).
+- **Checked:** compiles clean in Unity, new types load. Not played or seen on screen.
+- **Open issues:** playtest. Healing gives XP again when the neighbour is re-damaged (XP is paid per HP removed): watch for farming. Armored bricks are a wall for Shockwave / Cleave builds, and the label damage ratio (which counts area damage) will overstate hits left on them. Heal sound is a placeholder (`ZoneSpawn` pitched up), the tints are first guesses and there is no dedicated look yet (Opus pass).
