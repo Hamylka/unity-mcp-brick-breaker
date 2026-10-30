@@ -31,13 +31,23 @@ public class GameManager : MonoBehaviour
     [Tooltip("Seconds the game takes to slow down to a full stop before the Game Over screen opens.")]
     [SerializeField, Min(0f)] private float slowDownTime = 0.7f;
 
+    [Header("Ball speed ramp")]
+    [Tooltip("Seconds of play between two ball speed steps.")]
+    [SerializeField, Min(1f)] private float speedStepInterval = 60f;
+    [Tooltip("Speed added by each step, as a fraction of the start speed (0.2 = +20%). No cap for now.")]
+    [SerializeField, Min(0f)] private float speedStepAmount = 0.2f;
+
     /// <summary>Raised once when the run ends.</summary>
     public event Action<LoseReason> GameOver;
+
+    /// <summary>Raised when the ball speed ramp steps up: the step number (1, 2...) and the new speed factor (1.2, 1.4...).</summary>
+    public static event Action<int, float> BallSpeedStepped;
 
     public bool IsGameOver { get; private set; }
     /// <summary>Seconds of actual play (stops while paused).</summary>
     public float RunTime { get; private set; }
     private bool runStarted;
+    private int speedStep;
     public int BricksDestroyed { get; private set; }
 
     private void Awake()
@@ -46,6 +56,8 @@ public class GameManager : MonoBehaviour
         Application.targetFrameRate = 60;
         // The player only touches the screen while dragging, so stop it from dimming mid-run.
         Screen.sleepTimeout = SleepTimeout.NeverSleep;
+
+        BallController.RunSpeedFactor = 1f; // the ramp restarts with the run
 
         // A lost ball ends the run instead of going back to the paddle.
         if (ball != null) ball.AutoReset = false;
@@ -86,6 +98,17 @@ public class GameManager : MonoBehaviour
         }
 
         if (runStarted && !IsGameOver) RunTime += Time.deltaTime; // deltaTime is 0 while paused
+
+        // Ball speed ramp: +speedStepAmount of the start speed every speedStepInterval seconds of play, no cap.
+        int step = Mathf.FloorToInt(RunTime / speedStepInterval);
+        if (step > speedStep && !IsGameOver)
+        {
+            speedStep = step;
+            float factor = 1f + speedStepAmount * step;
+            BallController.RunSpeedFactor = factor;
+            RunProfiler.Log("ball_speed", "step", factor, step.ToString());
+            BallSpeedStepped?.Invoke(step, factor);
+        }
     }
 
     private void HandleBallLost(BallController lostBall)

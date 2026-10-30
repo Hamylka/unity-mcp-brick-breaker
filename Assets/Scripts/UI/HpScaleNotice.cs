@@ -8,7 +8,6 @@ using UnityEngine.UI;
 /// </summary>
 public class HpScaleNotice : MonoBehaviour
 {
-    private const string Message = "DIFFICULTY INCREASED!";
     private const float PixelSize = 5f;
     private const float AnchorY = 0.84f;     // fraction of the screen height: just under the XP bar, above the bricks
     private const float FadeIn = 0.25f;
@@ -20,6 +19,11 @@ public class HpScaleNotice : MonoBehaviour
 
     // Hot amber: a warning color that stands out on the dark scene and the cyan/magenta UI.
     private static readonly Color NoticeColor = new(1f, 0.62f, 0.12f);
+    // Hot cyan-white for the ball speed step, so the two warnings are told apart.
+    private static readonly Color SpeedColor = new(0.35f, 0.95f, 1f);
+
+    private readonly System.Collections.Generic.Queue<(string message, Color color)> queue = new();
+    private Color currentColor = NoticeColor;
 
     private BrickGrid grid;
     private RectTransform textRect;
@@ -46,11 +50,13 @@ public class HpScaleNotice : MonoBehaviour
     {
         grid = FindAnyObjectByType<BrickGrid>();
         if (grid != null) grid.HpScaled += OnHpScaled;
+        GameManager.BallSpeedStepped += OnBallSpeedStepped;
     }
 
     private void OnDestroy()
     {
         if (grid != null) grid.HpScaled -= OnHpScaled;
+        GameManager.BallSpeedStepped -= OnBallSpeedStepped;
     }
 
     private void BuildCanvas()
@@ -69,7 +75,7 @@ public class HpScaleNotice : MonoBehaviour
         text = go.GetComponent<PixelText>();
         text.PixelSize = PixelSize;
         text.Alignment = PixelText.Align.Center;
-        text.Text = Message;
+        text.Text = string.Empty;
         text.color = Color.clear;
         text.raycastTarget = false;
 
@@ -81,7 +87,23 @@ public class HpScaleNotice : MonoBehaviour
 
     private void OnHpScaled(int minHp, int maxHp)
     {
+        Enqueue("DIFFICULTY INCREASED!", NoticeColor);
+    }
+
+    private void OnBallSpeedStepped(int step, float factor) => Enqueue("BALL SPEED UP!", SpeedColor);
+
+    // Notices play one after the other so two at the same time do not overlap.
+    private void Enqueue(string message, Color color)
+    {
         if (grid != null && grid.IsGameOver) return;
+        queue.Enqueue((message, color));
+    }
+
+    private void StartNext()
+    {
+        (string message, Color color) = queue.Dequeue();
+        text.Text = message;
+        currentColor = color;
         time = 0f;
         SoundManager.Play(Sfx.HpScaleUp);
     }
@@ -89,7 +111,11 @@ public class HpScaleNotice : MonoBehaviour
     private void Update()
     {
         float life = FadeIn + Hold + FadeOut;
-        if (time >= life) return;
+        if (time >= life)
+        {
+            if (queue.Count == 0) return;
+            StartNext();
+        }
 
         time += Time.unscaledDeltaTime; // keeps playing while the game is slowed for a level-up
 
@@ -99,7 +125,7 @@ public class HpScaleNotice : MonoBehaviour
         else alpha = 1f - (time - FadeIn - Hold) / FadeOut;
         alpha = Mathf.Clamp01(alpha) * PeakAlpha;
 
-        Color c = NoticeColor;
+        Color c = currentColor;
         c.a = alpha;
         text.color = c;
         textRect.anchoredPosition = new Vector2(0f, Drift * Mathf.Clamp01(time / life));

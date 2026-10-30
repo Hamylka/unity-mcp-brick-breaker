@@ -52,7 +52,9 @@ public class BallController : MonoBehaviour
 
     public Vector3 Position => body.position;
     public Vector3 Direction { get; private set; } = Vector3.forward;
-    public float CurrentSpeed => baseSpeed * (1f + boost);
+    /// <summary>Run-clock speed ramp (1 = start speed), set by <see cref="GameManager"/>; applies to every ball, on top of upgrades.</summary>
+    public static float RunSpeedFactor { get; set; } = 1f;
+    public float CurrentSpeed => baseSpeed * RunSpeedFactor * (1f + boost);
     public bool IsFlying => state == State.Flying;
 
     /// <summary>
