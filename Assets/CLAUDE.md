@@ -39,7 +39,7 @@ You are an expert Unity 6 game developer and architect. Your job is to help me b
   * Endless experience (XP) system starting at Level 1.
   * **XP source:** every ball hit grants XP for the HP actually removed from the brick (not on destruction). A brick is worth `XpToNextLevel / Bricks Per Level` XP (`ExperienceSystem > Bricks Per Level`, 8), split per HP: `xp = damageDealt / brick.MaxHp x that`. All the XP of one ball hit (including splash, chain and cleave damage in the same frame) is merged into the fewest orbs, color-coded by value: 1 = white/grey, 5 = green, 20 = blue, 50 = purple, 100 = gold (bigger orbs for bigger values). The orbs leave the ball that made the hit (or the brick if no ball is within 1.5 units) and fly to the XP bar; the XP is only added when an orb lands, with retro pixel particle bursts.
   * **Level curve:** `Required XP = Base XP x (Level ^ Power)`, rounded. Defaults: Base XP = 12 (integer), Power = 1.2. Both editable in the Inspector at runtime for balancing.
-  * **HUD:** level badge + rounded XP progress bar (top left), "LEVEL UP!" pixel banner at ~62% of the screen height.
+  * **HUD:** level badge + rounded XP progress bar (top left), run clock (m:ss, `RunTimerHud`) centered under the bar, "LEVEL UP!" pixel banner at ~62% of the screen height.
   * **Upgrades (Roguelite style):** on level-up the game slows down to a full stop, then a card screen offers 3 random power-ups (count can be raised later by external stats). The player picks one and confirms. A Reroll button swaps the cards for a new roll (1 per level-up by default, `Base Rerolls` on `PowerUpManager`, extendable through `BonusRerolls`).
   * **Rarities:** Common (grey), Uncommon (green), Rare (blue), Epic (purple), Legendary (gold), picked by weight (55 / 25 / 11 / 6 / 3). Every offer holds at least one damage card when one is available (`PowerUpEffect.IsOffensive`). Each power-up is a data asset (definition + effect), some with a max stack count.
 - **Power-ups & Items:**
@@ -82,6 +82,7 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Label damage (hits left):** built 2026-10-30 (`BrickGrid > Label damage`: colors, pips, skulls and numbers use base damage x measured total/ball damage ratio). Check on a phone that the late wall shows fewer skulls, labels do not flicker and a new AoE card does not surprise the player; tune window (15 s), rise time and the 8% step.
 - **Time ease after the card screen:** built 2026-10-30 (`PowerUpManager > Resume Time` 1 s). Check on a phone that the ease feels smooth, the paddle answers during it and a level-up right after the last card does not stutter.
 - **Ball speed ramp:** built 2026-10-30 (+20% of the start speed per 60 s, no cap). Check on a phone how fast the ball feels at minutes 3 to 6 (x1.6 to x2.2), whether the paddle bounce angles and the safeguards against flat loops still hold, and that the two notices queue properly with "DIFFICULTY INCREASED!".
+- **Run timer on the HUD:** built 2026-10-30 (`RunTimerHud`, m:ss under the XP bar). Check on a phone that the position clears the bar, the notch and the notices, and that it reads at size 6.
 
 *Decided with the user (2026-10-29):* Time Warp is out of the pool (asset kept). Level-up cooldown / batching and Power Ball / Meteor Ball caps are dropped (level-ups are 10 to 15 s, a 6-minute run takes about 2 of each card).
 
@@ -539,3 +540,8 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Roadmap:** Steady Ball is now its own task (4) and the final visual pass on the speed look is a new Opus task (4b).
 - **Checked:** edits only, not compiled in Unity nor seen on screen.
 - **Open issues:** values are guesses, to judge in motion at x1.4 to x2.2 (Opus pass 4b).
+
+### [2026-10-30] - Run timer on the HUD (by Claude)
+- **Done (branch `feature/run-timer-hud`, from `develop`):** new `RunTimerHud` (`Assets/Scripts/UI`, builds itself like the notices, canvas order 5): the run time as m:ss, centered in the safe area at 170 reference px below the top (the XP bar ends at 124), pixel size 6, pale cyan with the same dark-navy outline and drop as the XP numbers. It reads `GameManager.RunTime` (starts at the first launch, stops while paused or choosing a card) and only rebuilds its text when the second changes.
+- **Checked:** edits only, not compiled in Unity nor seen on screen.
+- **Open issues:** position vs the "DIFFICULTY INCREASED!" / "BALL SPEED UP!" notices (at 84% of the screen height, about 300 px down) and the pause button; size and color are first guesses (constants at the top of `RunTimerHud`). `feature/ball-speed-ramp` is still unmerged and independent of this branch.
