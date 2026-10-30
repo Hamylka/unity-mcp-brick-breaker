@@ -34,7 +34,14 @@ public class MultiBallEffect : BonusEffect
     public float TickInterval => tickInterval;
     public float MinUpward => minUpward;
 
-    public override void Apply(BonusContext context) => MultiBallCharge.Queue(this, TemporaryBall.NewProcId());
+    // Not stackable while a split is pending: no drop, and a pickup that still gets through is ignored.
+    public override bool CanDrop => !MultiBallCharge.Pending;
+
+    public override void Apply(BonusContext context)
+    {
+        if (MultiBallCharge.Pending) return;
+        MultiBallCharge.Queue(this, TemporaryBall.NewProcId());
+    }
 
     /// <summary>Extra balls a split of <paramref name="pickups"/> queued pickups would add now (cap included).</summary>
     public int ExtrasFor(int pickups)

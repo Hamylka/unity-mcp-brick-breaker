@@ -83,12 +83,12 @@ Single source of truth for what is left. Update it at the end of every task (tic
 
 *7. Parked rebalance ideas (decided with the user 2026-10-30 after the analysis of two phone runs; none built yet).* Run B snowballed from 205 s to 250 s (pace factor at its cap of 4, kill rate 5/s, a level every 2 to 3 s, 15 wall clears in 50 s, 58 Multi-Ball drops, Shockwave 8 picks = 34% of damage).
 - ~~**Shockwave capped at 4 stacks**~~ built 2026-10-30 (changelog "Shockwave cap restored").
-- **Echo rework:** (a) and (b) built 2026-10-30 (changelog "Echo jumps and carries overkill"); folding Overkill Spill into Echo is not done yet (card kept, decide with the user); (c) open question: all echoes at 50% damage, flat, keeping +1 echo per level (needs fractional carry for low damage, and note that the Cleave counter and on-hit effects count hits, not damage).
+- ~~**Echo rework**~~ (a) and (b) built 2026-10-30 (changelog "Echo jumps and carries overkill"); (c) flat 50% echoes was left as an open question and Overkill Spill was not folded in (card kept), neither is planned now.
 - ~~**RunProfiler, Echo**~~ built 2026-10-30 (changelog "RunProfiler Echo counters").
 - **Make the danger readable (Opus task, visual/audio):** the lose line pulses, music tempo rises and a red edge tint grows as the front row nears the paddle.
 - **Special bricks:** Armored (ignores splash and AoE) and Healer (restores its neighbours).
 - **Bonus drop budget by time:** scale the per-brick drop chance by target kill rate / actual kill rate (clamped), so drops per minute stay roughly constant whatever the kill rate does.
-- **Gate Multi-Ball:** when the player grabs a Multi-Ball item, every other Multi-Ball item still falling is deleted, and Multi-Ball is not stackable while a split is pending (no new pickup joins the pending split, no Multi-Ball drop, including the one from a wall clear, while it is pending). A cooldown between wall-clear bonuses is still to decide.
+- ~~**Gate Multi-Ball**~~ built 2026-10-30 (changelog "Multi-Ball gate"); a cooldown between wall-clear bonuses is still to decide.
 - **Corruption on unlimited cards:** unlimited cards become corruptible, the cost being the loss of one owned level of that card. If none is owned, the card cannot be corrupted.
 - **Still open:** pace factor cap (4) and a second brake on the kill rate (XP falling when the rate is far over target), a minimum gap between level-ups, and the damage-card guarantee that keeps offering Shockwave.
 
@@ -651,3 +651,8 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Done (branch `feature/profiler-echo`):** roadmap section 5 item 7. `PowerUpStats` keeps six run counters (reset every run) and `RunProfiler` writes them into the summary of the run file: `echoProcs` (echoes fired), `echoRepeats` (repeat hits dealt), `echoBallKills` (procs where the ball's own hit had already killed the brick, i.e. the jump case), `echoJumps` (hops to another brick), `echoNoTarget` (repeats lost because no living brick was left, the "wasted" ones) and `echoCarriedDamage` (overkill damage carried onto the next brick). Indirect AoE damage that Echo triggers is still credited to the AoE sources. `schema` stays 2: new fields read 0 in older files.
 - **Checked:** compiles clean in Unity, no console errors. No run recorded yet.
 - **Open issues:** read the numbers in the next phone run with Echo picked (the ratio `echoNoTarget / (echoProcs x picks)` should be near 0, `echoJumps / echoProcs` shows how often the jump matters).
+
+### [2026-10-30] - Multi-Ball gate (by Claude)
+- **Done (branch `feature/gate-multiball`):** roadmap section 5 item 7. (1) Catching a Multi-Ball deletes every other Multi-Ball item still falling (`BonusDropper.RemoveFallingMultiBalls`, a small burst marks each one). (2) While a split is pending (`MultiBallCharge.Pending`, from the pickup until the extras spawn) Multi-Ball cannot drop: `MultiBallEffect.CanDrop` is false in the weighted roll and the wall-clear Multi-Ball is skipped; a pickup that still got through is ignored in `MultiBallEffect.Apply`, so nothing joins a pending split. After the split the gate opens again (extras still alive do not block it).
+- **Checked:** compiles clean in Unity, no console errors. Not played.
+- **Open issues:** the wall-clear Multi-Ball is lost (not delayed) if the wall clears during a pending split. The cooldown between wall-clear bonuses is still to decide. Pickup sound and flash still play for an ignored pickup (cannot normally happen). Pending split queue entries in the run profiler are unchanged.
