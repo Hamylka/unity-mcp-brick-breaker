@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Corruption concept</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#05040C; --navy:#0b1128; --cyan:#35e8ff; --text:#dfe6f5; --dim:#7b84a3;
+  --common:#8c919c; --uncommon:#59eb6b; --rare:#4d9eff; --epic:#b866ff; --legendary:#ffc933;
+  --exq:#ff2a4a; --malus:#6b6f80;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Press Start 2P',ui-monospace,monospace;font-size:10px;line-height:1.6}
+h1,h2{font-weight:normal;margin:0}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 16px 80px}
+h1{font-size:18px;color:var(--exq);text-shadow:2px 0 var(--cyan),-2px 0 #f0f}
+.sub{color:var(--dim);margin:10px 0 24px;max-width:760px}
+h2{font-size:12px;color:var(--cyan);margin:40px 0 14px}
+.note{color:var(--dim);max-width:640px;margin:0 0 14px}
+.stagewrap{display:flex;gap:28px;flex-wrap:wrap;align-items:flex-start}
+
+/* ---------- phone, same layout as the real card screen (321x656) ---------- */
+.phone{position:relative;width:321px;height:656px;background:#07061a;border:2px solid #1c2147;overflow:hidden;flex:none}
+.floor{position:absolute;left:0;right:0;top:190px;bottom:0;background:
+  linear-gradient(90deg,#8a2bff33 1px,#0000 1px) 0 0/32px 32px,
+  linear-gradient(#8a2bff33 1px,#0000 1px) 0 0/32px 32px;transform:perspective(300px) rotateX(35deg);transform-origin:top;border-top:2px solid #ff2a8f66}
+.dim{position:absolute;inset:0;background:#02010a;opacity:.7;z-index:1;transition:background .6s}
+.dim.red{background:#1a0006}
+.hud{position:absolute;top:10px;left:8px;width:58px;height:44px;border:1px solid #2a3566;background:#0b1128;text-align:center;font-size:8px;color:var(--dim);padding-top:4px;z-index:2}
+.hud b{display:block;font-size:18px;color:#fff;font-weight:normal}
+.title{position:absolute;top:158px;left:0;right:0;text-align:center;font-size:13px;color:#fff;z-index:2;letter-spacing:1px}
+.cards{position:absolute;left:0;right:0;top:222px;height:176px;z-index:3}
+
+.card{position:absolute;top:0;width:98px;height:176px;background:var(--navy);border:2px solid var(--c);border-radius:9px;
+  box-shadow:0 0 0 1px #0008;transition:left .6s cubic-bezier(.5,0,.2,1),top .6s cubic-bezier(.5,0,.2,1),transform .6s,opacity .3s;cursor:pointer;color:#fff}
+.card .dia{position:absolute;top:-15px;left:50%;width:34px;height:34px;margin-left:-17px;transform:rotate(45deg);background:#0b1128;border:3px solid var(--c);border-radius:6px;display:grid;place-items:center}
+.card .dia i{transform:rotate(-45deg);font-style:normal;font-size:12px;color:var(--c)}
+.card .tag{position:absolute;top:19px;right:4px;font-size:5px;padding:2px 4px;border-radius:6px;background:#1c7a38;color:#c8ffd4;border:1px solid #59eb6b}
+.card .name{position:absolute;top:56px;left:3px;right:3px;text-align:center;font-size:7px;color:var(--cn,#fff)}
+.card .desc{position:absolute;top:86px;left:5px;right:5px;text-align:center;font-size:5.5px;line-height:1.9;color:#c9d1e6}
+.card .rar{position:absolute;bottom:30px;left:0;right:0;text-align:center;font-size:6px;color:var(--cn,#fff)}
+.card .lv{position:absolute;bottom:10px;left:0;right:0;text-align:center;font-size:8px;color:var(--uncommon)}
+.card .lv s{text-decoration:none;color:var(--dim)}
+.card.sel{background:#141d3d;box-shadow:0 0 12px var(--c)}
+.card.legendary .lv{color:var(--legendary)}
+
+.btnrow{position:absolute;left:0;right:0;top:410px;display:flex;justify-content:center;gap:12px;z-index:4}
+.btn{font:inherit;font-size:9px;padding:11px 14px;border:0;border-radius:7px;background:var(--cyan);color:#06222b;cursor:pointer}
+.btn.confirm{background:#2a3350;color:#7b84a3}
+.btn.confirm.on{background:var(--uncommon);color:#06260f}
+.btn:disabled{cursor:default}
+.btn.reroll:disabled{opacity:.4}
+.corruptrow{position:absolute;left:0;right:0;top:462px;text-align:center;z-index:4}
+.btn.corrupt{background:#2a0610;color:var(--exq);border:2px solid var(--exq);padding:10px 22px;animation:throb 1.2s steps(2) infinite}
+.btn.corrupt:disabled{animation:none;opacity:.35;border-color:#5a2a35;color:#7a4050}
+@keyframes throb{50%{box-shadow:0 0 14px var(--exq)}}
+.hint{position:absolute;top:508px;left:12px;right:12px;text-align:center;color:var(--dim);font-size:6px;line-height:1.9;z-index:4}
+.chg{position:absolute;top:10px;right:8px;z-index:4;font-size:7px;color:var(--exq)}
+
+/* ---------- shards and virus ---------- */
+.shard{position:absolute;pointer-events:none;z-index:6;transition:transform .9s cubic-bezier(.2,.7,.3,1),opacity .9s}
+.virus{position:absolute;inset:0;z-index:7;pointer-events:none;display:none}
+.virus.on{display:block}
+.scan{position:absolute;inset:0;background:repeating-linear-gradient(#0000 0 2px,#00000066 2px 4px)}
+.band{position:absolute;left:0;right:0;height:14px;background:#ff2a4a33;mix-blend-mode:screen;animation:bandmove 1.1s linear infinite}
+@keyframes bandmove{from{top:-20px}to{top:670px}}
+.card.glitching{z-index:5;animation:shake .12s steps(2) infinite}
+.card.glitching .name,.card.glitching .desc,.card.glitching .lv{animation:flick .35s steps(3) infinite}
+@keyframes shake{0%{margin:-2px 0 0 1px}25%{margin:2px 0 0 -2px}50%{margin:-1px 0 0 3px}75%{margin:1px 0 0 -3px}100%{margin:0}}
+@keyframes flick{0%{opacity:1;transform:translateX(0)}30%{opacity:.2;transform:translateX(3px)}60%{opacity:1;transform:translateX(-4px)}100%{opacity:.5}}
+.card.rgb{text-shadow:2px 0 #f0f,-2px 0 #0ff;box-shadow:3px 0 #f0f8,-3px 0 #0ff8}
+.slice{position:absolute;left:-3px;right:-3px;background:var(--exq);mix-blend-mode:difference;opacity:.9}
+
+/* ---------- results ---------- */
+.card.exquisite{--c:var(--exq);--cn:#ff8a9a;background:#1a0309;box-shadow:0 0 18px var(--exq),inset 0 0 20px #ff2a4a55;animation:exq .5s steps(2) infinite}
+@keyframes exq{50%{box-shadow:0 0 30px var(--exq),inset 0 0 28px #ff2a4a88;margin-left:1px}}
+.card.exquisite .lv,.card.malus .lv{color:var(--exq)}
+.card.malus{--c:var(--malus);--cn:#9aa0b4;background:#0b0b10;box-shadow:inset 0 0 20px #000;filter:saturate(.4)}
+.card.malus .lv{color:#9aa0b4}
+.card.malus::after{content:"";position:absolute;inset:0;border-radius:9px;background:repeating-linear-gradient(135deg,#0000 0 6px,#00000066 6px 8px);pointer-events:none}
+.stamp{position:absolute;top:196px;left:0;right:0;text-align:center;z-index:5;font-size:10px}
+.stamp.exq{color:var(--exq);text-shadow:2px 0 #0ff,-2px 0 #f0f}
+.stamp.mal{color:#9aa0b4}
+.capnote{position:absolute;top:416px;left:0;right:0;text-align:center;z-index:5;font-size:7px;color:var(--exq)}
+.capnote.mal{color:#9aa0b4}
+
+/* ---------- static sections ---------- */
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.swatch{width:128px;border:2px solid var(--c);border-radius:8px;background:var(--navy);padding:10px 8px;text-align:center}
+.swatch b{display:block;color:var(--c);font-size:8px;margin-bottom:6px;font-weight:normal}
+.swatch .chip{height:20px;background:var(--c);margin:6px 0;border-radius:4px}
+.swatch small{display:block;color:var(--dim);font-size:6px;line-height:1.8}
+.pair{display:flex;gap:14px;flex-wrap:wrap}
+.pair .card{position:relative;top:0;left:0;margin-top:16px;cursor:default}
+.rules{color:var(--text);max-width:760px;padding-left:18px}
+.rules li{margin-bottom:9px}
+.ctl{margin:0 0 14px;display:flex;gap:8px;flex-wrap:wrap}
+.ctl .btn{padding:9px 10px;font-size:8px;background:#1a2340;color:var(--text)}
+.ctl .btn.on{background:var(--cyan);color:#06222b}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>CORRUPTION</h1>
+  <p class="sub">Concept prototype (Sonnet, rough). Same card screen as the game; CORRUPT sits under Reroll / Confirm and is always optional. Opus will do the final pass on shader, audio and polish.</p>
+
+  <h2>1. Try the flow</h2>
+  <div class="stagewrap">
+    <div class="phone" id="phone">
+      <div class="floor"></div>
+      <div class="dim" id="dim"></div>
+      <div class="hud">LV<b>1</b></div>
+      <div class="chg" id="chg"></div>
+      <div class="title" id="title">CHOOSE AN UPGRADE</div>
+      <div class="cards" id="cards"></div>
+      <div class="btnrow" id="btns">
+        <button class="btn reroll" id="rerollBtn">REROLL X1</button>
+        <button class="btn confirm" id="confirmBtn" disabled>CONFIRM</button>
+      </div>
+      <div class="corruptrow" id="crow"><button class="btn corrupt" id="corruptBtn" disabled>CORRUPT</button></div>
+      <div class="hint" id="hint"></div>
+      <div class="virus" id="virus"><div class="scan"></div><canvas id="noise" width="80" height="164" style="position:absolute;inset:0;width:100%;height:100%;opacity:.18;mix-blend-mode:screen"></canvas><div class="band"></div></div>
+    </div>
+    <div style="max-width:430px">
+      <p class="note">Select a card. CONFIRM takes it normally. CORRUPT (below) gambles it instead, and only lights up for cards with a capped stack (Executioner, Twin Fission, Laser Focus...), even at cap 1 (it then disappears for the run). Unlimited cards (Brake Pads, Lucky Orbs, Meteor Ball) cannot be corrupted. Reroll swaps the offer.</p>
+      <p class="note">Outcome to preview:</p>
+      <div class="ctl" id="forceCtl">
+        <button class="btn on" data-force="random">RANDOM</button>
+        <button class="btn" data-force="exq">EXQUISITE</button>
+        <button class="btn" data-force="mal">CURSED</button>
+      </div>
+      <p class="note">Corruption charges:</p>
+      <div class="ctl" id="chgCtl">
+        <button class="btn" data-chg="0">0</button>
+        <button class="btn on" data-chg="1">1</button>
+        <button class="btn" data-chg="2">2</button>
+      </div>
+      <button class="btn" id="reset" style="background:var(--cyan);color:#06222b">NEW LEVEL-UP</button>
+      <p class="note" style="margin-top:22px">Sequence (about 3.5 s): 0.0 the other cards shatter into shards, red flash and the dim turns blood-red. 0.4 the chosen card slides to the center, a bit bigger. 0.9 to 2.8 virus glitch: RGB split, slice tears, scanlines, noise, shake, flickering text. 2.8 hard cut to black. 2.95 reveal: red burst (Exquisite) or a dull thud (Cursed), the card shows its new max level. Then one CONFIRM tap, no reroll or swap.</p>
+    </div>
+  </div>
+
+  <h2>2. Rarity row</h2>
+  <div class="row">
+    <div class="swatch" style="--c:var(--common)"><b>COMMON</b><div class="chip"></div><small>55</small></div>
+    <div class="swatch" style="--c:var(--uncommon)"><b>UNCOMMON</b><div class="chip"></div><small>25</small></div>
+    <div class="swatch" style="--c:var(--rare)"><b>RARE</b><div class="chip"></div><small>11</small></div>
+    <div class="swatch" style="--c:var(--epic)"><b>EPIC</b><div class="chip"></div><small>6</small></div>
+    <div class="swatch" style="--c:var(--legendary)"><b>LEGENDARY</b><div class="chip"></div><small>3</small></div>
+    <div class="swatch" style="--c:var(--exq)"><b>EXQUISITE</b><div class="chip"></div><small>weight 0, corruption only. Pulsing, jittering frame.</small></div>
+    <div class="swatch" style="--c:var(--malus)"><b>CURSED</b><div class="chip"></div><small>weight 0, corruption only. Dull, hatched, no glow.</small></div>
+  </div>
+
+  <h2>3. Placeholder pools: Exquisite (top row) and Cursed (bottom row)</h2>
+  <p class="note">The real pools will be decided later. A pool card can be unlimited (LV 1) or capped (LV 1/2, 1/3). The outcome card is picked at random from its pool and is unrelated to the card that was corrupted.</p>
+  <div class="pair" id="pairs"></div>
+
+  <h2>4. Rules (from the user)</h2>
+  <ul class="rules">
+    <li><b>Always optional.</b> With a charge the player still chooses: CONFIRM (normal pick) or CORRUPT. The card screen keeps its current design; CORRUPT is a third button under Reroll and Confirm, shown only while a charge is held.</li>
+    <li><b>Charge source:</b> new Epic card <b>GLITCH CORE</b> ("+1 corruption charge", unlimited picks, each gives a charge). Name is a proposal.</li>
+    <li><b>Only capped cards.</b> A card can be corrupted if it has a cap (max stack 1 or more). Unlimited cards cannot. A card capped at 1 (Shield Plus, Meltdown...) can be corrupted too: its cap drops to 0 and it is never offered again this run.</li>
+    <li><b>Cost:</b> corrupting a card lowers that card's own max stack by one for the rest of the run (Twin Fission LV 1/2 becomes 1/1). Same cost for either outcome.</li>
+    <li><b>Outcome:</b> Exquisite (red, above Legendary) or Cursed (dark grey, a real downside). Odds proposal: 55% / 45%. The result is a random card from the Exquisite pool or the Cursed pool (pools decided later), not a variant of the corrupted card. Pool cards can be unlimited or capped. The result replaces the pick (the player does not also get the corrupted card).</li>
+    <li>Pause screen: Exquisite and Cursed cards keep their own entry and color. Greed becomes Exquisite.</li>
+  </ul>
+</div>
+
+<script>
+const POOL=[
+ {id:'brake',name:'BRAKE PADS',rar:'COMMON',c:'#8c919c',sym:'II',desc:'WALL STEPS ARE A LITTLE SLOWER',max:null},
+ {id:'lucky',name:'LUCKY ORBS',rar:'COMMON',c:'#8c919c',sym:'+',desc:'ORBS MAY PAY DOUBLE XP',max:null},
+ {id:'meteor',name:'METEOR BALL',rar:'LEGENDARY',c:'#ffc933',sym:'^',desc:'+20% TOTAL DAMAGE',max:null},
+ {id:'exec',name:'EXECUTIONER',rar:'RARE',c:'#4d9eff',sym:'x',desc:'+25% DAMAGE ON BRICKS AT 25% HP',max:3},
+ {id:'twin',name:'TWIN FISSION',rar:'RARE',c:'#4d9eff',sym:'Y',desc:'+1 EXTRA BALL PER MULTI-BALL',max:2},
+ {id:'focus',name:'LASER FOCUS',rar:'RARE',c:'#4d9eff',sym:'|',desc:'LASER FIRE RATE +20%',max:3},
+ {id:'catch',name:'CATCH ZONE',rar:'UNCOMMON',c:'#59eb6b',sym:'U',desc:'PADDLE CATCHES 15% WIDER',max:3},
+ {id:'glitch',name:'GLITCH CORE',rar:'EPIC',c:'#b866ff',sym:'?',desc:'+1 CORRUPTION CHARGE',max:null}
+];
+POOL.forEach(p=>p.orig=p.max);
+// Placeholder corruption pools (to be decided later). Entries can be unlimited (max 0) or capped.
+const EXQ=[
+ {name:'ECHO ECHO',sym:'~',desc:'EVERY 4TH HIT REPEATS TWICE',max:null},
+ {name:'BINARY STAR',sym:'o',desc:'ORBS HIT FOR 50% AND SPAWN A TWIN',max:null},
+ {name:'TRIPLE FISSION',sym:'Y',desc:'+2 EXTRA BALLS PER MULTI-BALL',max:2},
+ {name:'LASER FRENZY',sym:'|',desc:'FIRE RATE +45%, BOLTS PIERCE',max:3}
+];
+const CUR=[
+ {name:'DEAD STAR',sym:'o',desc:'ORBS HIT FOR 60% BUT BLOCK YOUR OWN BALL',max:null},
+ {name:'HEAVY BALL',sym:'#',desc:'+50% DAMAGE, BALL SPEED -20%',max:null},
+ {name:'UNSTABLE SPLIT',sym:'Y',desc:'+2 BALLS BUT THEY LAST HALF AS LONG',max:2},
+ {name:'OVERHEAT',sym:'|',desc:'FIRE RATE +60% BUT LASER LASTS -30%',max:3}
+];
+const START=['brake','exec','twin'];
+const $=s=>document.querySelector(s);
+const cardsEl=$('#cards'),hint=$('#hint'),virus=$('#virus'),corruptBtn=$('#corruptBtn'),confirmBtn=$('#confirmBtn'),rerollBtn=$('#rerollBtn');
+let offer=[],selected=null,busy=false,force='random',charges=1,rerolls=1;
+const POS=[8,111,214];
+const byId=id=>POOL.find(p=>p.id===id);
+
+function lvText(d){
+  return d.max!=null?`LV 1<s>/${d.max}</s>`:`LV 1`;
+}
+// variant: 'exq' or 'mal' (Cursed) only changes the rarity label
+function cardHTML(d,variant){
+  const rar=variant==='exq'?'EXQUISITE':variant==='mal'?'CURSED':d.rar;
+  return `<div class="dia"><i>${d.sym}</i></div><div class="tag">NEW!</div><div class="name">${d.name}</div><div class="desc">${d.desc}</div><div class="rar">${rar}</div><div class="lv">${lvText(d)}</div>`;
+}
+function build(ids){
+  const live=POOL.filter(p=>p.max!==0).map(p=>p.id);
+  offer=(ids||START).map(id=>byId(id).max===0?live.find(x=>!(ids||START).includes(x)):id);
+  cardsEl.innerHTML='';selected=null;busy=false;
+  document.querySelectorAll('.shard,.stamp,.capnote,.fin').forEach(n=>n.remove());
+  virus.classList.remove('on');$('#dim').classList.remove('red');
+  $('#title').textContent='CHOOSE AN UPGRADE';
+  $('#btns').style.display='flex';$('#crow').style.display=charges>0?'block':'none';
+  offer.forEach((id,i)=>{
+    const d=byId(id),el=document.createElement('div');
+    el.className='card'+(d.rar==='LEGENDARY'?' legendary':'');
+    el.style.setProperty('--c',d.c);el.style.setProperty('--cn',d.rar==='LEGENDARY'?'#ffc933':'#fff');el.style.left=POS[i]+'px';
+    el.innerHTML=cardHTML(d);
+    el.onclick=()=>{ if(busy)return; document.querySelectorAll('.card').forEach(x=>x.classList.remove('sel')); el.classList.add('sel'); selected=i; update(); };
+    cardsEl.appendChild(el);
+  });
+  update();
+}
+function update(){
+  const d=selected===null?null:byId(offer[selected]);
+  const capped=d&&d.max!=null&&d.max>=1;
+  confirmBtn.disabled=selected===null||busy;confirmBtn.classList.toggle('on',selected!==null&&!busy);
+  rerollBtn.disabled=rerolls<1||busy;rerollBtn.textContent='REROLL X'+rerolls;
+  corruptBtn.disabled=!capped||charges<1||busy;
+  corruptBtn.textContent='CORRUPT';
+  $('#chg').textContent=charges>0?'CHARGES x'+charges:'';
+  hint.textContent=busy?'':!d?'PICK A CARD':capped?`CORRUPT: THIS CARD IS REPLACED BY A RANDOM EXQUISITE OR CURSED ONE AND ITS MAX LEVEL DROPS ${d.max} > ${d.max-1}${d.max===1?" (NEVER OFFERED AGAIN)":""}. OR CONFIRM TO TAKE IT AS IS.`:'THIS CARD HAS NO CAP, IT CANNOT BE CORRUPTED.';
+}
+function shatter(el){
+  const r=el.getBoundingClientRect(),p=$('#phone').getBoundingClientRect();
+  const cols=6,rows=10,w=r.width/cols,h=r.height/rows;
+  for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
+    const s=document.createElement('div');s.className='shard';
+    s.style.cssText=`left:${r.left-p.left+x*w}px;top:${r.top-p.top+y*h}px;width:${w}px;height:${h}px;background:${el.style.getPropertyValue('--c')};opacity:${.5+Math.random()*.5}`;
+    $('#phone').appendChild(s);
+    requestAnimationFrame(()=>{
+      s.style.transform=`translate(${(Math.random()-.5)*220}px,${(Math.random()-.2)*320}px) rotate(${(Math.random()-.5)*360}deg) scale(.2)`;s.style.opacity=0;
+    });
+    setTimeout(()=>s.remove(),1000);
+  }
+  el.style.opacity=0;el.style.pointerEvents='none';
+}
+function flash(color,ms){
+  const f=document.createElement('div');f.style.cssText=`position:absolute;inset:0;background:${color};z-index:9;opacity:.8;transition:opacity ${ms}ms`;
+  $('#phone').appendChild(f);requestAnimationFrame(()=>f.style.opacity=0);setTimeout(()=>f.remove(),ms+50);
+}
+function slice(el){
+  el.querySelectorAll('.slice').forEach(n=>n.remove());
+  const n=document.createElement('div');n.className='slice';
+  n.style.top=Math.random()*150+'px';n.style.height=3+Math.random()*12+'px';
+  n.style.transform=`translateX(${(Math.random()-.5)*24}px)`;el.appendChild(n);
+}
+function noise(){
+  const g=$('#noise').getContext('2d'),im=g.createImageData(80,164);
+  for(let i=0;i<im.data.length;i+=4){const v=Math.random()<.2?255:0;im.data[i]=v;im.data[i+1]=v*.2;im.data[i+2]=v*.3;im.data[i+3]=v?200:0}
+  g.putImageData(im,0,0);
+}
+function finish(label){
+  $('#title').textContent=label;
+  setTimeout(()=>build(),700);
+}
+confirmBtn.onclick=()=>{ if(selected===null||busy)return; busy=true; const d=byId(offer[selected]);
+  if(d.id==='glitch')charges++;
+  update(); finish('TAKEN'); };
+rerollBtn.onclick=()=>{ if(rerolls<1||busy)return; rerolls--;
+  const ids=[...POOL.filter(p=>p.max!==0).map(p=>p.id)].sort(()=>Math.random()-.5).slice(0,3); build(ids); };
+corruptBtn.onclick=()=>{
+  if(selected===null||busy||charges<1)return;
+  const d=byId(offer[selected]); if(d.max==null||d.max<1)return;
+  busy=true;charges--;$('#btns').style.display='none';$('#crow').style.display='none';hint.textContent='';$('#chg').textContent='';
+  const all=[...document.querySelectorAll('.card')],chosen=all[selected];
+  all.forEach((el,i)=>{ if(i!==selected) shatter(el); });
+  flash('#ff2a4a',500);$('#dim').classList.add('red');$('#title').textContent='CORRUPTING...';
+  chosen.classList.remove('sel');chosen.style.zIndex=5;
+  setTimeout(()=>{chosen.style.left='111px';chosen.style.transform='scale(1.15)'},350);
+  setTimeout(()=>{
+    chosen.classList.add('glitching','rgb');virus.classList.add('on');
+    chosen._t=setInterval(()=>{noise();slice(chosen)},90);
+  },900);
+  setTimeout(()=>{ clearInterval(chosen._t);chosen.querySelectorAll('.slice').forEach(n=>n.remove());
+    chosen.classList.remove('glitching','rgb');chosen.style.opacity=0;virus.classList.remove('on');flash('#000',140);
+  },2800);
+  setTimeout(()=>{
+    const exq=force==='exq'||(force==='random'&&Math.random()<.55),v=exq?'exq':'mal';
+    // the picked card is replaced by a random card of the outcome pool; only the ORIGINAL card loses a level of cap
+    const pool=exq?EXQ:CUR,r=pool[Math.floor(Math.random()*pool.length)];
+    const oldMax=d.max;d.max--;
+    chosen.style.setProperty('--c',exq?'#ff2a4a':'#6b6f80');
+    chosen.className='card '+(exq?'exquisite':'malus');
+    chosen.style.transform='scale(1.15)';chosen.innerHTML=cardHTML(r,v);chosen.style.opacity=1;
+    flash(exq?'#ff2a4a':'#202028',700);
+    const st=document.createElement('div');st.className='stamp '+(exq?'exq':'mal');
+    st.textContent=exq?'EXQUISITE!':'CURSED...';$('#phone').appendChild(st);
+    const cn=document.createElement('div');cn.className='capnote '+(exq?'':'mal');cn.textContent=`${d.name} MAX ${oldMax} > ${d.max}${d.max===0?" - GONE FOR THE RUN":""}`;$('#phone').appendChild(cn);
+    $('#title').textContent=exq?'CORRUPTED':'CURSED';
+    setTimeout(()=>{ const b=document.createElement('div');b.className='btnrow fin';
+      b.innerHTML='<button class="btn confirm on">CONFIRM</button>';b.style.top='440px';
+      b.onclick=()=>{b.remove();finish('TAKEN')};$('#phone').appendChild(b);},500);
+  },2950);
+};
+document.querySelectorAll('[data-force]').forEach(b=>b.onclick=()=>{force=b.dataset.force;document.querySelectorAll('[data-force]').forEach(x=>x.classList.toggle('on',x===b));});
+document.querySelectorAll('[data-chg]').forEach(b=>b.onclick=()=>{charges=+b.dataset.chg;document.querySelectorAll('[data-chg]').forEach(x=>x.classList.toggle('on',x===b));build(offer);});
+$('#reset').onclick=()=>{rerolls=1;POOL.forEach(p=>p.max=p.orig);build(START);};
+build(START);
+
+// examples
+const pairs=$('#pairs');
+[['exq',EXQ],['mal',CUR]].forEach(([v,list])=>{
+  list.forEach(d=>{
+    const el=document.createElement('div');
+    el.className='card '+(v==='exq'?'exquisite':'malus');
+    el.style.setProperty('--c',v==='exq'?'#ff2a4a':'#6b6f80');
+    el.innerHTML=cardHTML(d,v);pairs.appendChild(el);
+  });
+  const br=document.createElement('div');br.style.flexBasis='100%';br.style.height='0';pairs.appendChild(br);
+});
+</script>
+</body>
+</html>
