@@ -115,9 +115,16 @@ public class PowerUpManager : MonoBehaviour
     /// to give. Unlimited cards and the corruption cards themselves cannot.
     /// </summary>
     public bool CanCorrupt(PowerUpDefinition definition) =>
-        definition != null && PowerUpStats.CorruptionCharges > 0 && definition.MaxStacks > 0 && !IsMaxed(definition)
+        definition != null && PowerUpStats.CorruptionCharges > 0 && CostIsPayable(definition)
         && !RarityStyle.IsCorruption(definition.Rarity) && !IsBlocked(definition)
         && (HasOpenOutcome(exquisitePool) || HasOpenOutcome(cursedPool));
+
+    // A capped card pays with its cap (as long as it is not maxed). An unlimited card pays with one owned level, so
+    // it needs at least one owned and an effect that can take a level back.
+    private bool CostIsPayable(PowerUpDefinition definition) =>
+        definition.MaxStacks > 0
+            ? !IsMaxed(definition)
+            : GetStacks(definition) > 0 && definition.Effect != null && definition.Effect.CanRemove;
 
     /// <summary>
     /// What corrupting this card would do, as the roll will use it: the chance of an Exquisite outcome (by the card's
@@ -145,9 +152,23 @@ public class PowerUpManager : MonoBehaviour
     {
         CorruptionOdds odds = GetOdds(source);
         PowerUpStats.CorruptionCharges = Mathf.Max(0, PowerUpStats.CorruptionCharges - 1);
-        int oldMax = GetMaxStacks(source);
-        capPenalty[source] = (capPenalty.TryGetValue(source, out int lost) ? lost : 0) + 1;
-        int newMax = GetMaxStacks(source);
+        bool unlimited = source.MaxStacks <= 0;
+        int oldMax, newMax;
+        if (unlimited)
+        {
+            // The cost is one owned level, taken back at once.
+            oldMax = GetStacks(source);
+            newMax = oldMax - 1;
+            source.Effect.Remove(MakeContext(source));
+            if (newMax > 0) stacks[source] = newMax;
+            else stacks.Remove(source); // the pause screen lists only cards that are still owned
+        }
+        else
+        {
+            oldMax = GetMaxStacks(source);
+            capPenalty[source] = (capPenalty.TryGetValue(source, out int lost) ? lost : 0) + 1;
+            newMax = GetMaxStacks(source);
+        }
 
         bool exquisite = UnityEngine.Random.value < odds.ExquisiteChance;
         PowerUpDefinition outcome = exquisite
@@ -156,7 +177,7 @@ public class PowerUpManager : MonoBehaviour
 
         CorruptionDowry dowry = !exquisite && outcome != null ? odds.Dowry : CorruptionDowry.None;
         pendingDowry = dowry;
-        var result = new CorruptionResult(source, outcome, oldMax, newMax, IsMaxed(source), odds.ExquisiteChance, dowry);
+        var result = new CorruptionResult(source, outcome, oldMax, newMax, unlimited ? false : IsMaxed(source), odds.ExquisiteChance, dowry, unlimited);
         Corrupted?.Invoke(result);
         return result;
     }
@@ -314,20 +335,20 @@ public class PowerUpManager : MonoBehaviour
         }
 
         if (definition.Effect != null)
-        {
-            var context = new PowerUpContext
-            {
-                Manager = this,
-                Paddle = paddle,
-                Grid = grid,
-                Experience = experience,
-                Balls = FindObjectsByType<BallController>()
-            };
-            definition.Effect.Apply(context);
-        }
+            definition.Effect.Apply(MakeContext(definition));
 
         PowerUpChosen?.Invoke(definition, stacks[definition]);
     }
+
+    private PowerUpContext MakeContext(PowerUpDefinition source) => new()
+    {
+        Manager = this,
+        Source = source,
+        Paddle = paddle,
+        Grid = grid,
+        Experience = experience,
+        Balls = FindObjectsByType<BallController>()
+    };
 
     // Picks a rarity by weight (among rarities that still have something to offer), then a random power-up of it.
     // minRank >= 0 (a Cursed dowry): the offer holds at least one card of that rarity or better when the pool has one.

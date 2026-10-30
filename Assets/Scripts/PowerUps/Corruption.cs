@@ -43,12 +43,15 @@ public readonly struct CorruptionResult
     public readonly float ExquisiteChance;
     /// <summary>What a Cursed outcome pays back (None for an Exquisite one).</summary>
     public readonly CorruptionDowry Dowry;
+    /// <summary>True for an unlimited card: the cost was one owned level (OldMax / NewMax then hold the level before / after).</summary>
+    public readonly bool LevelLost;
 
     public bool IsExquisite => Outcome != null && RarityStyle.IsExquisite(Outcome.Rarity);
 
     public CorruptionResult(PowerUpDefinition source, PowerUpDefinition outcome, int oldMax, int newMax, bool sourceGone,
-        float exquisiteChance, CorruptionDowry dowry)
+        float exquisiteChance, CorruptionDowry dowry, bool levelLost = false)
     {
+        LevelLost = levelLost;
         Source = source;
         Outcome = outcome;
         OldMax = oldMax;

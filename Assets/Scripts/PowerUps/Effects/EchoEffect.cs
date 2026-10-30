@@ -8,6 +8,9 @@ public class EchoEffect : PowerUpEffect
 
     public override void Apply(PowerUpContext context) => PowerUpStats.EchoPicks++;
 
+    public override bool CanRemove => true;
+    public override void Remove(PowerUpContext context) => PowerUpStats.EchoPicks = Mathf.Max(0, PowerUpStats.EchoPicks - 1);
+
     public override string Describe(int stacks)
     {
         return $"EVERY {PowerUpStats.EchoInterval(stacks)} HITS REPEAT {stacks}X FREE";

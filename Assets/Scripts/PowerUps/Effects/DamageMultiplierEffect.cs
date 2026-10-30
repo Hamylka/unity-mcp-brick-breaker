@@ -17,6 +17,12 @@ public class DamageMultiplierEffect : PowerUpEffect
         foreach (BallController ball in context.Balls) ball.MultiplyDamage(1f + percent);
     }
 
+    public override bool CanRemove => true;
+    public override void Remove(PowerUpContext context)
+    {
+        foreach (BallController ball in context.Balls) ball.MultiplyDamage(1f / (1f + percent));
+    }
+
     public override string Describe(int stacks) =>
         $"+{Mathf.RoundToInt(percent * 100f)}% DAMAGE, TOTAL X{Mathf.Pow(1f + percent, stacks):0.0#}";
 }

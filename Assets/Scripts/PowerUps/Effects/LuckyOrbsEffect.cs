@@ -10,6 +10,14 @@ public class LuckyOrbsEffect : PowerUpEffect
     public override void Apply(PowerUpContext context) =>
         PowerUpStats.LuckyOrbChance = Mathf.Min(PowerUpStats.MaxLuckyOrbChance, PowerUpStats.LuckyOrbChance + chance);
 
+    // Picks beyond the cap added nothing, so the manager's remaining picks decide the chance: rebuilt from the stacks.
+    public override bool CanRemove => true;
+    public override void Remove(PowerUpContext context)
+    {
+        int left = context.Manager != null ? Mathf.Max(0, context.Manager.GetStacks(context.Source) - 1) : 0;
+        PowerUpStats.LuckyOrbChance = Mathf.Min(PowerUpStats.MaxLuckyOrbChance, chance * left);
+    }
+
     public override string Describe(int stacks) =>
         $"{Mathf.RoundToInt(Mathf.Min(PowerUpStats.MaxLuckyOrbChance, chance * stacks) * 100f)}% OF XP ORBS PAY DOUBLE";
 }

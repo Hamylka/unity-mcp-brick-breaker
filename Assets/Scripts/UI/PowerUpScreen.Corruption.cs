@@ -161,7 +161,7 @@ public partial class PowerUpScreen
     private void RefreshCorruptHint() => hintDirty = true;
 
     private bool IsCorruptible(PowerUpDefinition card) =>
-        card != null && card.MaxStacks > 0 && corruption.CanCorrupt(card) && corruption.Odds != null;
+        card != null && corruption.CanCorrupt(card) && corruption.Odds != null;
 
     // The odds line, shown in bright red while a corruptible card is selected: "55% EXQUISITE+   45% CURSED-".
     private string OddsFor(PowerUpDefinition card)
@@ -176,12 +176,22 @@ public partial class PowerUpScreen
 
     private string HintFor(PowerUpDefinition card)
     {
-        if (card == null) return "SELECT A CAPPED CARD TO CORRUPT IT";
+        if (card == null) return "SELECT A CARD TO CORRUPT IT";
         int max = corruption.MaxStacks != null ? corruption.MaxStacks(card) : card.MaxStacks;
-        if (card.MaxStacks <= 0 || max <= 0) return "UNLIMITED CARDS CANNOT BE CORRUPTED";
-        if (!corruption.CanCorrupt(card)) return "THIS CARD CANNOT BE CORRUPTED";
         int owned = stackLookup != null ? stackLookup(card) : 0;
         string name = card.DisplayName.ToUpperInvariant();
+        if (card.MaxStacks <= 0)
+        {
+            // Unlimited card: the price is one level you own.
+            if (owned <= 0) return "NEEDS AN OWNED LEVEL TO CORRUPT";
+            if (!corruption.CanCorrupt(card)) return "THIS CARD CANNOT BE CORRUPTED";
+            string levelCost = $"{name} LV {owned} > {owned - 1}";
+            if (corruption.Odds == null) return $"BECOMES A RANDOM EXQUISITE OR CURSED CARD\n{levelCost}";
+            CorruptionOdds unlimitedOdds = corruption.Odds(card);
+            string unlimitedDowry = unlimitedOdds.ExquisiteChance >= 1f ? "" : $"\n{RarityStyle.GetLabel(unlimitedOdds.CursedRarity)} PAYS: {CorruptionDowryInfo.Text(unlimitedOdds.Dowry)}";
+            return $"{levelCost}{unlimitedDowry}";
+        }
+        if (max <= 0 || !corruption.CanCorrupt(card)) return "THIS CARD CANNOT BE CORRUPTED";
         string cost = max - 1 <= owned ? $"{name} GONE FOR THE RUN" : $"{name} MAX LV {max} > {max - 1}";
         if (corruption.Odds == null) return $"BECOMES A RANDOM EXQUISITE OR CURSED CARD\n{cost}";
 
@@ -216,7 +226,9 @@ public partial class PowerUpScreen
         intensity = 0f;
         absorbed = 0;
         punch = 0f;
-        capText = corruptResult.SourceGone
+        capText = corruptResult.LevelLost
+            ? $"{source.DisplayName.ToUpperInvariant()} LV {corruptResult.OldMax} > {corruptResult.NewMax}"
+            : corruptResult.SourceGone
             ? $"{source.DisplayName.ToUpperInvariant()} GONE FOR THE RUN"
             : $"{source.DisplayName.ToUpperInvariant()} MAX LV {corruptResult.OldMax} > {corruptResult.NewMax}";
         if (corruptResult.Dowry != CorruptionDowry.None)
