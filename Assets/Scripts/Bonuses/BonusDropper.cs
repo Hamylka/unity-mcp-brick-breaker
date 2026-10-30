@@ -63,7 +63,7 @@ public class BonusDropper : MonoBehaviour
     // A cleared wall is an event: a Multi-Ball falls from the back of the field (the favourite moment of the runs).
     private void HandleBricksCleared()
     {
-        if (itemPrefab == null || bonuses == null) return;
+        if (itemPrefab == null || bonuses == null || MultiBallCharge.Pending) return; // no Multi-Ball while a split is pending
         foreach (BonusDefinition bonus in bonuses)
         {
             if (bonus == null || !(bonus.Effect is MultiBallEffect)) continue;
@@ -102,12 +102,27 @@ public class BonusDropper : MonoBehaviour
         NeonFx.Ring(at, definition.Color, 32, 6f);
         NeonFx.Burst(at, Color.Lerp(definition.Color, Color.white, 0.4f), 16, 3f, 0.08f, 0.4f);
 
+        // Multi-Ball is gated: grabbing one deletes every other Multi-Ball item still falling.
+        if (definition.Effect is MultiBallEffect && !MultiBallCharge.Pending)
+            RemoveFallingMultiBalls(item);
+
         if (definition.Effect != null)
         {
             // Copy the list: effects such as multi-ball add balls while they run.
             definition.Effect.Apply(new BonusContext(paddle, new List<BallController>(BallController.Active)));
         }
         BonusCollected?.Invoke(definition, paddle);
+    }
+
+    private static void RemoveFallingMultiBalls(BonusItem keep)
+    {
+        foreach (BonusItem other in FindObjectsByType<BonusItem>(FindObjectsSortMode.None))
+        {
+            if (other == keep || other.Definition == null || !(other.Definition.Effect is MultiBallEffect)) continue;
+            Vector3 at = other.transform.position;
+            NeonFx.Burst(at, other.Definition.Color, 10, 2.5f, 0.08f, 0.3f);
+            Destroy(other.gameObject);
+        }
     }
 
     private BonusDefinition PickBonus()
