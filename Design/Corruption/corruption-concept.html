@@ -124,7 +124,7 @@ h2{font-size:12px;color:var(--cyan);margin:40px 0 14px}
       <div class="virus" id="virus"><div class="scan"></div><canvas id="noise" width="80" height="164" style="position:absolute;inset:0;width:100%;height:100%;opacity:.18;mix-blend-mode:screen"></canvas><div class="band"></div></div>
     </div>
     <div style="max-width:430px">
-      <p class="note">Select a card. CONFIRM takes it normally. CORRUPT (below) gambles it instead, and only lights up for cards with a capped stack (Executioner, Twin Fission, Laser Focus...). Unlimited cards (Brake Pads, Lucky Orbs, Meteor Ball) cannot be corrupted. Reroll swaps the offer.</p>
+      <p class="note">Select a card. CONFIRM takes it normally. CORRUPT (below) gambles it instead, and only lights up for cards with a capped stack (Executioner, Twin Fission, Laser Focus...), even at cap 1 (it then disappears for the run). Unlimited cards (Brake Pads, Lucky Orbs, Meteor Ball) cannot be corrupted. Reroll swaps the offer.</p>
       <p class="note">Outcome to preview:</p>
       <div class="ctl" id="forceCtl">
         <button class="btn on" data-force="random">RANDOM</button>
@@ -161,7 +161,7 @@ h2{font-size:12px;color:var(--cyan);margin:40px 0 14px}
   <ul class="rules">
     <li><b>Always optional.</b> With a charge the player still chooses: CONFIRM (normal pick) or CORRUPT. The card screen keeps its current design; CORRUPT is a third button under Reroll and Confirm, shown only while a charge is held.</li>
     <li><b>Charge source:</b> new Epic card <b>GLITCH CORE</b> ("+1 corruption charge", unlimited picks, each gives a charge). Name is a proposal.</li>
-    <li><b>Only capped cards.</b> A card can be corrupted only if it has a max stack of 2 or more. Unlimited cards and 1-stack cards (Shield Plus, Meltdown...) cannot.</li>
+    <li><b>Only capped cards.</b> A card can be corrupted if it has a cap (max stack 1 or more). Unlimited cards cannot. A card capped at 1 (Shield Plus, Meltdown...) can be corrupted too: its cap drops to 0 and it is never offered again this run.</li>
     <li><b>Cost:</b> corrupting a card lowers that card's own max stack by one for the rest of the run (Twin Fission LV 1/2 becomes 1/1). Same cost for either outcome.</li>
     <li><b>Outcome:</b> Exquisite (red, above Legendary) or Cursed (dark grey, a real downside). Odds proposal: 55% / 45%. The result is a random card from the Exquisite pool or the Cursed pool (pools decided later), not a variant of the corrupted card. Pool cards can be unlimited or capped. The result replaces the pick (the player does not also get the corrupted card).</li>
     <li>Pause screen: Exquisite and Cursed cards keep their own entry and color. Greed becomes Exquisite.</li>
@@ -170,26 +170,26 @@ h2{font-size:12px;color:var(--cyan);margin:40px 0 14px}
 
 <script>
 const POOL=[
- {id:'brake',name:'BRAKE PADS',rar:'COMMON',c:'#8c919c',sym:'II',desc:'WALL STEPS ARE A LITTLE SLOWER',max:0},
- {id:'lucky',name:'LUCKY ORBS',rar:'COMMON',c:'#8c919c',sym:'+',desc:'ORBS MAY PAY DOUBLE XP',max:0},
- {id:'meteor',name:'METEOR BALL',rar:'LEGENDARY',c:'#ffc933',sym:'^',desc:'+20% TOTAL DAMAGE',max:0},
+ {id:'brake',name:'BRAKE PADS',rar:'COMMON',c:'#8c919c',sym:'II',desc:'WALL STEPS ARE A LITTLE SLOWER',max:null},
+ {id:'lucky',name:'LUCKY ORBS',rar:'COMMON',c:'#8c919c',sym:'+',desc:'ORBS MAY PAY DOUBLE XP',max:null},
+ {id:'meteor',name:'METEOR BALL',rar:'LEGENDARY',c:'#ffc933',sym:'^',desc:'+20% TOTAL DAMAGE',max:null},
  {id:'exec',name:'EXECUTIONER',rar:'RARE',c:'#4d9eff',sym:'x',desc:'+25% DAMAGE ON BRICKS AT 25% HP',max:3},
  {id:'twin',name:'TWIN FISSION',rar:'RARE',c:'#4d9eff',sym:'Y',desc:'+1 EXTRA BALL PER MULTI-BALL',max:2},
  {id:'focus',name:'LASER FOCUS',rar:'RARE',c:'#4d9eff',sym:'|',desc:'LASER FIRE RATE +20%',max:3},
  {id:'catch',name:'CATCH ZONE',rar:'UNCOMMON',c:'#59eb6b',sym:'U',desc:'PADDLE CATCHES 15% WIDER',max:3},
- {id:'glitch',name:'GLITCH CORE',rar:'EPIC',c:'#b866ff',sym:'?',desc:'+1 CORRUPTION CHARGE',max:0}
+ {id:'glitch',name:'GLITCH CORE',rar:'EPIC',c:'#b866ff',sym:'?',desc:'+1 CORRUPTION CHARGE',max:null}
 ];
 POOL.forEach(p=>p.orig=p.max);
 // Placeholder corruption pools (to be decided later). Entries can be unlimited (max 0) or capped.
 const EXQ=[
- {name:'ECHO ECHO',sym:'~',desc:'EVERY 4TH HIT REPEATS TWICE',max:0},
- {name:'BINARY STAR',sym:'o',desc:'ORBS HIT FOR 50% AND SPAWN A TWIN',max:0},
+ {name:'ECHO ECHO',sym:'~',desc:'EVERY 4TH HIT REPEATS TWICE',max:null},
+ {name:'BINARY STAR',sym:'o',desc:'ORBS HIT FOR 50% AND SPAWN A TWIN',max:null},
  {name:'TRIPLE FISSION',sym:'Y',desc:'+2 EXTRA BALLS PER MULTI-BALL',max:2},
  {name:'LASER FRENZY',sym:'|',desc:'FIRE RATE +45%, BOLTS PIERCE',max:3}
 ];
 const CUR=[
- {name:'DEAD STAR',sym:'o',desc:'ORBS HIT FOR 60% BUT BLOCK YOUR OWN BALL',max:0},
- {name:'HEAVY BALL',sym:'#',desc:'+50% DAMAGE, BALL SPEED -20%',max:0},
+ {name:'DEAD STAR',sym:'o',desc:'ORBS HIT FOR 60% BUT BLOCK YOUR OWN BALL',max:null},
+ {name:'HEAVY BALL',sym:'#',desc:'+50% DAMAGE, BALL SPEED -20%',max:null},
  {name:'UNSTABLE SPLIT',sym:'Y',desc:'+2 BALLS BUT THEY LAST HALF AS LONG',max:2},
  {name:'OVERHEAT',sym:'|',desc:'FIRE RATE +60% BUT LASER LASTS -30%',max:3}
 ];
@@ -201,7 +201,7 @@ const POS=[8,111,214];
 const byId=id=>POOL.find(p=>p.id===id);
 
 function lvText(d){
-  return d.max?`LV 1<s>/${d.max}</s>`:`LV 1`;
+  return d.max!=null?`LV 1<s>/${d.max}</s>`:`LV 1`;
 }
 // variant: 'exq' or 'mal' (Cursed) only changes the rarity label
 function cardHTML(d,variant){
@@ -209,7 +209,8 @@ function cardHTML(d,variant){
   return `<div class="dia"><i>${d.sym}</i></div><div class="tag">NEW!</div><div class="name">${d.name}</div><div class="desc">${d.desc}</div><div class="rar">${rar}</div><div class="lv">${lvText(d)}</div>`;
 }
 function build(ids){
-  offer=ids||START;
+  const live=POOL.filter(p=>p.max!==0).map(p=>p.id);
+  offer=(ids||START).map(id=>byId(id).max===0?live.find(x=>!(ids||START).includes(x)):id);
   cardsEl.innerHTML='';selected=null;busy=false;
   document.querySelectorAll('.shard,.stamp,.capnote,.fin').forEach(n=>n.remove());
   virus.classList.remove('on');$('#dim').classList.remove('red');
@@ -227,13 +228,13 @@ function build(ids){
 }
 function update(){
   const d=selected===null?null:byId(offer[selected]);
-  const capped=d&&d.max>=2;
+  const capped=d&&d.max!=null&&d.max>=1;
   confirmBtn.disabled=selected===null||busy;confirmBtn.classList.toggle('on',selected!==null&&!busy);
   rerollBtn.disabled=rerolls<1||busy;rerollBtn.textContent='REROLL X'+rerolls;
   corruptBtn.disabled=!capped||charges<1||busy;
   corruptBtn.textContent='CORRUPT';
   $('#chg').textContent=charges>0?'CHARGES x'+charges:'';
-  hint.textContent=busy?'':!d?'PICK A CARD':capped?`CORRUPT: THIS CARD IS REPLACED BY A RANDOM EXQUISITE OR CURSED ONE AND ITS MAX LEVEL DROPS ${d.max} > ${d.max-1}. OR CONFIRM TO TAKE IT AS IS.`:'THIS CARD HAS NO CAP, IT CANNOT BE CORRUPTED.';
+  hint.textContent=busy?'':!d?'PICK A CARD':capped?`CORRUPT: THIS CARD IS REPLACED BY A RANDOM EXQUISITE OR CURSED ONE AND ITS MAX LEVEL DROPS ${d.max} > ${d.max-1}${d.max===1?" (NEVER OFFERED AGAIN)":""}. OR CONFIRM TO TAKE IT AS IS.`:'THIS CARD HAS NO CAP, IT CANNOT BE CORRUPTED.';
 }
 function shatter(el){
   const r=el.getBoundingClientRect(),p=$('#phone').getBoundingClientRect();
@@ -272,10 +273,10 @@ confirmBtn.onclick=()=>{ if(selected===null||busy)return; busy=true; const d=byI
   if(d.id==='glitch')charges++;
   update(); finish('TAKEN'); };
 rerollBtn.onclick=()=>{ if(rerolls<1||busy)return; rerolls--;
-  const ids=[...POOL.map(p=>p.id)].sort(()=>Math.random()-.5).slice(0,3); build(ids); };
+  const ids=[...POOL.filter(p=>p.max!==0).map(p=>p.id)].sort(()=>Math.random()-.5).slice(0,3); build(ids); };
 corruptBtn.onclick=()=>{
   if(selected===null||busy||charges<1)return;
-  const d=byId(offer[selected]); if(d.max<2)return;
+  const d=byId(offer[selected]); if(d.max==null||d.max<1)return;
   busy=true;charges--;$('#btns').style.display='none';$('#crow').style.display='none';hint.textContent='';$('#chg').textContent='';
   const all=[...document.querySelectorAll('.card')],chosen=all[selected];
   all.forEach((el,i)=>{ if(i!==selected) shatter(el); });
@@ -300,7 +301,7 @@ corruptBtn.onclick=()=>{
     flash(exq?'#ff2a4a':'#202028',700);
     const st=document.createElement('div');st.className='stamp '+(exq?'exq':'mal');
     st.textContent=exq?'EXQUISITE!':'CURSED...';$('#phone').appendChild(st);
-    const cn=document.createElement('div');cn.className='capnote '+(exq?'':'mal');cn.textContent=`${d.name} MAX ${oldMax} > ${d.max}`;$('#phone').appendChild(cn);
+    const cn=document.createElement('div');cn.className='capnote '+(exq?'':'mal');cn.textContent=`${d.name} MAX ${oldMax} > ${d.max}${d.max===0?" - GONE FOR THE RUN":""}`;$('#phone').appendChild(cn);
     $('#title').textContent=exq?'CORRUPTED':'CURSED';
     setTimeout(()=>{ const b=document.createElement('div');b.className='btnrow fin';
       b.innerHTML='<button class="btn confirm on">CONFIRM</button>';b.style.top='440px';
