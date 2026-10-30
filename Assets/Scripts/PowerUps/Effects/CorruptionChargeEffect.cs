@@ -8,6 +8,10 @@ public class CorruptionChargeEffect : PowerUpEffect
 
     public override void Apply(PowerUpContext context) => PowerUpStats.CorruptionCharges += charges;
 
+    public override bool CanRemove => true;
+    public override void Remove(PowerUpContext context) =>
+        PowerUpStats.CorruptionCharges = Mathf.Max(0, PowerUpStats.CorruptionCharges - charges);
+
     public override string Describe(int stacks)
     {
         int left = PowerUpStats.CorruptionCharges;

@@ -9,5 +9,8 @@ public class LaserFocusEffect : PowerUpEffect
 
     public override void Apply(PowerUpContext context) => PowerUpStats.LaserFireRate += percent;
 
+    public override bool CanRemove => true;
+    public override void Remove(PowerUpContext context) => PowerUpStats.LaserFireRate = Mathf.Max(0f, PowerUpStats.LaserFireRate - percent);
+
     public override string Describe(int stacks) => $"LASER FIRES {Mathf.RoundToInt(percent * stacks * 100f)}% FASTER";
 }

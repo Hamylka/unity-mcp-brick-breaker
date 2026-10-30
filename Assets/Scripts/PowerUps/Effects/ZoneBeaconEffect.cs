@@ -9,6 +9,9 @@ public class ZoneBeaconEffect : PowerUpEffect
 {
     public override void Apply(PowerUpContext context) => PowerUpStats.ZoneBeaconPicks++;
 
+    public override bool CanRemove => true;
+    public override void Remove(PowerUpContext context) => PowerUpStats.ZoneBeaconPicks = Mathf.Max(0, PowerUpStats.ZoneBeaconPicks - 1);
+
     public override string Describe(int stacks) =>
         $"ZONES {Mathf.RoundToInt((1f - PowerUpStats.ZoneIntervalFactorFor(stacks)) * 100f)}% SOONER, " +
         $"{Mathf.RoundToInt((PowerUpStats.ZoneLengthFactorFor(stacks) - 1f) * 100f)}% LONGER";

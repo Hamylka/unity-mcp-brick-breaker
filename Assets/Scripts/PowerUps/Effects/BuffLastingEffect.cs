@@ -9,5 +9,8 @@ public class BuffLastingEffect : PowerUpEffect
 
     public override void Apply(PowerUpContext context) => PowerUpStats.WallBuffDuration += percent;
 
+    public override bool CanRemove => true;
+    public override void Remove(PowerUpContext context) => PowerUpStats.WallBuffDuration = Mathf.Max(0f, PowerUpStats.WallBuffDuration - percent);
+
     public override string Describe(int stacks) => $"WALL BUFFS LAST +{Mathf.RoundToInt(percent * stacks * 100f)}% LONGER";
 }

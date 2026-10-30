@@ -13,5 +13,8 @@ public class SatelliteEffect : PowerUpEffect
         SatelliteSystem.Ensure();
     }
 
+    public override bool CanRemove => true;
+    public override void Remove(PowerUpContext context) => PowerUpStats.SatelliteOrbs = Mathf.Max(0, PowerUpStats.SatelliteOrbs - 1);
+
     public override string Describe(int stacks) => $"{stacks} ORB{(stacks > 1 ? "S" : "")} HIT BRICKS FOR 25% DMG";
 }

@@ -11,5 +11,8 @@ public class RicochetEffect : PowerUpEffect
 
     public override void Apply(PowerUpContext context) => PowerUpStats.RicochetPercent += percent;
 
+    public override bool CanRemove => true;
+    public override void Remove(PowerUpContext context) => PowerUpStats.RicochetPercent = Mathf.Max(0f, PowerUpStats.RicochetPercent - percent);
+
     public override string Describe(int stacks) => $"+{Mathf.RoundToInt(percent * stacks * 100f)}% DMG PER WALL BOUNCE";
 }

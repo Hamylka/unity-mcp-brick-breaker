@@ -11,6 +11,12 @@ public class BallSpeedEffect : PowerUpEffect
         foreach (BallController ball in context.Balls) ball.MultiplyBaseSpeed(1f + percent);
     }
 
+    public override bool CanRemove => true;
+    public override void Remove(PowerUpContext context)
+    {
+        foreach (BallController ball in context.Balls) ball.MultiplyBaseSpeed(1f / (1f + percent));
+    }
+
     // Slowing stops at the ball's speed floor, so the text never promises more than that.
     public override string Describe(int stacks)
     {

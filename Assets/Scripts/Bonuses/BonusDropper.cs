@@ -138,7 +138,7 @@ public class BonusDropper : MonoBehaviour
 
     private static void RemoveFallingMultiBalls(BonusItem keep)
     {
-        foreach (BonusItem other in FindObjectsByType<BonusItem>(FindObjectsSortMode.None))
+        foreach (BonusItem other in FindObjectsByType<BonusItem>())
         {
             if (other == keep || other.Definition == null || !(other.Definition.Effect is MultiBallEffect)) continue;
             Vector3 at = other.transform.position;
