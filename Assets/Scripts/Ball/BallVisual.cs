@@ -58,6 +58,15 @@ public class BallVisual : MonoBehaviour
     [SerializeField, Min(0f)] private float trailBrightness = 2.6f;
     [SerializeField, Range(0f, 1f)] private float coreTrailWidth = 0.38f;
     [SerializeField, Min(0f)] private float coreTrailTime = 0.1f;
+    [Header("Speed Look (run ramp)")]
+    [Tooltip("Extra trail time per +100% of run speed (the trail is already longer in space since the ball is faster).")]
+    [SerializeField, Min(0f)] private float speedTrailTimeGain = 0.2f;
+    [Tooltip("Extra trail brightness per +100% of run speed.")]
+    [SerializeField, Min(0f)] private float speedTrailBrightnessGain = 0.15f;
+    [Tooltip("Run speed bonus (1 = +100%) after which the look stops growing.")]
+    [SerializeField, Min(0.1f)] private float speedLookMax = 1.5f;
+    [Tooltip("Seconds to ease the look to a new speed step.")]
+    [SerializeField, Min(0.05f)] private float speedLookEase = 1f;
 
     [Header("Bounce Sparks")]
     [SerializeField, Min(0)] private int sparkCount = 7;
@@ -170,6 +179,8 @@ public class BallVisual : MonoBehaviour
     private LineRenderer arcA, arcB;
     private float powerBlend;
     private float trailPower = -1f;
+    private float speedLook;          // eased run-speed bonus (0 = start speed), drives the trail length and brightness
+    private float trailSpeedLook = -1f;
     private bool wasPowered;
     private float arcAngle;
     private float arcKick;     // 1 right after a powered brick hit, eases back to 0
@@ -626,14 +637,17 @@ public class BallVisual : MonoBehaviour
 
         // Trails: blend toward the power, then the ghost gradients (rebuilt only while a blend moves).
         bool settled = (blend == 0f || blend == 1f) && (power == 0f || power == 1f);
+        speedLook = Mathf.MoveTowards(speedLook, Mathf.Min(speedLookMax, BallController.RunSpeedFactor - 1f), dt * speedLookMax / speedLookEase);
+        bool speedMoved = Mathf.Abs(speedLook - trailSpeedLook) > 0.01f;
         bool moved = Mathf.Abs(blend - trailBlend) > 0.02f || Mathf.Abs(power - trailPower) > 0.02f;
-        if (outerTrail != null && (moved || (settled && (blend != trailBlend || power != trailPower))))
+        if (outerTrail != null && (moved || speedMoved || (settled && (blend != trailBlend || power != trailPower))))
         {
             trailBlend = blend;
             trailPower = power;
-            float brightness = Mathf.Lerp(Mathf.Lerp(trailBrightness, powerTrailBrightness, power), phaseTrailBrightness, blend);
+            trailSpeedLook = speedLook;
+            float brightness = Mathf.Lerp(Mathf.Lerp(trailBrightness, powerTrailBrightness, power), phaseTrailBrightness, blend) * (1f + speedTrailBrightnessGain * speedLook);
             outerTrail.colorGradient = LerpGradient(LerpGradient(outerNormal, outerPower, power), outerPhase, blend);
-            outerTrail.time = Mathf.Lerp(Mathf.Lerp(trailTime, trailTime * 1.15f, power), phaseTrailTime, blend);
+            outerTrail.time = Mathf.Lerp(Mathf.Lerp(trailTime, trailTime * 1.15f, power), phaseTrailTime, blend) * (1f + speedTrailTimeGain * speedLook);
             NeonGlow.SetColor(outerTrail, NeonGlow.Hdr(Color.white, brightness));
             if (coreTrail != null)
             {
