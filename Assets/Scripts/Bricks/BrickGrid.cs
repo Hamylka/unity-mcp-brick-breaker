@@ -55,6 +55,21 @@ public class BrickGrid : MonoBehaviour
     [Tooltip("0 = a different layout every run, otherwise a fixed seed.")]
     [SerializeField] private int seed;
 
+    [Header("Special Bricks")]
+    [Tooltip("Armored bricks ignore splash and area damage. First row (counted from the start of the run) where one can appear.")]
+    [SerializeField, Min(0)] private int armoredFromRow = 6;
+    [Tooltip("Chance per brick once the ramp is complete.")]
+    [SerializeField, Range(0f, 0.4f)] private float armoredMaxChance = 0.1f;
+    [Tooltip("Healer bricks restore their neighbours. First row where one can appear.")]
+    [SerializeField, Min(0)] private int healerFromRow = 10;
+    [SerializeField, Range(0f, 0.4f)] private float healerMaxChance = 0.06f;
+    [Tooltip("Rows over which each chance climbs from 0 to its maximum.")]
+    [SerializeField, Min(1)] private int specialRampRows = 20;
+    [Tooltip("Seconds of play between two heals of a Healer brick.")]
+    [SerializeField, Min(0.5f)] private float healInterval = 4f;
+    [Tooltip("Share of a neighbour's maximum HP a heal restores (at least 1 HP).")]
+    [SerializeField, Range(0f, 1f)] private float healPercent = 0.25f;
+
     [Header("Advance (Space Invaders style)")]
     [Tooltip("Master switch for the advancing wall.")]
     [SerializeField] private bool advance = true;
@@ -450,13 +465,28 @@ public class BrickGrid : MonoBehaviour
             Brick brick = Instantiate(brickPrefab, stackObject.transform);
             brick.name = $"Brick_{layer}";
             brick.ApplySize(size);
+            BrickKind kind = RollKind(rowNumber);
+            brick.SetKind(kind);
             brick.Initialize(layerHitPoints[layer], palette);
+            if (kind == BrickKind.Healer) brick.gameObject.AddComponent<BrickHealer>().Setup(this, healInterval, healPercent);
             stack.AddBrick(brick);
             brick.Destroyed += HandleBrickDestroyed;
             brick.Hit += HandleBrickHit;
             if (animate) brick.PlaySpawn(delay + layer * 0.05f);
             RemainingBricks++;
         }
+    }
+
+    // Special bricks appear from their first row and get more common over specialRampRows rows.
+    private BrickKind RollKind(int rowNumber)
+    {
+        float armored = armoredMaxChance * Mathf.Clamp01((rowNumber - armoredFromRow + 1f) / specialRampRows);
+        float healer = healerMaxChance * Mathf.Clamp01((rowNumber - healerFromRow + 1f) / specialRampRows);
+        if (armored <= 0f && healer <= 0f) return BrickKind.Normal;
+        double roll = rng.NextDouble();
+        if (roll < armored) return BrickKind.Armored;
+        if (roll < armored + healer) return BrickKind.Healer;
+        return BrickKind.Normal;
     }
 
     // Phase is left out of both sums: its malus is not in MainBaseDamage.
