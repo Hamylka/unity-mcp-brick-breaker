@@ -85,12 +85,11 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Shockwave capped at 4 stacks** (the linear +25% per pick stays, the cap comes back).
 - **Echo rework:** (a) when the ball's hit kills the brick, the echo jumps to the nearest living brick instead of being wasted; (b) the echo carries the overkill damage onto that brick (which makes Overkill Spill redundant: fold it in and reuse the slot); (c) open question: all echoes at 50% damage, flat, keeping +1 echo per level (needs fractional carry for low damage, and note that the Cleave counter and on-hit effects count hits, not damage).
 - **RunProfiler, Echo:** log per run the Echo procs, the wasted ones (brick already dead), the jumps and the carried overkill damage, so the overkill state of the card can be read (and the indirect AoE damage that Echo triggers, which is credited to the AoE sources today).
-- **Make the danger readable:** the lose line pulses, music tempo rises and a red edge tint grows as the front row nears the paddle.
-- **Special bricks:** Armored (ignores splash and AoE) and Healer (restores its neighbours). Bomb and Rusher bricks are candidates for v0.4 (see C).
+- **Make the danger readable (Opus task, visual/audio):** the lose line pulses, music tempo rises and a red edge tint grows as the front row nears the paddle.
+- **Special bricks:** Armored (ignores splash and AoE) and Healer (restores its neighbours).
 - **Bonus drop budget by time:** scale the per-brick drop chance by target kill rate / actual kill rate (clamped), so drops per minute stay roughly constant whatever the kill rate does.
-- **Gate Multi-Ball:** no Multi-Ball drop (including the one from a wall clear) while extras are flying or a split is pending; a cooldown between wall-clear bonuses is still to decide.
-- **Corruption on unlimited cards:** unlimited cards become corruptible, the cost being the loss of one owned level of that card (the exact rule when none is owned is open: free, or a weight penalty).
-- **Not kept:** rows spawning faster when the wall is thin (it would starve the wall clear event; if the clear needs more weight, make the 4-row wave after a clear tougher instead).
+- **Gate Multi-Ball:** when the player grabs a Multi-Ball item, every other Multi-Ball item still falling is deleted, and Multi-Ball is not stackable while a split is pending (no new pickup joins the pending split, no Multi-Ball drop, including the one from a wall clear, while it is pending). A cooldown between wall-clear bonuses is still to decide.
+- **Corruption on unlimited cards:** unlimited cards become corruptible, the cost being the loss of one owned level of that card. If none is owned, the card cannot be corrupted.
 - **Still open:** pace factor cap (4) and a second brake on the kill rate (XP falling when the rate is far over target), a minimum gap between level-ups, and the damage-card guarantee that keeps offering Shockwave.
 
 *Decided with the user (2026-10-29):* Time Warp is out of the pool (asset kept). Level-up cooldown / batching and Power Ball / Meteor Ball caps are dropped (level-ups are 10 to 15 s, a 6-minute run takes about 2 of each card).
