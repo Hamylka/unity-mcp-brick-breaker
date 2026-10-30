@@ -542,13 +542,17 @@ public class PowerUpScreen : MonoBehaviour
         icon.preserveAspect = true;
         Place(icon.rectTransform, Vector2.zero, new Vector2(0f, topY), new Vector2(70f, 70f));
 
+        // Two separate bands so the texts never meet: name above (y 30 to 140), description below (y -160 to 20).
+        // Each text shrinks one font pixel at a time until it fits its band (4 cards make the cards narrow).
         PixelText nameText = NewText("Name", rect, def.DisplayName, 4f, rarity, PixelText.Align.Center);
         nameText.Wrap = true;
-        Place(nameText.rectTransform, Vector2.zero, new Vector2(0f, 60f), new Vector2(width - 36f, 130f));
+        Place(nameText.rectTransform, Vector2.zero, new Vector2(0f, 85f), new Vector2(width - 36f, 110f));
+        FitText(nameText, 4f, 3f);
 
         PixelText description = NewText("Description", rect, def.Description, 3f, new Color(0.88f, 0.9f, 1f), PixelText.Align.Center);
         description.Wrap = true;
-        Place(description.rectTransform, Vector2.zero, new Vector2(0f, -60f), new Vector2(width - 44f, 190f));
+        Place(description.rectTransform, Vector2.zero, new Vector2(0f, -70f), new Vector2(width - 44f, 180f));
+        FitText(description, 3f, 2f);
 
         PixelText rarityText = NewText("Rarity", rect, RarityStyle.GetLabel(def.Rarity), 3f, rarity, PixelText.Align.Center);
         Place(rarityText.rectTransform, Vector2.zero, new Vector2(0f, -184f), new Vector2(width - 20f, 30f));
@@ -656,6 +660,18 @@ public class PowerUpScreen : MonoBehaviour
     }
 
     // Anchored to the screen center, so positions are offsets from the middle.
+    // Lowers the pixel size from max to min (one font pixel at a time) until the wrapped text fits its rect.
+    private static void FitText(PixelText text, float maxSize, float minSize)
+    {
+        Vector2 box = text.rectTransform.sizeDelta;
+        for (float size = maxSize; size >= minSize; size -= 1f)
+        {
+            text.PixelSize = size;
+            Vector2 used = text.Measure(box.x);
+            if (used.x <= box.x && used.y <= box.y) return;
+        }
+    }
+
     private static void Place(RectTransform rect, Vector2 anchorOffsetUnused, Vector2 position, Vector2 size)
     {
         rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
