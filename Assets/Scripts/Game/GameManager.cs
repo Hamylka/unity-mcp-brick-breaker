@@ -141,6 +141,7 @@ public class GameManager : MonoBehaviour
     private void RevivePhoenix(BallController lostBall)
     {
         PowerUpStats.PhoenixReady = false;
+        RunProfiler.Log("phoenix_used", "Phoenix Ball", RunTime, $"level={FindAnyObjectByType<ExperienceSystem>()?.Level}");
         lostBall.ResetToPaddle();
         foreach (TrailRenderer trail in lostBall.GetComponentsInChildren<TrailRenderer>()) trail.Clear();
 

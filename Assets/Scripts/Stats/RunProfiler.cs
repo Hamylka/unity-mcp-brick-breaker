@@ -84,6 +84,8 @@ public class RunProfiler : MonoBehaviour
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
+        BallController.BrickHitRegistered -= HandleBrickHitRegistered;
+        BallController.AnyBallLost -= HandleAnyBallLost;
     }
 
     private void Start()
@@ -125,6 +127,8 @@ public class RunProfiler : MonoBehaviour
         BallController anyBall = FindAnyObjectByType<BallController>();
         record.settings.minSpeedFactor = anyBall != null ? anyBall.MinSpeedFactor : 0f;
 
+        BallController.BrickHitRegistered += HandleBrickHitRegistered;
+        BallController.AnyBallLost += HandleAnyBallLost;
         grid.BrickHit += HandleBrickHit;
         grid.HpWindowGrew += HandleHpWindowGrew;
         game.GameOver += HandleGameOver;
@@ -279,8 +283,37 @@ public class RunProfiler : MonoBehaviour
             wallStepInterval = Round(grid.StepInterval),
             ballSize = Round(PowerUpStats.BallSize),
             corruptionCharges = PowerUpStats.CorruptionCharges,
-            xpBrake = experience != null ? Round(experience.KillRateBrake) : 1f
+            xpBrake = experience != null ? Round(experience.KillRateBrake) : 1f,
+            dangerLevel = Round(DangerMeter.Level),
+            stepsLeft = Round((grid.RestingFrontZ - grid.DangerZ) / Mathf.Max(0.01f, grid.StepDistance)),
+            frontGap = Round(grid.RestingFrontZ - grid.DangerZ),
+            killRatePerBall = Round(grid.KillRate / Mathf.Max(1, flying)),
+            rampHits = Round(grid.TargetHitsPerMinute * grid.RunTime / 60f)
         };
+    }
+
+    // Brick hit by a ball: how many side / back wall bounces came since its previous brick hit.
+    private void HandleBrickHitRegistered(BallController ball, int side, int back)
+    {
+        if (finished) return;
+        RunRecord.Summary s = record.summary;
+        s.brickHitsCounted++;
+        s.sideBounceHist[Mathf.Min(side, 6)]++;
+        s.backBounceHist[Mathf.Min(back, 6)]++;
+        s.sideBounceTotal += side;
+        s.backBounceTotal += back;
+    }
+
+    // A ball fell past the paddle: what the player was doing. detail = key=value pairs.
+    private void HandleAnyBallLost(BallController lost)
+    {
+        if (finished) return;
+        int others = 0;
+        foreach (BallController ball in BallController.Active)
+            if (ball != null && ball != lost && ball.IsFlying) others++;
+        record.summary.ballsLost++;
+        AddEvent("ball_lost", lost.IsExtra ? "extra" : "main", Round(lost.TimeSincePaddleHit),
+            $"others={others};speed={Round(lost.CurrentSpeed)};paddleOffset={Round(lost.PaddleOffset)};sincePaddle={Round(lost.TimeSincePaddleHit)};phoenix={PowerUpStats.PhoenixReady}");
     }
 
     // Bricks on the wall and their total HP (the bottom brick of each stack, the only ones the ball can reach).

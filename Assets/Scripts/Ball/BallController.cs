@@ -254,9 +254,32 @@ public class BallController : MonoBehaviour
     /// <summary>Called by the brick after a ball hit landed: the streak grows, the wall bounces are spent.</summary>
     public void RegisterBrickHit()
     {
+        BrickHitRegistered?.Invoke(this, SideBounces, BackBounces);
         HitsSincePaddle++;
         WallBounces = 0;
+        SideBounces = 0;
+        BackBounces = 0;
     }
+
+    /// <summary>Side-wall bounces since the ball's last brick hit (profiler, future Ricochet / Backstop split).</summary>
+    public int SideBounces { get; private set; }
+
+    /// <summary>Back-wall bounces since the ball's last brick hit.</summary>
+    public int BackBounces { get; private set; }
+
+    /// <summary>Seconds since this ball last bounced on the paddle, -1 if it has not since it was launched.</summary>
+    public float TimeSincePaddleHit => lastPaddleHitTime < 0f ? -1f : Time.time - lastPaddleHitTime;
+
+    private float lastPaddleHitTime = -1f;
+
+    /// <summary>Sideways distance between the ball and the paddle centre (0 when there is no paddle).</summary>
+    public float PaddleOffset => paddle != null ? transform.position.x - paddle.position.x : 0f;
+
+    /// <summary>Raised on every brick hit by a ball with the side / back wall bounces it made since its previous brick hit.</summary>
+    public static event Action<BallController, int, int> BrickHitRegistered;
+
+    /// <summary>Raised when any ball falls past the paddle (before the run decides what happens next).</summary>
+    public static event Action<BallController> AnyBallLost;
 
     /// <summary>Permanently multiplies the damage per hit by <paramref name="factor"/> (cards), on top of earlier picks.</summary>
     public void MultiplyDamage(float factor) => cardDamageMultiplier *= factor;
@@ -319,6 +342,7 @@ public class BallController : MonoBehaviour
         {
             if (AutoReset)
             {
+                AnyBallLost?.Invoke(this);
                 BallLost?.Invoke(this);
                 ResetToPaddle();
             }
@@ -328,6 +352,7 @@ public class BallController : MonoBehaviour
                 state = State.Lost;
                 body.linearVelocity = Vector3.zero;
                 body.isKinematic = true;
+                AnyBallLost?.Invoke(this);
                 BallLost?.Invoke(this);
             }
         }
@@ -405,8 +430,16 @@ public class BallController : MonoBehaviour
         // 2) Let the surface customise the result (paddle angles, wall zones, ...).
         BallSurface surface = collision.collider.GetComponentInParent<BallSurface>();
         if (surface != null) surface.OnBallHit(this, collision);
-        if (surface is PaddleBallSurface) HitsSincePaddle = 0;   // Rampage streak ends
-        else if (surface is Wall) WallBounces++;                 // Ricochet charge
+        if (surface is PaddleBallSurface)
+        {
+            HitsSincePaddle = 0;                                 // Rampage streak ends
+            lastPaddleHitTime = Time.time;
+        }
+        else if (surface is Wall wall)
+        {
+            WallBounces++;                                       // Ricochet charge
+            if (wall.IsSideWall) SideBounces++; else BackBounces++;
+        }
 
         // 3) Apply, including the anti-horizontal-loop safeguard.
         Direction = ClampDirection(Direction);
@@ -498,6 +531,7 @@ public class BallController : MonoBehaviour
     {
         state = State.Waiting;
         boost = 0f;
+        lastPaddleHitTime = -1f;
         if (!body.isKinematic) body.linearVelocity = Vector3.zero;
         body.isKinematic = true;
         FollowPaddle();
