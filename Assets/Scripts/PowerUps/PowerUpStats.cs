@@ -22,7 +22,7 @@ public static class PowerUpStats
 
     /// <summary>Extra damage fraction on bricks at or under <see cref="ExecutionerThreshold"/> of their HP (Executioner).</summary>
     public static float ExecutionerBonus { get; set; }
-    public const float ExecutionerThreshold = 0.25f;
+    public const float ExecutionerThreshold = 0.4f;
 
     /// <summary>Extra bounces a new shield absorbs before it breaks (Shield Plus).</summary>
     public static int ShieldExtraBounces { get; set; }
@@ -181,13 +181,12 @@ public static class PowerUpStats
 
     /// <summary>
     /// Damage of this ball's next hit on <paramref name="brick"/>: the ball's damage with Rampage, Ricochet and
-    /// Executioner counted (rounded up).
+    /// Rampage and Ricochet counted (rounded up). Executioner is applied later, in <see cref="Brick.TakeHit"/>.
     /// </summary>
     public static int BallHitDamage(BallController ball, Brick brick)
     {
         float factor = 1f + RampagePercent * ball.HitsSincePaddle + RicochetPercent * ball.WallBounces;
-        int damage = factor > 1f ? Mathf.CeilToInt(ball.Damage * factor - 0.001f) : ball.Damage;
-        return WithExecutioner(brick, damage);
+        return factor > 1f ? Mathf.CeilToInt(ball.Damage * factor - 0.001f) : ball.Damage;
     }
 
     /// <summary>
@@ -283,11 +282,15 @@ public static class PowerUpStats
         return best;
     }
 
-    /// <summary>Damage a ball hit deals to <paramref name="brick"/> once Executioner is counted (rounded up).</summary>
-    public static int WithExecutioner(Brick brick, int damage)
+    /// <summary>Damage a hit deals to <paramref name="brick"/> once Executioner is counted (rounded up).</summary>
+    public static int WithExecutioner(Brick brick, int damage) =>
+        brick == null ? damage : WithExecutioner(brick, damage, brick.HitPoints);
+
+    /// <summary>Same, for a hit already dealt: <paramref name="hpBefore"/> is the brick's HP before it.</summary>
+    public static int WithExecutioner(Brick brick, int damage, int hpBefore)
     {
         if (ExecutionerBonus <= 0f || brick == null) return damage;
-        if (brick.HitPoints > brick.MaxHitPoints * ExecutionerThreshold) return damage;
+        if (hpBefore > brick.MaxHitPoints * ExecutionerThreshold) return damage;
         return Mathf.CeilToInt(damage * (1f + ExecutionerBonus) - 0.001f);
     }
 }

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Executioner
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Executioner
-  description: +25% damage on bricks at 25% HP or less
+  description: +25% damage from every source on bricks at 40% HP or less
   rarity: 2
   icon: '...#...
 

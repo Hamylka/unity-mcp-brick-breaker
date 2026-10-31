@@ -346,6 +346,7 @@ public class Brick : MonoBehaviour
             return;
         }
 
+        damage = PowerUpStats.WithExecutioner(this, damage); // every damage source, on a brick that is already low
         int dealt = Mathf.Min(damage, HitPoints);
         HitPoints = Mathf.Max(0, HitPoints - damage);
         Hit?.Invoke(this, dealt);
