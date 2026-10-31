@@ -1,8 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// The wall waits a little longer between steps. The gain shrinks with every pick (+2%, then less each time,
-/// never more than +50% in total): the numbers live in <see cref="PowerUpStats.WallStepFactorFor"/>.
+/// The wall waits longer between steps: +8% per pick,
+/// never more than +50% in total (7 picks): the numbers live in <see cref="PowerUpStats.WallStepFactorFor"/>.
 /// </summary>
 [CreateAssetMenu(fileName = "BrakePadsEffect", menuName = "BrickBreaker/Effects/Brake Pads")]
 public class BrakePadsEffect : PowerUpEffect

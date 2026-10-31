@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: SlowFall
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Slow Fall
-  description: Bonus items fall 15% slower
+  description: Bonus items fall 30% slower
   rarity: 0
   icon: '..###..
 

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ZoneBeacon
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Zone Beacon
-  description: Buff zones come sooner and longer
+  description: Buff zones come 8% sooner and last 10% longer
   rarity: 0
   icon: '#.....#
 

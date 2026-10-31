@@ -1,7 +1,7 @@
 using UnityEngine;
 
 /// <summary>
-/// Wall buff zones come sooner (3% on the first pick, diminishing, never under 45% of the wait) and are 4% longer
+/// Wall buff zones come sooner (8% per pick, never under 40% of the wait, 8 s of 20) and are 10% longer
 /// per pick. The numbers live in <see cref="PowerUpStats"/>.
 /// </summary>
 [CreateAssetMenu(fileName = "ZoneBeaconEffect", menuName = "BrickBreaker/Effects/Zone Beacon")]

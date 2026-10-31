@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d97b36f6254724042324b64421978edb, type: 3}
   m_Name: BuffLastingEffect
   m_EditorClassIdentifier: Assembly-CSharp::BuffLastingEffect
-  percent: 0.1
+  percent: 0.25
