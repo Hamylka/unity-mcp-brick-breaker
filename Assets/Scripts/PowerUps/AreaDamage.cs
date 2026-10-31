@@ -107,6 +107,18 @@ public class AreaDamage : MonoBehaviour
     public static int CleaveEveryFor(int picks) => picks <= 0 ? 0 : Mathf.Max(3, 7 - picks);
     public void EnableMeltdown() => meltdown = true;
 
+    // One level lost to a corruption: the reverse of each Add above.
+    public void RemoveSplash(float percent) => splashPercent = Mathf.Max(0f, splashPercent - percent);
+    public void RemoveChain() => chainJumps = chainJumps <= 2 ? 0 : chainJumps - 1;
+    public void RemovePierce(int depth) => pierceDepth = Mathf.Max(0, pierceDepth - depth);
+    public void RemoveBlast(float percent) => blastPercent = Mathf.Max(0f, blastPercent - percent);
+    public void RemoveCleave()
+    {
+        cleavePicks = Mathf.Max(0, cleavePicks - 1);
+        cleaveEvery = CleaveEveryFor(cleavePicks);
+        cleaveCounter = cleaveEvery > 0 ? Mathf.Min(cleaveCounter, cleaveEvery - 1) : 0;
+    }
+
     private void Awake() => grid = GetComponent<BrickGrid>();
 
     private void OnEnable()

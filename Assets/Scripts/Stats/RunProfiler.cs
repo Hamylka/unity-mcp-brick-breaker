@@ -219,6 +219,7 @@ public class RunProfiler : MonoBehaviour
     private void HandlePowerUpChosen(PowerUpDefinition definition, int stacks)
     {
         if (finished || record.offers.Count == 0) return;
+        if (RarityStyle.IsCorruption(definition.Rarity)) return; // a corruption outcome is logged by its corrupt event, not as the pick
         RunRecord.OfferEntry entry = record.offers[^1];
         entry.chosen = $"{definition.DisplayName} LV{stacks}";
         entry.chosenRarity = definition.Rarity.ToString();
@@ -228,7 +229,8 @@ public class RunProfiler : MonoBehaviour
     {
         if (finished) return;
         string outcome = result.Outcome != null ? $"{result.Outcome.DisplayName} ({result.Outcome.Rarity})" : "none";
-        AddEvent("corrupt", result.Source.DisplayName, result.NewMax, $"{outcome}, {Mathf.RoundToInt(result.ExquisiteChance * 100f)}% exquisite");
+        AddEvent("corrupt", result.Source.DisplayName, result.LevelAfter,
+            $"{outcome}, {Mathf.RoundToInt(result.ExquisiteChance * 100f)}% exquisite, lv {result.LevelBefore}>{result.LevelAfter}");
     }
 
     private void HandleBonusDropped(BonusDefinition definition)

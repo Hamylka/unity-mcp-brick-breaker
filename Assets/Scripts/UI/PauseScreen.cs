@@ -682,7 +682,7 @@ public class PauseScreen : MonoBehaviour
     {
         Color rarity = RarityStyle.GetColor(def.Rarity);
         Color rarityDark = new(rarity.r * 0.35f, rarity.g * 0.35f, rarity.b * 0.35f, 1f);
-        int max = powerUps != null ? powerUps.GetMaxStacks(def) : def.MaxStacks; // corruptions lower caps
+        int max = def.MaxStacks;
         bool maxed = max > 0 && stacks >= max;
         Color level = maxed ? maxLevelColor : levelColor;
         const float left = -ListWidth * 0.5f;

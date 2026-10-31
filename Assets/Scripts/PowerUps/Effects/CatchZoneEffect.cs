@@ -8,6 +8,8 @@ public class CatchZoneEffect : PowerUpEffect
     [SerializeField, Min(0f)] private float percent = 0.3f;
 
     public override void Apply(PowerUpContext context) => PowerUpStats.CatchZoneScale *= 1f + percent;
+    public override bool CanRemove => true;
+    public override void Remove(PowerUpContext context) => PowerUpStats.CatchZoneScale /= 1f + percent;
 
     public override string Describe(int stacks) => $"BONUS CATCH AREA +{CompoundPercent(percent, stacks)}%";
 }

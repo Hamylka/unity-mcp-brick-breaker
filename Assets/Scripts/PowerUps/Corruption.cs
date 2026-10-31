@@ -1,98 +1,49 @@
 using System;
+using System.Collections.Generic;
 
-/// <summary>What a Cursed result pays back, on top of the outcome card itself (applied when the outcome is confirmed).</summary>
-public enum CorruptionDowry
-{
-    None,
-    /// <summary>Cursed: one extra reroll on the next level-up.</summary>
-    Reroll,
-    /// <summary>Cursed-: the next level-up offers at least one Rare or better card.</summary>
-    RareOffer,
-    /// <summary>Cursed--: the next level-up offers at least one Legendary card.</summary>
-    LegendaryOffer
-}
-
-public static class CorruptionDowryInfo
-{
-    public static CorruptionDowry ForTier(int tier) =>
-        tier >= 2 ? CorruptionDowry.LegendaryOffer : tier == 1 ? CorruptionDowry.RareOffer : CorruptionDowry.Reroll;
-
-    /// <summary>Short text for the card screen.</summary>
-    public static string Text(CorruptionDowry dowry)
-    {
-        switch (dowry)
-        {
-            case CorruptionDowry.Reroll: return "+1 REROLL NEXT LEVEL-UP";
-            case CorruptionDowry.RareOffer: return "RARE+ CARD IN THE NEXT OFFER";
-            case CorruptionDowry.LegendaryOffer: return "LEGENDARY CARD IN THE NEXT OFFER";
-            default: return "";
-        }
-    }
-}
-
-/// <summary>What a corruption gave: the outcome card (Exquisite or Cursed) and the corrupted card's lowered cap.</summary>
+/// <summary>What a corruption gave: the outcome card (Exquisite or Cursed) and the level the corrupted card lost.</summary>
 public readonly struct CorruptionResult
 {
     public readonly PowerUpDefinition Source;
     public readonly PowerUpDefinition Outcome;
-    public readonly int OldMax;
-    public readonly int NewMax;
-    /// <summary>True when the corrupted card can no longer be offered this run (its cap reached what is owned).</summary>
-    public readonly bool SourceGone;
+    /// <summary>Owned level of the corrupted card before / after (one level is the price).</summary>
+    public readonly int LevelBefore;
+    public readonly int LevelAfter;
     /// <summary>Chance (0-1) the roll had of giving an Exquisite card.</summary>
     public readonly float ExquisiteChance;
-    /// <summary>What a Cursed outcome pays back (None for an Exquisite one).</summary>
-    public readonly CorruptionDowry Dowry;
-    /// <summary>True for an unlimited card: the cost was one owned level (OldMax / NewMax then hold the level before / after).</summary>
-    public readonly bool LevelLost;
 
     public bool IsExquisite => Outcome != null && RarityStyle.IsExquisite(Outcome.Rarity);
+    /// <summary>True when the corrupted card had a single level: it left the owned list (it can be offered again later).</summary>
+    public bool SourceRemoved => LevelAfter <= 0;
 
-    public CorruptionResult(PowerUpDefinition source, PowerUpDefinition outcome, int oldMax, int newMax, bool sourceGone,
-        float exquisiteChance, CorruptionDowry dowry, bool levelLost = false)
+    public CorruptionResult(PowerUpDefinition source, PowerUpDefinition outcome, int levelBefore, int levelAfter, float exquisiteChance)
     {
-        LevelLost = levelLost;
         Source = source;
         Outcome = outcome;
-        OldMax = oldMax;
-        NewMax = newMax;
-        SourceGone = sourceGone;
+        LevelBefore = levelBefore;
+        LevelAfter = levelAfter;
         ExquisiteChance = exquisiteChance;
-        Dowry = dowry;
-    }
-}
-
-/// <summary>What the card screen shows before a card is corrupted: the odds of each side and what a Cursed result pays.</summary>
-public readonly struct CorruptionOdds
-{
-    public readonly float ExquisiteChance;
-    public readonly PowerUpRarity ExquisiteRarity;
-    public readonly PowerUpRarity CursedRarity;
-    public readonly CorruptionDowry Dowry;
-
-    public CorruptionOdds(float exquisiteChance, PowerUpRarity exquisiteRarity, PowerUpRarity cursedRarity, CorruptionDowry dowry)
-    {
-        ExquisiteChance = exquisiteChance;
-        ExquisiteRarity = exquisiteRarity;
-        CursedRarity = cursedRarity;
-        Dowry = dowry;
     }
 }
 
 /// <summary>
-/// What the card screen needs from <see cref="PowerUpManager"/> for corruption and for the run's lowered caps.
-/// The card screen asks; the manager owns the charges, the caps and the outcome pools.
+/// What the card screen needs from <see cref="PowerUpManager"/> for corruption. The card screen asks; the manager owns
+/// the charges, the owned levels and the outcome pools.
 /// </summary>
 public sealed class CorruptionHooks
 {
     /// <summary>Corruption charges left (the CORRUPT button only shows while there is one).</summary>
     public Func<int> Charges;
-    /// <summary>A card's max level this run (its cap minus earlier corruptions; 0 = unlimited).</summary>
-    public Func<PowerUpDefinition, int> MaxStacks;
-    /// <summary>True when this card may be corrupted now.</summary>
-    public Func<PowerUpDefinition, bool> CanCorrupt;
-    /// <summary>The odds and the dowry of corrupting this card, as the roll will use them.</summary>
-    public Func<PowerUpDefinition, CorruptionOdds> Odds;
-    /// <summary>Spends a charge, lowers the card's cap and rolls the outcome.</summary>
+    /// <summary>Every owned upgrade with its level (the corruption inventory).</summary>
+    public Func<IReadOnlyDictionary<PowerUpDefinition, int>> Owned;
+    /// <summary>True when this owned card can pay a level (normal pool, effect with a way back). Ignores the charges.</summary>
+    public Func<PowerUpDefinition, bool> IsCorruptible;
+    /// <summary>True when a charge is held, a card can pay and an outcome is left to give.</summary>
+    public Func<bool> CanOpen;
+    /// <summary>Chance (0-1) of an Exquisite outcome when corrupting this card, as the roll will use it.</summary>
+    public Func<PowerUpDefinition, float> ExquisiteChance;
+    /// <summary>Spends a charge, takes one level of the card back and rolls the outcome.</summary>
     public Func<PowerUpDefinition, CorruptionResult> Corrupt;
+    /// <summary>Adds the outcome card to the run (on CONFIRM after the reveal).</summary>
+    public Action<PowerUpDefinition> Grant;
 }

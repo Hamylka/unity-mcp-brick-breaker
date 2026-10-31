@@ -8,11 +8,13 @@ using UnityEngine.UI;
 /// <summary>
 /// The level-up choice screen: the game fades to black, a row of power-up cards slides in, the player taps one
 /// (it gets a pulsing halo and pixel sparkles) and presses Confirm. The Reroll button swaps the cards for a new roll while rerolls remain.
+/// With a corruption charge, CORRUPT slides this screen up and opens the corruption inventory (see PowerUpScreen.Corruption.cs).
 /// Built in code, animated with unscaled time so it works while the game is paused.
 /// </summary>
 public partial class PowerUpScreen : MonoBehaviour
 {
-    private enum Phase { Hidden, Showing, Visible, Corrupting, Revealed, Hiding }
+    // Inventory: the corruption screen is up (or sliding). Corrupting / Revealed: the sequence. Returning: back to the same offer.
+    private enum Phase { Hidden, Showing, Visible, Inventory, Corrupting, Revealed, Returning, Hiding }
 
     [Header("Look")]
     [Tooltip("How dark the game gets behind the cards (1 = black).")]
@@ -37,7 +39,7 @@ public partial class PowerUpScreen : MonoBehaviour
     [Tooltip("Scales how many pixel sparkles appear. 0 = none.")]
     [SerializeField, Range(0f, 2f)] private float particleAmount = 1f;
 
-    private const int ParticleCapacity = 340;
+    private const int ParticleCapacity = 480; // the corruption inventory can shatter up to 9 cards at once
     private const float ReferenceWidth = 1080f;
     // Halo (38) plus the selected card's 6% zoom and breathing, so the side cards' glow is never cut by the screen edge.
     private const float SideMargin = 60f;
@@ -63,6 +65,7 @@ public partial class PowerUpScreen : MonoBehaviour
     }
 
     private RectTransform root;
+    private RectTransform offerRoot; // the card screen itself (title, cards, buttons): slides up when the corruption screen opens
     private Image dim;
     private PixelText title;
     private RectTransform cardsRoot;
@@ -174,12 +177,11 @@ public partial class PowerUpScreen : MonoBehaviour
         // Draw the chosen card last so its halo is not covered by the neighbouring cards.
         cards[index].transform.SetAsLastSibling();
         Burst(cards[index], 18, 1f);
-        RefreshCorruptHint();
     }
 
     private void ConfirmSelection()
     {
-        if ((phase != Phase.Visible && phase != Phase.Revealed) || selected < 0) return;
+        if (phase != Phase.Visible || selected < 0) return;
 
         CardView card = cards[selected];
         Burst(card, 45, 1.6f);
@@ -203,9 +205,9 @@ public partial class PowerUpScreen : MonoBehaviour
         float time = Time.unscaledTime;
         phaseTime += dt;
 
-        if (phase == Phase.Corrupting || phase == Phase.Revealed)
+        if (phase == Phase.Inventory || phase == Phase.Corrupting || phase == Phase.Revealed || phase == Phase.Returning)
         {
-            AnimateCorruption(dt, time); // owns the whole screen until CONFIRM
+            AnimateCorruption(dt, time); // owns the whole screen until the offer is back
             return;
         }
 
@@ -233,7 +235,6 @@ public partial class PowerUpScreen : MonoBehaviour
                 dimAlpha = (1f - k) * dimAmount;
                 titleAlpha = 1f - k;
                 foreach (CardView card in cards) card.Appear = 1f - k;
-                FadeCorruptionUi(1f - k);
                 if (k >= 1f)
                 {
                     FinishHiding();
@@ -258,12 +259,6 @@ public partial class PowerUpScreen : MonoBehaviour
 
     private void AnimateCard(CardView card, int index, float dt, float time)
     {
-        if (card == resultCard)
-        {
-            AnimateResultCardOut(card); // the corruption outcome leaves from its own spot and size
-            return;
-        }
-
         bool isSelected = index == selected;
         card.SelectT = Mathf.MoveTowards(card.SelectT, isSelected ? 1f : 0f, dt * 6f);
 
@@ -365,8 +360,8 @@ public partial class PowerUpScreen : MonoBehaviour
 
     private void EmitAround(CardView card)
     {
-        Vector2 half = new Vector2(card.Width, cardHeight) * 0.5f * card.Rect.localScale.x;
-        Vector2 center = card.Rect.anchoredPosition;
+        Vector2 center = ParticleSpace(card.Rect, out float scale);
+        Vector2 half = new Vector2(card.Width, cardHeight) * 0.5f * scale;
         Vector2 offset;
         switch (UnityEngine.Random.Range(0, 4))
         {
@@ -384,8 +379,8 @@ public partial class PowerUpScreen : MonoBehaviour
     private void Burst(CardView card, int count, float power)
     {
         if (particleAmount <= 0f) return;
-        Vector2 center = card.Rect.anchoredPosition;
-        Vector2 half = new Vector2(card.Width, cardHeight) * 0.5f;
+        Vector2 center = ParticleSpace(card.Rect, out float scale);
+        Vector2 half = new Vector2(card.Width, cardHeight) * 0.5f * scale;
         for (int i = 0; i < count; i++)
         {
             Vector2 start = center + new Vector2(UnityEngine.Random.Range(-half.x, half.x), UnityEngine.Random.Range(-half.y, half.y)) * 0.8f;
@@ -395,6 +390,13 @@ public partial class PowerUpScreen : MonoBehaviour
             Color color = UnityEngine.Random.value < 0.4f ? Color.white : card.RarityColor;
             Spawn(start, velocity, color, UnityEngine.Random.Range(8f, 18f), UnityEngine.Random.Range(0.5f, 1.0f), 2.5f);
         }
+    }
+
+    // A card's center in the particles' space and its scale there: offer, inventory and stage cards all live under different parents.
+    private Vector2 ParticleSpace(RectTransform rect, out float scale)
+    {
+        scale = rect.lossyScale.x / Mathf.Max(0.0001f, particlesRoot.lossyScale.x);
+        return particlesRoot.InverseTransformPoint(rect.position);
     }
 
     private void Spawn(Vector2 position, Vector2 velocity, Color color, float size, float life, float drag,
@@ -504,15 +506,10 @@ public partial class PowerUpScreen : MonoBehaviour
         dim.type = Image.Type.Simple;
         dim.raycastTarget = true;
 
-        title = NewText("Title", root, "CHOOSE AN UPGRADE", 6f, Color.white, PixelText.Align.Center);
-        Place(title.rectTransform, Vector2.zero, new Vector2(0f, 520f), new Vector2(1000f, 60f));
-        var titleShadow = title.gameObject.AddComponent<Shadow>();
-        titleShadow.effectColor = new Color(0.1f, 0.05f, 0.25f, 1f);
-        titleShadow.effectDistance = new Vector2(0f, -6f);
+        // The corruption screen sits behind everything, below the screen until CORRUPT slides it in.
+        BuildCorruptionScreen();
 
-        cardsRoot = NewRect("Cards", root);
-        Stretch(cardsRoot);
-
+        // Sparkles go behind the cards so they frame them without covering the text.
         particlesRoot = NewRect("Particles", root);
         Stretch(particlesRoot);
         for (int i = 0; i < ParticleCapacity; i++)
@@ -524,26 +521,34 @@ public partial class PowerUpScreen : MonoBehaviour
             particles.Add(new Particle { rect = image.rectTransform, image = image });
         }
 
-        // Sparkles go behind the cards so they frame them without covering the text.
-        particlesRoot.SetSiblingIndex(cardsRoot.GetSiblingIndex());
+        offerRoot = NewRect("Offer", root);
+        Stretch(offerRoot);
+
+        title = NewText("Title", offerRoot, "CHOOSE AN UPGRADE", 6f, Color.white, PixelText.Align.Center);
+        Place(title.rectTransform, Vector2.zero, new Vector2(0f, 520f), new Vector2(1000f, 60f));
+        var titleShadow = title.gameObject.AddComponent<Shadow>();
+        titleShadow.effectColor = new Color(0.1f, 0.05f, 0.25f, 1f);
+        titleShadow.effectDistance = new Vector2(0f, -6f);
+
+        cardsRoot = NewRect("Cards", offerRoot);
+        Stretch(cardsRoot);
 
         float buttonY = cardCenterY - cardHeight * 0.5f - 110f;
-        BuildButton("RerollButton", "REROLL", new Vector2(-195f, buttonY), out rerollButton, out rerollImage, out rerollLabel);
-        BuildButton("ConfirmButton", "CONFIRM", new Vector2(195f, buttonY), out confirmButton, out confirmImage, out confirmLabel);
+        BuildButton(offerRoot, "RerollButton", "REROLL", new Vector2(-195f, buttonY), out rerollButton, out rerollImage, out rerollLabel);
+        BuildButton(offerRoot, "ConfirmButton", "CONFIRM", new Vector2(195f, buttonY), out confirmButton, out confirmImage, out confirmLabel);
         confirmButton.Clicked += ConfirmSelection;
         confirmButton.DeniedClick += () => SoundManager.Play(Sfx.Denied); // no card chosen yet
         rerollButton.Clicked += RerollCards;
         rerollButton.DeniedClick += () => SoundManager.Play(Sfx.Denied);  // no rerolls left
-        confirmHome = confirmButton.GetComponent<RectTransform>().anchoredPosition;
 
         BuildCorruptionUi(buttonY);
 
         root.gameObject.SetActive(false);
     }
 
-    private void BuildButton(string name, string label, Vector2 position, out UiButton button, out Image image, out PixelText text)
+    private void BuildButton(RectTransform parent, string name, string label, Vector2 position, out UiButton button, out Image image, out PixelText text)
     {
-        image = NewImage(name, root, disabledColor, true);
+        image = NewImage(name, parent, disabledColor, true);
         Place(image.rectTransform, Vector2.zero, position, new Vector2(340f, 120f));
         button = image.gameObject.AddComponent<UiButton>();
         // Size 5 leaves room for "REROLL x1" with padding on both sides.
@@ -551,12 +556,13 @@ public partial class PowerUpScreen : MonoBehaviour
         Stretch(text.rectTransform);
     }
 
-    private CardView BuildCard(int index, PowerUpDefinition def, int stacks, float width, float x)
+    // parent: null = the offer row. owned: the card shows the level already owned (corruption inventory), not the one this pick grants.
+    private CardView BuildCard(int index, PowerUpDefinition def, int stacks, float width, float x, RectTransform parent = null, bool owned = false)
     {
         Color rarity = RarityStyle.GetColor(def.Rarity);
         Color rarityDark = new(rarity.r * 0.5f, rarity.g * 0.5f, rarity.b * 0.5f, 1f);
 
-        RectTransform rect = NewRect($"Card{index}", cardsRoot);
+        RectTransform rect = NewRect($"Card{index}", parent != null ? parent : cardsRoot);
         Place(rect, Vector2.zero, new Vector2(x, cardCenterY), new Vector2(width, cardHeight));
         var group = rect.gameObject.AddComponent<CanvasGroup>();
         var view = rect.gameObject.AddComponent<CardView>();
@@ -605,7 +611,7 @@ public partial class PowerUpScreen : MonoBehaviour
         PixelText rarityText = NewText("Rarity", rect, RarityStyle.GetLabel(def.Rarity), 3f, rarity, PixelText.Align.Center);
         Place(rarityText.rectTransform, Vector2.zero, new Vector2(0f, -184f), new Vector2(width - 20f, 30f));
 
-        BuildLevelDisplay(rect, view, def, stacks, width, topY);
+        BuildLevelDisplay(rect, view, def, stacks, width, topY, owned);
 
         view.Index = index;
         view.Clicked = SelectCard;
@@ -629,10 +635,11 @@ public partial class PowerUpScreen : MonoBehaviour
 
     // Bottom of the card: "LV 2/3" (or "LV 4" when unlimited), one pip per level for capped power-ups (owned ones filled,
     // the one this pick grants blinking), and a corner tag: NEW! on a first pick, MAX! when this pick reaches the cap.
-    private void BuildLevelDisplay(RectTransform card, CardView view, PowerUpDefinition def, int stacks, float width, float topY)
+    // owned (corruption inventory): "LV 3/4" with the owned pips filled, nothing blinking and no tag.
+    private void BuildLevelDisplay(RectTransform card, CardView view, PowerUpDefinition def, int stacks, float width, float topY, bool owned)
     {
-        int max = corruption?.MaxStacks != null ? corruption.MaxStacks(def) : def.MaxStacks; // corruptions lower caps
-        int next = stacks + 1;
+        int max = def.MaxStacks;
+        int next = owned ? stacks : stacks + 1;
         bool capped = max > 0;
         bool reachesMax = capped && next >= max;
         Color color = reachesMax ? maxLevelColor : levelColor;
@@ -652,7 +659,7 @@ public partial class PowerUpScreen : MonoBehaviour
                 Color pipColor = i < stacks ? color : disabledColor; // owned levels share the label color
                 Image pip = NewImage($"Pip{i}", card, pipColor, false);
                 Place(pip.rectTransform, Vector2.zero, new Vector2(rowStart + i * (pipWidth + pipGap), -256f), new Vector2(pipWidth, pipHeight));
-                if (i == stacks)
+                if (i == stacks && !owned)
                 {
                     view.NextPip = pip;
                     view.NextPipColor = color;
@@ -662,6 +669,7 @@ public partial class PowerUpScreen : MonoBehaviour
 
         // Corner tag, top right, clear of the header diamond.
         // A one-level power-up is both new and maxed: NEW! wins, the gold label and pip already say it is the last level.
+        if (owned) return;
         string tagText = stacks <= 0 ? "NEW!" : reachesMax ? "MAX!" : null;
         if (tagText == null) return;
 

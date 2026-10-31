@@ -10,6 +10,11 @@ public class XpBoostEffect : PowerUpEffect
     {
         if (context.Experience != null) context.Experience.AddXpMultiplier(percent);
     }
+    public override bool CanRemove => true;
+    public override void Remove(PowerUpContext context)
+    {
+        if (context.Experience != null) context.Experience.AddXpMultiplier(-percent);
+    }
 
     // A negative percent lowers XP (Dim Orbs, Cursed); ExperienceSystem never goes under MinXpMultiplier.
     public override string Describe(int stacks)

@@ -10,6 +10,11 @@ public class PaddleWidthEffect : PowerUpEffect
     {
         if (context.Paddle != null) context.Paddle.MultiplyWidth(1f + percent);
     }
+    public override bool CanRemove => true;
+    public override void Remove(PowerUpContext context)
+    {
+        if (context.Paddle != null) context.Paddle.MultiplyWidth(1f / (1f + percent));
+    }
 
     public override string Describe(int stacks) => $"PADDLE WIDTH {CompoundPercent(percent, stacks):+0;-0}%";
 }

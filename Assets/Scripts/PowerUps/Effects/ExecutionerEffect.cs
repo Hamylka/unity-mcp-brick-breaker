@@ -10,6 +10,8 @@ public class ExecutionerEffect : PowerUpEffect
     [SerializeField, Min(0f)] private float percent = 0.25f;
 
     public override void Apply(PowerUpContext context) => PowerUpStats.ExecutionerBonus += percent;
+    public override bool CanRemove => true;
+    public override void Remove(PowerUpContext context) => PowerUpStats.ExecutionerBonus = Mathf.Max(0f, PowerUpStats.ExecutionerBonus - percent);
 
     public override string Describe(int stacks) => $"+{Mathf.RoundToInt(percent * stacks * 100f)}% DAMAGE AT 40% HP OR LESS";
 }
