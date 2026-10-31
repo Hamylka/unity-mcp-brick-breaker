@@ -142,7 +142,8 @@ public class Brick : MonoBehaviour
     // Damage that comes from an area effect: an Armored brick ignores it (direct hits still land).
     private static bool IsAreaSource(DamageSource source) =>
         source == DamageSource.Shockwave || source == DamageSource.Chain || source == DamageSource.Volatile
-        || source == DamageSource.Cleave || source == DamageSource.Meltdown || source == DamageSource.OverkillSpill;
+        || source == DamageSource.Cleave || source == DamageSource.Meltdown || source == DamageSource.OverkillSpill
+        || source == DamageSource.CannonBlast;
 
     /// <summary>Restores hit points (Healer), never above the maximum. The color fades to the new value.</summary>
     public void Heal(int amount)

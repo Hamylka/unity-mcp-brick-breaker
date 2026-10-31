@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: PaddleCannon
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Paddle Cannon
-  description: Every paddle bounce fires bolts ahead
+  description: Every paddle bounce fires bolts ahead, a bolt that kills blasts the bricks around it
   rarity: 4
   icon: '#..#..#
 
