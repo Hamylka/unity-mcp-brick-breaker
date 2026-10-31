@@ -11,6 +11,11 @@ public class PaddleSpeedEffect : PowerUpEffect
     {
         if (context.Paddle != null) context.Paddle.MultiplyFollowSpeed(1f + percent);
     }
+    public override bool CanRemove => true;
+    public override void Remove(PowerUpContext context)
+    {
+        if (context.Paddle != null) context.Paddle.MultiplyFollowSpeed(1f / (1f + percent));
+    }
 
     public override string Describe(int stacks) => $"PADDLE FOLLOWS {CompoundPercent(percent, stacks)}% FASTER";
 }

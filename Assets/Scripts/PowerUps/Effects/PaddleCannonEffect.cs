@@ -7,6 +7,8 @@ public class PaddleCannonEffect : PowerUpEffect
     public override bool IsOffensive => true;
 
     public override void Apply(PowerUpContext context) => PowerUpStats.CannonPicks++;
+    public override bool CanRemove => true;
+    public override void Remove(PowerUpContext context) => PowerUpStats.CannonPicks = Mathf.Max(0, PowerUpStats.CannonPicks - 1);
 
     public override string Describe(int stacks)
     {

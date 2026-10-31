@@ -10,6 +10,9 @@ public class SlowFallEffect : PowerUpEffect
     // A negative percent makes them fall faster (Leaden Bonuses, Cursed), never more than MaxBonusFallSpeed.
     public override void Apply(PowerUpContext context) =>
         PowerUpStats.BonusFallSpeed = Mathf.Min(PowerUpStats.MaxBonusFallSpeed, PowerUpStats.BonusFallSpeed * (1f - percent));
+    public override bool CanRemove => true;
+    public override void Remove(PowerUpContext context) =>
+        PowerUpStats.BonusFallSpeed = Mathf.Min(PowerUpStats.MaxBonusFallSpeed, PowerUpStats.BonusFallSpeed / (1f - percent));
 
     public override string Describe(int stacks)
     {

@@ -41,6 +41,23 @@ public class AreaDamageEffect : PowerUpEffect
         }
     }
 
+    // Meltdown is an Exquisite card (never corrupted), so it has no way back.
+    public override bool CanRemove => kind != Kind.Meltdown;
+
+    public override void Remove(PowerUpContext context)
+    {
+        if (context.Grid == null || !context.Grid.TryGetComponent(out AreaDamage area)) return;
+
+        switch (kind)
+        {
+            case Kind.Shockwave: area.RemoveSplash(amount); break;
+            case Kind.ChainLightning: area.RemoveChain(); break;
+            case Kind.Piercing: area.RemovePierce(Mathf.RoundToInt(amount)); break;
+            case Kind.Volatile: area.RemoveBlast(amount); break;
+            case Kind.Cleave: area.RemoveCleave(); break;
+        }
+    }
+
     public override string Describe(int stacks)
     {
         int percent = Mathf.RoundToInt(amount * 100f);

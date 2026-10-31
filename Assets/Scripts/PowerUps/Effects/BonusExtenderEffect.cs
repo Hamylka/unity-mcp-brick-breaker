@@ -8,6 +8,8 @@ public class BonusExtenderEffect : PowerUpEffect
     [SerializeField, Min(0f)] private float percent = 0.2f;
 
     public override void Apply(PowerUpContext context) => PowerUpStats.BonusDuration += percent;
+    public override bool CanRemove => true;
+    public override void Remove(PowerUpContext context) => PowerUpStats.BonusDuration = Mathf.Max(1f, PowerUpStats.BonusDuration - percent);
 
     public override string Describe(int stacks) => $"BONUS DURATION +{Mathf.RoundToInt(percent * stacks * 100f)}%";
 }

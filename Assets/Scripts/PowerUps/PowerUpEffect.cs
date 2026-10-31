@@ -22,8 +22,8 @@ public abstract class PowerUpEffect : ScriptableObject
     public abstract void Apply(PowerUpContext context);
 
     /// <summary>
-    /// True when <see cref="Remove"/> can take one level back. Only such unlimited cards can be corrupted (the cost
-    /// of corrupting an unlimited card is one owned level of it).
+    /// True when <see cref="Remove"/> can take one level back. Only such cards can be corrupted (the cost of a
+    /// corruption is one owned level of the card).
     /// </summary>
     public virtual bool CanRemove => false;
 
