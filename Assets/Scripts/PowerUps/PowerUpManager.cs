@@ -33,6 +33,8 @@ public class PowerUpManager : MonoBehaviour
     [SerializeField, Min(0f)] private float openDelay = 0.3f;
     [Tooltip("Seconds the game takes to ease from the full stop back to normal speed after the last card.")]
     [SerializeField, Min(0f)] private float resumeTime = 1f;
+    [Tooltip("A level-up this many seconds (real time) after the last card screen joins a burst: no new slow-down, no pause before its cards.")]
+    [SerializeField, Min(0f)] private float burstWindow = 4f;
 
     [Header("Corruption")]
     [Tooltip("Cards a corruption can turn into when it goes well. Never rolled on a level-up.")]
@@ -71,6 +73,7 @@ public class PowerUpManager : MonoBehaviour
     private readonly Queue<int> pendingDamage = new(); // damage gain of each level-up still waiting for its pick
     private float savedTimeScale = 1f;
     private bool keepSavedTimeScale;
+    private float lastChoiceEnd = -999f;  // real time the last card screen closed (level-up bursts)
 
     private void OnEnable()
     {
@@ -234,25 +237,28 @@ public class PowerUpManager : MonoBehaviour
         // applied after the pick: the bricks recolor with the new damage once the card screen is gone.
         pendingDamage.Enqueue(DamagePerLevel);
         pending++;
-        if (!IsChoosing) StartCoroutine(ChoiceLoop());
+        if (!IsChoosing) StartCoroutine(ChoiceLoop(Time.unscaledTime - lastChoiceEnd < burstWindow));
     }
 
     [ContextMenu("Debug: Trigger Level Up Choice")]
     private void DebugTrigger() => HandleLevelUp(0);
 
-    private IEnumerator ChoiceLoop()
+    // burst: this level-up came right after the last card screen. It is part of the same chain, so the slow-down is
+    // only a quick brake (the game is still easing back) and the cards open without the stillness before them.
+    private IEnumerator ChoiceLoop(bool burst = false)
     {
         IsChoosing = true;
         if (!keepSavedTimeScale) savedTimeScale = Time.timeScale > 0f ? Time.timeScale : 1f;
         keepSavedTimeScale = false;
 
         // Ease into slow motion, then a full stop. The HUD banner and the choice screen run on unscaled time.
+        float brake = burst ? slowDownTime * 0.25f : slowDownTime;
         float elapsed = 0f;
         float from = Time.timeScale > 0f ? Time.timeScale : savedTimeScale;
-        while (elapsed < slowDownTime)
+        while (elapsed < brake)
         {
             elapsed += Time.unscaledDeltaTime;
-            float k = Mathf.Clamp01(elapsed / slowDownTime);
+            float k = Mathf.Clamp01(elapsed / brake);
             Time.timeScale = Mathf.Lerp(from, 0f, k * k * (3f - 2f * k)); // smoothstep
             yield return null;
         }
@@ -260,7 +266,9 @@ public class PowerUpManager : MonoBehaviour
 
         while (pending > 0)
         {
-            yield return new WaitForSecondsRealtime(openDelay);
+            // Stillness before the first card of a chain only; the next cards of the chain follow at once.
+            if (!burst) yield return new WaitForSecondsRealtime(openDelay);
+            burst = true;
 
             pending--;
             // Dowries of earlier Cursed outcomes: this offer holds a card of at least that rarity / gets extra rerolls.
@@ -290,6 +298,7 @@ public class PowerUpManager : MonoBehaviour
                 while (!closed) yield return null;
             }
 
+            lastChoiceEnd = Time.unscaledTime;
             ApplyLevelDamage(pendingDamage.Count > 0 ? pendingDamage.Dequeue() : 0);
 
             // Toll (Cursed--): every level-up pushes the wall closer, once the game runs again.
@@ -322,7 +331,7 @@ public class PowerUpManager : MonoBehaviour
             // A new level-up came in during the ease: run the whole sequence again from the current speed.
             IsChoosing = false;
             keepSavedTimeScale = true; // the current speed is mid-ease, the real one is already saved
-            StartCoroutine(ChoiceLoop());
+            StartCoroutine(ChoiceLoop(true));
             yield break;
         }
 
