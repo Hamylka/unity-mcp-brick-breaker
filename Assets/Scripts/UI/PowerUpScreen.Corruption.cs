@@ -55,7 +55,9 @@ public partial class PowerUpScreen
     private const float InvBottom = 440f;     // from the bottom: odds, cost, buttons
     private const float InvStagger = 0.035f;
     private const float OddsBarWidth = 760f;
-    private const float NoiseRate = 9f;       // background noise redraws per second
+    private const float NoiseRate = 4f;       // background noise redraws per second (calm; faster during the virus)
+    private const float BgDipTime = 0.6f;     // a soft dim of the background field, down and back up
+    private const float BgTearTime = 0.25f;   // a rare tear fades out over this long
 
     private static readonly Color CorruptRed = new(1f, 0.16f, 0.29f);
     private static readonly Color CorruptCyan = new(0.2f, 0.95f, 1f);
@@ -577,37 +579,41 @@ public partial class PowerUpScreen
         }
     }
 
-    // The infected background: a blood-red field whose brightness steps instead of easing, a rolling band, scanlines
-    // drifting in steps, coarse noise strongest at the edges, now and then a horizontal tear.
+    // The infected background, kept calm so the cards read: a blood-red field that breathes slowly and dims softly now
+    // and then, a faint rolling band, faint drifting scanlines, sparse noise near the edges, a rare soft tear.
+    // It only gets restless with the virus of the sequence (level near 1).
     private void AnimateBackground(float dt, float time, float level)
     {
         if (backgroundGroup.alpha <= 0f) return;
 
-        float wave = 0.82f + 0.12f * Mathf.Sin(time * 2.3f) + 0.08f * Mathf.Sin(time * 7.7f) * level;
-        float stepped = Mathf.Round(wave * 6f) / 6f; // hard steps, like a failing tube
-        if (bgDropLeft > 0f) bgDropLeft -= dt;
-        else if (Random.value < dt * (0.6f + 2.5f * level)) bgDropLeft = Random.Range(0.03f, 0.08f);
-        if (bgDropLeft > 0f) stepped *= 0.55f;
-        field.color = new Color(stepped, stepped, stepped, 0.96f);
+        float breathe = 0.86f + 0.07f * Mathf.Sin(time * 1.1f) + 0.05f * (Mathf.PerlinNoise(time * 0.6f, 0.2f) - 0.5f);
+        if (bgDropLeft > 0f) bgDropLeft = Mathf.Max(0f, bgDropLeft - dt);
+        else if (Random.value < dt * (0.08f + 0.6f * level)) bgDropLeft = BgDipTime;
+        float dip = bgDropLeft > 0f ? Mathf.Sin(Mathf.PI * (1f - bgDropLeft / BgDipTime)) : 0f; // eases down and back up
+        float brightness = breathe * (1f - (0.12f + 0.2f * level) * dip);
+        field.color = new Color(brightness, brightness, brightness, 0.96f);
 
-        float bandY = Mathf.Lerp(1300f, -1300f, Mathf.Repeat(time / Mathf.Lerp(3.4f, 1.2f, level), 1f));
+        float bandY = Mathf.Lerp(1300f, -1300f, Mathf.Repeat(time / Mathf.Lerp(6f, 1.6f, level), 1f));
         bgBand.rectTransform.anchoredPosition = new Vector2(0f, bandY);
-        bgBand.color = WithAlpha(CorruptRed, 0.07f + 0.13f * level);
+        bgBand.color = WithAlpha(CorruptRed, 0.035f + 0.12f * level);
 
-        bgScan.color = WithAlpha(Color.white, 0.25f + 0.2f * level);
-        bgScan.uvRect = new Rect(0f, Mathf.Floor(time * 8f) * 0.25f, 1f, root.rect.height / 8f);
+        bgScan.color = WithAlpha(Color.white, 0.1f + 0.25f * level);
+        bgScan.uvRect = new Rect(0f, time * 0.15f, 1f, root.rect.height / 8f);
 
         bgNoiseTimer -= dt;
         if (bgNoiseTimer <= 0f)
         {
-            bgNoiseTimer = 1f / NoiseRate;
-            RefreshBackgroundNoise(0.02f + 0.05f * level);
+            bgNoiseTimer = 1f / Mathf.Lerp(NoiseRate, 12f, level);
+            RefreshBackgroundNoise(0.006f + 0.04f * level);
         }
-        bgNoise.color = WithAlpha(Color.white, 0.3f + 0.35f * level);
+        bgNoise.color = WithAlpha(Color.white, 0.18f + 0.45f * level);
 
         if (bgTearLeft > 0f)
         {
             bgTearLeft -= dt;
+            float fade = Mathf.Clamp01(bgTearLeft / BgTearTime);
+            for (int i = 0; i < bgTears.Length; i++)
+                bgTears[i].color = WithAlpha(i == 0 ? CorruptRed : CorruptCyan, (0.14f + 0.2f * level) * fade);
             if (bgTearLeft <= 0f) foreach (Image tear in bgTears) tear.enabled = false;
         }
         else
@@ -615,18 +621,16 @@ public partial class PowerUpScreen
             bgTearTimer -= dt;
             if (bgTearTimer <= 0f)
             {
-                bgTearTimer = Random.Range(0.5f, 2.2f) * Mathf.Lerp(1f, 0.3f, level);
-                bgTearLeft = 0.08f;
+                bgTearTimer = Random.Range(3f, 7f) * Mathf.Lerp(1f, 0.15f, level);
+                bgTearLeft = BgTearTime;
                 float y = Random.Range(-0.45f, 0.45f) * root.rect.height;
                 for (int i = 0; i < bgTears.Length; i++)
                 {
                     Image tear = bgTears[i];
                     tear.enabled = true;
-                    tear.color = WithAlpha(i == 0 ? CorruptRed : CorruptCyan, 0.35f);
-                    tear.rectTransform.anchoredPosition = new Vector2(Random.Range(-90f, 90f), y + i * Random.Range(6f, 16f));
-                    tear.rectTransform.sizeDelta = new Vector2(1200f, Random.Range(4f, 14f));
+                    tear.rectTransform.anchoredPosition = new Vector2(Random.Range(-40f, 40f), y + i * Random.Range(4f, 10f));
+                    tear.rectTransform.sizeDelta = new Vector2(1200f, Random.Range(3f, 8f));
                 }
-                if (Random.value < 0.35f) SoundManager.Play(Sfx.CountTick, Random.Range(0.4f, 0.6f), 0.15f);
             }
         }
     }
@@ -669,10 +673,10 @@ public partial class PowerUpScreen
         {
             // Thicker toward the edges so the cards in the middle stay readable.
             float edge = Mathf.Max(Mathf.Abs(x / (w - 1f) - 0.5f), Mathf.Abs(y / (h - 1f) - 0.5f)) * 2f;
-            float local = density * (0.05f + 2f * edge * edge * edge);
+            float local = density * 3f * Mathf.Max(0f, edge - 0.55f) / 0.45f; // none in the middle third of the screen
             float roll = Random.value;
-            bgNoisePixels[y * w + x] = roll < local * 0.2f ? new Color32(255, 255, 255, 120)
-                : roll < local ? new Color32(255, 30, 60, 110)
+            bgNoisePixels[y * w + x] = roll < local * 0.2f ? new Color32(255, 255, 255, 70)
+                : roll < local ? new Color32(255, 30, 60, 80)
                 : new Color32(0, 0, 0, 0);
         }
         bgNoiseTexture.SetPixels32(bgNoisePixels);
@@ -1966,19 +1970,19 @@ public partial class PowerUpScreen
         return texture;
     }
 
-    // A coarse blood-red radial field in hard bands (pixel art, not a smooth gradient): hot in the middle, near black at the edges.
+    // A soft blood-red radial glow: warm in the middle, near black at the edges (bilinear, so it stays smooth on any screen).
     private static Texture2D BuildFieldTexture()
     {
         const int w = 54, h = 96;
-        var texture = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
-        Color hot = new(0.24f, 0.02f, 0.06f), cold = new(0.025f, 0f, 0.012f);
+        var texture = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+        Color hot = new(0.2f, 0.015f, 0.05f), cold = new(0.025f, 0f, 0.012f);
         for (int y = 0; y < h; y++)
         for (int x = 0; x < w; x++)
         {
             float dx = (x / (w - 1f) - 0.5f) * 1.1f, dy = (y / (h - 1f) - 0.52f) * 1.25f;
             float d = Mathf.Clamp01(Mathf.Sqrt(dx * dx + dy * dy) * 1.5f);
-            float banded = Mathf.Floor((1f - d) * 6f) / 6f;
-            texture.SetPixel(x, y, Color.Lerp(cold, hot, banded * banded));
+            float k = Smooth01(1f - d);
+            texture.SetPixel(x, y, Color.Lerp(cold, hot, k * k));
         }
         texture.Apply(false);
         return texture;
