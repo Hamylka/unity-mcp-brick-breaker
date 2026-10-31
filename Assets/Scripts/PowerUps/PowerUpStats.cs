@@ -41,8 +41,11 @@ public static class PowerUpStats
     /// <summary>Extra balls every Multi-Ball pickup adds (Twin Fission).</summary>
     public static int ExtraMultiBalls { get; set; }
 
-    /// <summary>Duration factor of timed bonuses (Bonus Extender): Laser and Multi-Ball.</summary>
+    /// <summary>Duration factor of timed bonuses (Greed): Laser and Multi-Ball.</summary>
     public static float BonusDuration { get; set; } = 1f;
+
+    /// <summary>Bonus Extender: catching a bonus adds this fraction of their full duration to every other timed bonus still running (0.1 per pick).</summary>
+    public static float BonusExtendFraction { get; set; }
 
     /// <summary>Damage added per brick hit since the ball last touched the paddle (Rampage), as a fraction.</summary>
     public static float RampagePercent { get; set; }
@@ -184,6 +187,7 @@ public static class PowerUpStats
         LaserLanes = 1;
         ExtraMultiBalls = 0;
         BonusDuration = 1f;
+        BonusExtendFraction = 0f;
         BrakePicks = 0;
         LuckyOrbChance = 0f;
         WallBuffDuration = 1f;

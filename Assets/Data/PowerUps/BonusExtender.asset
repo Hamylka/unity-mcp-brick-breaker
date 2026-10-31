@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: BonusExtender
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Bonus Extender
-  description: Laser and Multi-Ball last 20% longer
+  description: Catching a bonus extends the other running bonuses by 10%
   rarity: 2
   icon: '#######
 

@@ -125,12 +125,38 @@ public class BonusDropper : MonoBehaviour
         NeonFx.Ring(at, definition.Color, 32, 6f);
         NeonFx.Burst(at, Color.Lerp(definition.Color, Color.white, 0.4f), 16, 3f, 0.08f, 0.4f);
 
+        ExtendRunningBonuses(definition, paddle);
+
         if (definition.Effect != null)
         {
             // Copy the list: effects such as multi-ball add balls while they run.
             definition.Effect.Apply(new BonusContext(paddle, new List<BallController>(BallController.Active)));
         }
         BonusCollected?.Invoke(definition, paddle);
+    }
+
+    // Bonus Extender: a catch extends every other timed bonus that is already running (before the new one starts, so a
+    // same-type pickup does nothing extra). The Laser and the Multi-Ball extras are the only timed bonuses.
+    private static void ExtendRunningBonuses(BonusDefinition caught, PaddleController paddle)
+    {
+        float fraction = PowerUpStats.BonusExtendFraction;
+        if (fraction <= 0f) return;
+
+        bool extended = false;
+        if (!(caught.Effect is LaserEffect) && paddle != null && paddle.TryGetComponent(out LaserCannon cannon))
+        {
+            cannon.Extend(cannon.TotalTime * fraction);
+            extended = true;
+        }
+        if (!(caught.Effect is MultiBallEffect))
+        {
+            foreach (TemporaryBall extra in FindObjectsByType<TemporaryBall>())
+            {
+                extra.Extend(extra.TotalTime * fraction);
+                extended = true;
+            }
+        }
+        if (extended) SoundManager.Play(Sfx.BonusPickup, 1.4f, 0.4f);
     }
 
     // True while an item of this bonus is already falling: a bonus never has two items going down at once.
