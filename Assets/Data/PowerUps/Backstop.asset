@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Backstop
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Backstop
-  description: +40% damage per back-wall bounce until the next brick hit
+  description: +60% damage per back-wall bounce until the next brick hit
   rarity: 3
   icon: '#######
 

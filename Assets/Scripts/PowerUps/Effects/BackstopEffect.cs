@@ -6,8 +6,8 @@ public class BackstopEffect : PowerUpEffect
 {
     public override bool IsOffensive => true;
 
-    [Tooltip("0.4 = +40% damage per back-wall bounce, per pick (the back wall is hit rarely).")]
-    [SerializeField, Min(0f)] private float percent = 0.4f;
+    [Tooltip("0.6 = +60% damage per back-wall bounce, per pick (the back wall is hit rarely).")]
+    [SerializeField, Min(0f)] private float percent = 0.6f;
 
     public override void Apply(PowerUpContext context) => PowerUpStats.BackstopPercent += percent;
 

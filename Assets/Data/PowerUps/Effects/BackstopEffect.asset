@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: edbc186428a6afe4ab1330bd91e599e7, type: 3}
   m_Name: BackstopEffect
   m_EditorClassIdentifier: Assembly-CSharp::BackstopEffect
-  percent: 0.4
+  percent: 0.6
