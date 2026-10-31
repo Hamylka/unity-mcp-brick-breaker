@@ -186,7 +186,20 @@ public class PowerUpManager : MonoBehaviour
     private static bool IsBlocked(PowerUpDefinition definition) =>
         PowerUpStats.BrittlePact && definition.Effect != null && (definition.Effect is ShieldPlusEffect || definition.Effect is PhoenixBallEffect);
 
-    private bool IsOpenOutcome(PowerUpDefinition definition) => definition != null && !IsMaxed(definition) && !IsBlocked(definition);
+    // Brittle Pact is never an outcome (corruption or dowry roll) once a card it would cancel is owned.
+    private bool CancelsOwnedCard(PowerUpDefinition definition)
+    {
+        if (definition.Effect is not BrittlePactEffect) return false;
+        foreach (var pair in stacks)
+        {
+            if (pair.Value > 0 && pair.Key.Effect != null && (pair.Key.Effect is ShieldPlusEffect || pair.Key.Effect is PhoenixBallEffect))
+                return true;
+        }
+        return false;
+    }
+
+    private bool IsOpenOutcome(PowerUpDefinition definition) =>
+        definition != null && !IsMaxed(definition) && !IsBlocked(definition) && !CancelsOwnedCard(definition);
 
     private bool HasOpenOutcome(List<PowerUpDefinition> pool) => pool.Exists(IsOpenOutcome);
 
