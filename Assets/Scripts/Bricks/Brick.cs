@@ -135,6 +135,10 @@ public class Brick : MonoBehaviour
     private static readonly Color ArmoredTint = new(0.72f, 0.84f, 1f);
     private static readonly Color HealerTint = new(0.3f, 1f, 0.45f);
 
+    /// <summary>Times a Healer brick has healed its neighbours (its icon pops on each one).</summary>
+    public int HealCasts { get; private set; }
+    public void NotifyHealCast() => HealCasts++;
+
     // Damage that comes from an area effect: an Armored brick ignores it (direct hits still land).
     private static bool IsAreaSource(DamageSource source) =>
         source == DamageSource.Shockwave || source == DamageSource.Chain || source == DamageSource.Volatile

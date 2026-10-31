@@ -2,7 +2,8 @@ using UnityEngine;
 
 /// <summary>
 /// Tiny built-in 5x7 pixel font, generated into a texture at runtime (no font asset needed).
-/// Contains A-Z, 0-9 and a few punctuation marks. Lowercase is drawn as uppercase.
+/// Contains A-Z, 0-9, a few punctuation marks and icon glyphs ('*' pip, '@' skull, '$' lock, '&' heal cross).
+/// Lowercase is drawn as uppercase.
 /// Add a glyph by adding one line to <see cref="Data"/>: the character, then 7 rows of 5 cells ('#' = pixel).
 /// </summary>
 public static class PixelFont
@@ -65,7 +66,11 @@ Z ##### ....# ...#. ..#.. .#... #.... #####
 > .#... ..#.. ...#. ....# ...#. ..#.. .#...
 < ...#. ..#.. .#... #.... .#... ..#.. ...#.
 # .#.#. ##### .#.#. .#.#. .#.#. ##### .#.#.
+$ .###. #...# #...# ##### ##.## ##.## #####
+& ..... ##### ##.## #...# ##.## ##### .....
 ";
+    // Icon glyphs (not text): '$' = padlock (Armored brick), '&' = medkit, a cross cut out of a square (Healer brick).
+    // A plain '+' next to the hits-left number read as "+2", hence the cut-out cross.
 
     private static Texture2D atlas;
     private static string characters;
