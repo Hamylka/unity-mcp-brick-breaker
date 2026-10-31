@@ -24,7 +24,7 @@ public class PowerUpManager : MonoBehaviour
     [Tooltip("How many times the cards can be rerolled on each level-up.")]
     [SerializeField, Min(0)] private int baseRerolls = 1;
     [Tooltip("Relative chance of each rarity: Common, Uncommon, Rare, Epic, Legendary.")]
-    [SerializeField] private float[] rarityWeights = { 55f, 25f, 11f, 6f, 3f };
+    [SerializeField] private float[] rarityWeights = { 44f, 30f, 16f, 7f, 3f };
     [Tooltip("Base ball damage every level-up gives for free, before any card.")]
     [SerializeField, Min(0)] private int passiveDamagePerLevel = 1;
     [Tooltip("Seconds the game takes to slow down to a full stop when a level is gained.")]
