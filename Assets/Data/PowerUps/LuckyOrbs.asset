@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: LuckyOrbs
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Lucky Orbs
-  description: Orbs may pay double XP
+  description: 8% chance per orb to pay double XP
   rarity: 0
   icon: '..###..
 

@@ -4,8 +4,8 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "BuffLastingEffect", menuName = "BrickBreaker/Effects/Buff Lasting")]
 public class BuffLastingEffect : PowerUpEffect
 {
-    [Tooltip("0.1 = +10% of the buff's base duration per pick (additive).")]
-    [SerializeField, Min(0f)] private float percent = 0.1f;
+    [Tooltip("0.25 = +25% of the buff's base duration per pick (additive).")]
+    [SerializeField, Min(0f)] private float percent = 0.25f;
 
     public override void Apply(PowerUpContext context) => PowerUpStats.WallBuffDuration += percent;
 

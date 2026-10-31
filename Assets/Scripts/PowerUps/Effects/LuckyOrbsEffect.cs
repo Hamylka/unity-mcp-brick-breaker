@@ -4,8 +4,8 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "LuckyOrbsEffect", menuName = "BrickBreaker/Effects/Lucky Orbs")]
 public class LuckyOrbsEffect : PowerUpEffect
 {
-    [Tooltip("0.02 = +2% chance per pick that an orb pays double.")]
-    [SerializeField, Range(0f, 0.3f)] private float chance = 0.02f;
+    [Tooltip("0.08 = +8% chance per pick that an orb pays double.")]
+    [SerializeField, Range(0f, 0.3f)] private float chance = 0.08f;
 
     public override void Apply(PowerUpContext context) =>
         PowerUpStats.LuckyOrbChance = Mathf.Min(PowerUpStats.MaxLuckyOrbChance, PowerUpStats.LuckyOrbChance + chance);

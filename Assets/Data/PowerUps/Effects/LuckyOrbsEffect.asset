@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed6a75d461273181c75d3fe5f8f1d2d5, type: 3}
   m_Name: LuckyOrbsEffect
   m_EditorClassIdentifier: Assembly-CSharp::LuckyOrbsEffect
-  chance: 0.02
+  chance: 0.08

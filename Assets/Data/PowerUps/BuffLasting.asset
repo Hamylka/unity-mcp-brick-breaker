@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: BuffLasting
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Buff Lasting
-  description: Wall buffs last 10% longer
+  description: Wall buffs last 25% longer
   rarity: 0
   icon: '#######
 

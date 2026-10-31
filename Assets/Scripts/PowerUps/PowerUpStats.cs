@@ -75,32 +75,32 @@ public static class PowerUpStats
 
     /// <summary>Brake Pads picks: the wall waits longer between steps (see <see cref="WallStepFactor"/>).</summary>
     public static int BrakePicks { get; set; }
-    private const float BrakeMaxGain = 0.5f;  // the wall never waits more than +50% longer
-    private const float BrakeRate = 0.96f;    // each pick adds 4% less than the one before (the first pick is +2%)
+    private const float BrakeMaxGain = 0.5f;   // the wall never waits more than +50% longer
+    private const float BrakePerPick = 0.08f;  // each pick adds 8% (the cap is reached at 7 picks)
 
-    /// <summary>Multiplier of the wall step interval: +2% for the first pick, diminishing toward +50%.</summary>
+    /// <summary>Multiplier of the wall step interval: +8% per pick, up to +50%.</summary>
     public static float WallStepFactor => WallStepFactorFor(BrakePicks);
-    public static float WallStepFactorFor(int picks) => 1f + BrakeMaxGain * (1f - Mathf.Pow(BrakeRate, picks));
+    public static float WallStepFactorFor(int picks) => 1f + Mathf.Min(BrakeMaxGain, BrakePerPick * picks);
 
     /// <summary>Chance, 0-1, that an XP orb pays double (Lucky Orbs). Capped by <see cref="MaxLuckyOrbChance"/>.</summary>
     public static float LuckyOrbChance { get; set; }
-    public const float MaxLuckyOrbChance = 0.30f;
+    public const float MaxLuckyOrbChance = 0.40f;
 
     /// <summary>Duration factor of wall buffs, 2x damage and Phase (Buff Lasting). Additive per pick.</summary>
     public static float WallBuffDuration { get; set; } = 1f;
 
     /// <summary>Zone Beacon picks: wall buff zones come sooner and are longer.</summary>
     public static int ZoneBeaconPicks { get; set; }
-    private const float ZoneIntervalFloor = 0.45f;  // the wait between zones never drops under 45% (9 s of 20 s)
-    private const float ZoneIntervalRate = 0.9455f; // the first pick is 3% sooner, each next one gains less
-    private const float ZoneLengthPerPick = 0.04f;
+    private const float ZoneIntervalFloor = 0.4f;   // the wait between zones never drops under 40% (8 s of 20 s)
+    private const float ZoneIntervalRate = 0.92f;   // each pick makes the wait 8% shorter (compounding)
+    private const float ZoneLengthPerPick = 0.10f;
     private const float ZoneLengthMax = 2f;
 
     /// <summary>Multiplier of the wait before a wall buff zone appears.</summary>
     public static float ZoneIntervalFactor => ZoneIntervalFactorFor(ZoneBeaconPicks);
-    public static float ZoneIntervalFactorFor(int picks) => ZoneIntervalFloor + (1f - ZoneIntervalFloor) * Mathf.Pow(ZoneIntervalRate, picks);
+    public static float ZoneIntervalFactorFor(int picks) => Mathf.Max(ZoneIntervalFloor, Mathf.Pow(ZoneIntervalRate, picks));
 
-    /// <summary>Multiplier of the length of a wall buff zone along the wall (+4% per pick, at most x2).</summary>
+    /// <summary>Multiplier of the length of a wall buff zone along the wall (+10% per pick, at most x2).</summary>
     public static float ZoneLengthFactor => ZoneLengthFactorFor(ZoneBeaconPicks);
     public static float ZoneLengthFactorFor(int picks) => Mathf.Min(ZoneLengthMax, 1f + ZoneLengthPerPick * picks);
 

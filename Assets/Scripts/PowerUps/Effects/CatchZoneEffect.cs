@@ -4,8 +4,8 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "CatchZoneEffect", menuName = "BrickBreaker/Effects/Catch Zone")]
 public class CatchZoneEffect : PowerUpEffect
 {
-    [Tooltip("0.15 = 15% wider catch area per pick.")]
-    [SerializeField, Min(0f)] private float percent = 0.15f;
+    [Tooltip("0.3 = 30% wider catch area per pick.")]
+    [SerializeField, Min(0f)] private float percent = 0.3f;
 
     public override void Apply(PowerUpContext context) => PowerUpStats.CatchZoneScale *= 1f + percent;
 

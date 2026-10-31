@@ -4,8 +4,8 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "SlowFallEffect", menuName = "BrickBreaker/Effects/Slow Fall")]
 public class SlowFallEffect : PowerUpEffect
 {
-    [Tooltip("0.15 = 15% slower per pick.")]
-    [SerializeField, Range(-1f, 0.9f)] private float percent = 0.15f;
+    [Tooltip("0.3 = 30% slower per pick.")]
+    [SerializeField, Range(-1f, 0.9f)] private float percent = 0.3f;
 
     // A negative percent makes them fall faster (Leaden Bonuses, Cursed), never more than MaxBonusFallSpeed.
     public override void Apply(PowerUpContext context) =>

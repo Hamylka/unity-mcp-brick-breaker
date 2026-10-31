@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: BrakePads
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Brake Pads
-  description: Wall steps are a little slower
+  description: Wall steps are 8% slower
   rarity: 0
   icon: '.##.##.
 

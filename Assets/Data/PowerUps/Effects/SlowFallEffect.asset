@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6279a54eedc36cc4198d043da2ce7092, type: 3}
   m_Name: SlowFallEffect
   m_EditorClassIdentifier: Assembly-CSharp::SlowFallEffect
-  percent: 0.15
+  percent: 0.3
