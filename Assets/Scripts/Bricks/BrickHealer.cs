@@ -56,6 +56,7 @@ public class BrickHealer : MonoBehaviour
         }
         if (healed == 0) return;
 
+        brick.NotifyHealCast();
         brick.Pulse(HealColor * 1.6f, 0.3f);
         NeonFx.Ring(origin, HealColor, 14, 2.5f, 0.07f, 0.3f);
         SoundManager.Play(Sfx.ZoneSpawn, 1.4f); // placeholder cue: a soft bell
