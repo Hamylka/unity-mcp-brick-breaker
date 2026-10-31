@@ -781,7 +781,6 @@ public partial class PowerUpScreen
         capText = corruptResult.SourceRemoved
             ? $"{name} IS REMOVED (1 > 0)"
             : $"LOSE 1 LEVEL OF {name} ({corruptResult.LevelBefore} > {corruptResult.LevelAfter})";
-        capText += "\nTHEN BACK TO YOUR LEVEL-UP PICK";
 
         phase = Phase.Corrupting;
         brackets.gameObject.SetActive(false);
@@ -1837,7 +1836,7 @@ public partial class PowerUpScreen
         stamp.enabled = false;
 
         capNote = NewText("CapNote", root, "", 3f, Color.white, PixelText.Align.Center);
-        Place(capNote.rectTransform, Vector2.zero, new Vector2(0f, cardCenterY + 10f - (cardHeight * 0.5f) * CorruptScale - 62f), new Vector2(960f, 70f)); // the level lost, then a reminder of the pick
+        Place(capNote.rectTransform, Vector2.zero, new Vector2(0f, cardCenterY + 10f - (cardHeight * 0.5f) * CorruptScale - 62f), new Vector2(960f, 70f)); // the level lost
         capNote.enabled = false;
 
         BuildButton(root, "RevealConfirm", "CONFIRM", new Vector2(0f, buttonY - 150f), out revealButton, out revealImage, out revealLabel);
