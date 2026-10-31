@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: LaserFocus
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Laser Focus
-  description: Laser fires 20% faster
+  description: Laser fires one more parallel bolt
   rarity: 2
   icon: '...#...
 
@@ -29,4 +29,4 @@ MonoBehaviour:
 
     ...#...'
   maxStacks: 0
-  effect: {fileID: 11400000, guid: f4cbccd367627964d988a56b576ba71e, type: 2}
+  effect: {fileID: 11400000, guid: 8d2f5a6e0c3b49718e4a1d7c9b06f352, type: 2}

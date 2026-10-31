@@ -112,6 +112,14 @@ public class LaserSight
         }
     }
 
+    /// <summary>Hides the guide (a lane that is not in use).</summary>
+    public void Hide()
+    {
+        beam.enabled = false;
+        SetCornersVisible(false);
+        lastTarget = null;
+    }
+
     public void Destroy()
     {
         if (root != null) Object.Destroy(root);

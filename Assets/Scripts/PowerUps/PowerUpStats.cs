@@ -35,6 +35,9 @@ public static class PowerUpStats
     /// <summary>Laser fire-rate factor (Laser Focus, Laser Frenzy; picks add up linearly). 1.2 = a shot every 1/1.2 of the base interval.</summary>
     public static float LaserFireRate { get; set; } = 1f;
 
+    /// <summary>Parallel bolt lanes of the Laser (Laser Focus adds one per pick, no cap). 1 = the single middle bolt.</summary>
+    public static int LaserLanes { get; set; } = 1;
+
     /// <summary>Extra balls every Multi-Ball pickup adds (Twin Fission).</summary>
     public static int ExtraMultiBalls { get; set; }
 
@@ -178,6 +181,7 @@ public static class PowerUpStats
         ExecutionerBonus = 0f;
         ShieldExtraCharges = 0;
         LaserFireRate = 1f;
+        LaserLanes = 1;
         ExtraMultiBalls = 0;
         BonusDuration = 1f;
         BrakePicks = 0;

@@ -1,6 +1,6 @@
 using UnityEngine;
 
-/// <summary>The Laser fires faster. Picks add up linearly on the base fire rate (+20%, +40%, +60%...).</summary>
+/// <summary>The Laser fires faster. Picks add up linearly on the base fire rate. Used by Laser Frenzy (Exquisite); Laser Focus now adds lanes (<see cref="LaserLanesEffect"/>).</summary>
 [CreateAssetMenu(fileName = "LaserFocusEffect", menuName = "BrickBreaker/Effects/Laser Focus")]
 public class LaserFocusEffect : PowerUpEffect
 {
