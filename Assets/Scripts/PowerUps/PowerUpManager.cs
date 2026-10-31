@@ -245,7 +245,11 @@ public class PowerUpManager : MonoBehaviour
                     Corrupt = Corrupt,
                     Grant = GrantOutcome
                 };
-                screen.Show(choices, GetStacks, Apply, () => closed = true, rerolls, () =>
+                screen.Show(choices, GetStacks, Apply, () =>
+                {
+                    closed = true;
+                    PowerUpStats.ReleasePendingCorruptionCharges(); // Glitch Core's charge arrives once the screen is gone
+                }, rerolls, () =>
                 {
                     List<PowerUpDefinition> rerolled = Roll(ChoiceCount);
                     Offered?.Invoke(rerolled, true);
