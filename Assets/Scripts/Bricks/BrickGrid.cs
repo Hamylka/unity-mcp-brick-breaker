@@ -105,6 +105,18 @@ public class BrickGrid : MonoBehaviour
     [Tooltip("\"Difficulty increased\" fires when the window max has grown by this factor since the last notice.")]
     [SerializeField, Min(1.01f)] private float noticeGrowth = 1.75f;
 
+    [Header("Late ramp (after the first minutes)")]
+    [Tooltip("Run time (s) after which the late ramp starts. Before it, nothing changes.")]
+    [SerializeField, Min(0f)] private float lateRampStart = 300f;
+    [Tooltip("Extra hits on the toughest brick's target per minute past the start (linear part).")]
+    [SerializeField, Min(0f)] private float lateHitsPerMinute = 6f;
+    [Tooltip("Extra hits per minute squared past the start (the ramp keeps accelerating).")]
+    [SerializeField, Min(0f)] private float lateHitsAccel = 1.5f;
+    [Tooltip("The wall step interval shrinks to 1 / (1 + this x minutes past the start).")]
+    [SerializeField, Min(0f)] private float lateStepSpeedUp = 0.25f;
+    [Tooltip("The late step speed-up never goes below this share of the interval.")]
+    [SerializeField, Range(0.2f, 1f)] private float lateStepFloor = 0.4f;
+
     [Header("HP Window (follows the kill rate)")]
     [Tooltip("Bricks the player should destroy per second (about the rate rows are added). Faster than this means the player has more power than the ball damage shows (splash, cleave, orbs), so new bricks get tougher.")]
     [SerializeField, Min(0.1f)] private float targetKillsPerSecond = 1.5f;
@@ -165,7 +177,15 @@ public class BrickGrid : MonoBehaviour
     /// <summary>Smoothed base damage of the ball, the input of the HP window.</summary>
     public float SmoothedDamage => smoothedDamage;
     /// <summary>Hits the toughest brick spawning now is aimed at, <c>5 + 1.4 x minutes</c>.</summary>
-    public float TargetHits => targetHitsStart + targetHitsPerMinute * runTime / 60f;
+    public float TargetHits => targetHitsStart + targetHitsPerMinute * runTime / 60f + LateHits;
+
+    /// <summary>Minutes of play past <c>Late Ramp Start</c> (0 before it).</summary>
+    public float LateMinutes => Mathf.Max(0f, runTime - lateRampStart) / 60f;
+    /// <summary>Extra target hits from the late ramp: linear plus quadratic, so it keeps accelerating.</summary>
+    public float LateHits => lateHitsPerMinute * LateMinutes + lateHitsAccel * LateMinutes * LateMinutes;
+    /// <summary>Multiplier on the step interval from the late ramp (1 before it, down to <c>Late Step Floor</c>).</summary>
+    public float LateStepFactor => Mathf.Max(lateStepFloor, 1f / (1f + lateStepSpeedUp * LateMinutes));
+    private float StepWait => stepInterval * PowerUpStats.WallStepFactor * LateStepFactor;
     /// <summary>Bricks destroyed per second, averaged over the last few seconds of play.</summary>
     public float KillRate => killAccum / killRateSmoothing;
     /// <summary>Multiplier (1 or more) on the HP window that tracks the damage the ball hit does not show; rises while the player kills faster than the target.</summary>
@@ -204,7 +224,7 @@ public class BrickGrid : MonoBehaviour
     /// <summary>World distance the wall moves on one step.</summary>
     public float StepDistance => stepInRows * cellSize;
     /// <summary>0 right after a step, 1 when the next one starts (the timer only runs while a ball is in play).</summary>
-    public float StepProgress => Mathf.Clamp01(stepTimer / Mathf.Max(0.01f, stepInterval * PowerUpStats.WallStepFactor));
+    public float StepProgress => Mathf.Clamp01(stepTimer / Mathf.Max(0.01f, StepWait));
     /// <summary>Wall steps queued by Toll that will run without waiting for the timer.</summary>
     public int QueuedSteps => extraSteps;
 
@@ -356,7 +376,7 @@ public class BrickGrid : MonoBehaviour
 
         stepTimer += dt;
         bool tolled = extraSteps > 0; // Toll: a queued step goes right away and leaves the step timer alone
-        if (tolled || stepTimer >= stepInterval * PowerUpStats.WallStepFactor)
+        if (tolled || stepTimer >= StepWait)
         {
             if (tolled) extraSteps--;
             else stepTimer = 0f;
@@ -555,6 +575,17 @@ public class BrickGrid : MonoBehaviour
         killAccum += 1f;
         BrickDestroyed?.Invoke(brick);
         if (RemainingBricks > 0) return;
+
+        // Safety net: the counter must agree with the bricks really alive, or a "clear" fires with bricks left.
+        int alive = 0;
+        foreach (Brick b in GetComponentsInChildren<Brick>())
+            if (b.IsAlive) alive++;
+        if (alive > 0)
+        {
+            Debug.LogWarning($"BrickGrid: brick counter drifted (0 vs {alive} alive), resynced.", this);
+            RemainingBricks = alive;
+            return;
+        }
 
         BricksCleared?.Invoke();
 
