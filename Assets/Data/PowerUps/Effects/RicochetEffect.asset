@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7e1b36440e9e27a4482cda6cca4c6fff, type: 3}
   m_Name: RicochetEffect
   m_EditorClassIdentifier: Assembly-CSharp::RicochetEffect
-  percent: 0.1
+  percent: 0.2

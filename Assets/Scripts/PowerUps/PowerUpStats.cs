@@ -39,8 +39,14 @@ public static class PowerUpStats
     /// <summary>Damage added per brick hit since the ball last touched the paddle (Rampage), as a fraction.</summary>
     public static float RampagePercent { get; set; }
 
-    /// <summary>Damage added per wall bounce since the ball's last brick hit (Ricochet), as a fraction.</summary>
+    /// <summary>Damage added per side-wall bounce since the ball's last brick hit (Ricochet), as a fraction.</summary>
     public static float RicochetPercent { get; set; }
+
+    /// <summary>Damage added per back-wall bounce since the ball's last brick hit (Backstop), as a fraction.</summary>
+    public static float BackstopPercent { get; set; }
+
+    /// <summary>Most side or back bounces that count toward one hit, so a ball looping with no bricks in reach cannot store a huge hit.</summary>
+    public const int MaxCountedBounces = 6;
 
     /// <summary>Echo picks: every <see cref="EchoInterval"/> ball hits repeat once for free.</summary>
     public static int EchoPicks { get; set; }
@@ -157,6 +163,7 @@ public static class PowerUpStats
         PhoenixReady = false;
         RampagePercent = 0f;
         RicochetPercent = 0f;
+        BackstopPercent = 0f;
         EchoPicks = 0;
         EchoProcs = EchoRepeats = EchoBallKills = EchoJumps = EchoNoTarget = EchoCarried = 0;
         OverkillPercent = 0f;
@@ -180,12 +187,14 @@ public static class PowerUpStats
     }
 
     /// <summary>
-    /// Damage of this ball's next hit on <paramref name="brick"/>: the ball's damage with Rampage, Ricochet and
-    /// Rampage and Ricochet counted (rounded up). Executioner is applied later, in <see cref="Brick.TakeHit"/>.
+    /// Damage of this ball's next hit on <paramref name="brick"/>: the ball's damage with Rampage, Ricochet and Backstop
+    /// counted (rounded up). Executioner is applied later, in <see cref="Brick.TakeHit"/>.
     /// </summary>
     public static int BallHitDamage(BallController ball, Brick brick)
     {
-        float factor = 1f + RampagePercent * ball.HitsSincePaddle + RicochetPercent * ball.WallBounces;
+        float factor = 1f + RampagePercent * ball.HitsSincePaddle
+            + RicochetPercent * Mathf.Min(ball.SideBounces, MaxCountedBounces)
+            + BackstopPercent * Mathf.Min(ball.BackBounces, MaxCountedBounces);
         return factor > 1f ? Mathf.CeilToInt(ball.Damage * factor - 0.001f) : ball.Damage;
     }
 
