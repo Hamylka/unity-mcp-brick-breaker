@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8e7e70a5ae08d354aa01413a7879ac95, type: 3}
   m_Name: ShieldPlusEffect
   m_EditorClassIdentifier: Assembly-CSharp::ShieldPlusEffect
-  bounces: 1
+  extraCharges: 2

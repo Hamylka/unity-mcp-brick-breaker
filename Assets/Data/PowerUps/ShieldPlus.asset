@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: ShieldPlus
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Shield Plus
-  description: The shield absorbs one more bounce
+  description: The shield holds up to 5 charges instead of 3
   rarity: 4
   icon: '#######
 

@@ -1,8 +1,8 @@
 using UnityEngine;
 
 /// <summary>
-/// Rare protection: raises a barrier behind the paddle that bounces a falling ball back once, then breaks.
-/// Only one shield barrier exists at a time; another one caught while it is up adds bounces to it.
+/// Rare protection: raises a barrier behind the paddle that bounces a falling ball back, using one charge per bounce.
+/// Only one barrier exists at a time; each Shield caught while it is up adds a charge (max 3, 5 with Shield Plus).
 /// </summary>
 [CreateAssetMenu(fileName = "ShieldEffect", menuName = "BrickBreaker/Bonus Effects/Shield")]
 public class ShieldEffect : BonusEffect
@@ -21,8 +21,8 @@ public class ShieldEffect : BonusEffect
     {
         if (ShieldBarrier.Current != null)
         {
-            // Caught while a shield is up: it gains a fresh shield's worth of bounces.
-            ShieldBarrier.Current.AddBounces(1 + PowerUpStats.ShieldExtraBounces);
+            // Caught while a shield is up: one more charge, up to the maximum (3, or 5 with Shield Plus).
+            ShieldBarrier.Current.AddCharge();
             SoundManager.Play(Sfx.ShieldUp);
             return;
         }
