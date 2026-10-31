@@ -257,6 +257,34 @@ public class AreaDamage : MonoBehaviour
     }
 
     /// <summary>
+    /// Paddle Cannon: a bolt that killed its target sets off a small blast on the 4 direct neighbours (the Shockwave
+    /// reach, much smaller than Volatile's 3x3). Armored bricks ignore it, and it does not trigger area effects again.
+    /// </summary>
+    public void CannonBlast(Vector3 origin, float damage)
+    {
+        if (applying || damage <= 0f || grid == null) return;
+        applying = true;
+        try
+        {
+            using var tag = DamageTag.Begin(DamageSource.CannonBlast);
+            Collect(origin, neighbourRadius, null);
+            NeonFx.Flash(origin, BlastColor * 1.4f, 0.8f, 0.12f);
+            NeonFx.Ring(origin, BlastColor, 18, 3f, 0.08f, 0.25f);
+            NeonFx.Burst(origin, BlastColor, 8, 2.5f, 0.08f, 0.3f);
+            SoundManager.Play(Sfx.VolatileBlast, Random.Range(1.35f, 1.5f), 0.45f);
+            foreach (Brick neighbour in targets)
+            {
+                neighbour.Pulse(BlastColor * 1.6f, 0.25f, 0.03f);
+                DealFraction(neighbour, damage);
+            }
+        }
+        finally
+        {
+            applying = false;
+        }
+    }
+
+    /// <summary>
     /// Overkill Spill: damage beyond what a killed brick had left carries on into the nearest brick behind it, in the
     /// same column. Like the other secondary damage it does not trigger area effects again.
     /// </summary>

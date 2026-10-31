@@ -13,6 +13,7 @@ public static class PaddleCannon
     private static readonly int[] Lanes = { 1, 2, 3, 5, 7 };
     private static readonly float[] DamageFactors = { 1f, 1f, 1.25f, 1.25f, 1.5f };
     private const float DamageShare = 0.5f;
+    private const float BlastShare = 0.5f; // the kill blast deals this share of the bolt's damage to each neighbour
     private const float MaxRange = 40f;
     private static readonly Color BoltColor = new(0.45f, 0.95f, 1f);
     private static readonly RaycastHit[] hits = new RaycastHit[32];
@@ -66,7 +67,15 @@ public static class PaddleCannon
         int whole = Mathf.FloorToInt(brick.DamageCarry + 0.001f);
         if (whole <= 0) return;
         brick.DamageCarry = Mathf.Max(0f, brick.DamageCarry - whole);
-        using var tag = DamageTag.Begin(DamageSource.PaddleCannon);
-        target.TakeDamage(whole);
+        Vector3 at = brick.transform.position;
+        using (DamageTag.Begin(DamageSource.PaddleCannon))
+            target.TakeDamage(whole);
+
+        // A bolt that kills sets off a small blast on the neighbours (tagged and handled on its own, outside the bolt's tag).
+        if (!brick.IsAlive)
+        {
+            AreaDamage area = Object.FindAnyObjectByType<AreaDamage>();
+            if (area != null) area.CannonBlast(at, damage * BlastShare);
+        }
     }
 }

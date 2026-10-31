@@ -13,7 +13,8 @@ public enum DamageSource
     Echo,
     OverkillSpill,
     Satellite,
-    PaddleCannon
+    PaddleCannon,
+    CannonBlast
 }
 
 /// <summary>
