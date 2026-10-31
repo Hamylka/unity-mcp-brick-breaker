@@ -586,9 +586,9 @@ public partial class PowerUpScreen
     private void AnimateBackground(float dt, float time, float level)
     {
         if (backgroundGroup.alpha <= 0f) return;
-        if (backdrop == CorruptionBackdrop.Veins)
+        if (backdrop == CorruptionBackdrop.Cyber)
         {
-            AnimateVeins(dt, time, level);
+            AnimateCyber(dt, time, level);
             return;
         }
 
@@ -1634,7 +1634,7 @@ public partial class PowerUpScreen
             tear.enabled = false;
             bgTears[i] = tear;
         }
-        BuildVeinsLayer(background);
+        BuildCyberLayer(background);
         ApplyBackdrop();
 
         // Title, outside the fading inventory group: it turns into CORRUPTING... during the sequence.
