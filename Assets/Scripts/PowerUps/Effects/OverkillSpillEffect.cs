@@ -4,7 +4,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "OverkillSpillEffect", menuName = "BrickBreaker/Effects/Overkill Spill")]
 public class OverkillSpillEffect : PowerUpEffect
 {
-    public override bool IsOffensive => true;
+    public override bool IsOffensive => false; // out of the pool and not a damage card (roadmap 7)
 
     public override void Apply(PowerUpContext context)
     {

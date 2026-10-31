@@ -1,6 +1,6 @@
 using UnityEngine;
 
-/// <summary>Ball hits deal extra damage to bricks at 25% HP or less (picks add up).</summary>
+/// <summary>Every damage source deals extra damage to bricks at 40% HP or less (picks add up).</summary>
 [CreateAssetMenu(fileName = "ExecutionerEffect", menuName = "BrickBreaker/Effects/Executioner")]
 public class ExecutionerEffect : PowerUpEffect
 {
@@ -11,5 +11,5 @@ public class ExecutionerEffect : PowerUpEffect
 
     public override void Apply(PowerUpContext context) => PowerUpStats.ExecutionerBonus += percent;
 
-    public override string Describe(int stacks) => $"+{Mathf.RoundToInt(percent * stacks * 100f)}% DAMAGE AT 25% HP OR LESS";
+    public override string Describe(int stacks) => $"+{Mathf.RoundToInt(percent * stacks * 100f)}% DAMAGE AT 40% HP OR LESS";
 }

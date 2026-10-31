@@ -65,7 +65,8 @@ public class BrickStack : BallSurface
         int hpBefore = bottom.HitPoints;
         int damage = PowerUpStats.BallHitDamage(ball, bottom);
         TakeDamage(damage);
-        PowerUpStats.AfterBallHit(ball, bottom, damage, hpBefore);
+        // Overkill and Echo carry what the brick really took, Executioner included.
+        PowerUpStats.AfterBallHit(ball, bottom, PowerUpStats.WithExecutioner(bottom, damage, hpBefore), hpBefore);
     }
 
     /// <summary>Damages the bottom brick of the stack (ball hits, lasers, other abilities).</summary>
