@@ -103,7 +103,7 @@ Single source of truth for what is left. Update it at the end of every task (tic
   - ~~**Multi-Ball** drop weight a little lower (5 to 4, `Bonus_MultiBall`); re-check its uptime in the profiler afterwards.~~ **Done 2026-11-01 (branch `fix/multiball-weight`); uptime still to re-check in the profiler.**
   - ~~**Shockwave nerf:** +20% splash per pick (was 25%, so 80% at the cap of 4).~~ **Done 2026-11-01 (branch `fix/shockwave-nerf`).**
   - ~~**Common weight 35 → weights 44 / 30 / 16 / 7 / 3** (was 55 / 25 / 11 / 6 / 3; rarity weights in `PowerUpManager`, code default and `Game.unity`). Re-check how often Rare and above show up, the power curve gets faster.~~ **Done 2026-11-01 (branch `fix/common-weight`); re-check in the profiler.**
-  - **Merge Slow Fall and Catch Zone** into one card (name and numbers to decide; one effect with `Remove`, the old assets kept out of the pool; keep corruption working on the merged card).
+  - ~~**Merge Slow Fall and Catch Zone** into one card.~~ **Done 2026-11-01 (branch `feature/merge-slowfall-catchzone`): Safe Hands, Uncommon, max 3, fall -30% and catch +30% per pick.**
   - **Merge Buff Lasting and Zone Beacon** into one "Zone" card (longer zones, longer buffs, sooner respawn; one effect with `Remove`, old assets out of the pool; numbers to decide, same rule as the Slow Fall / Catch Zone merge).
   - **Wide Paddle** +25% width per pick (check the current value and cap on the asset).
   - **Backstop** +60% per back-wall bounce per pick (was 40%).
@@ -832,3 +832,8 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Done (branch `fix/common-weight`):** second rebalance, fifth task. Rarity weights are now 44 / 30 / 16 / 7 / 3 (sum 100, so they read as percentages when every rarity is present; was 55 / 25 / 11 / 6 / 3), in the `PowerUpManager` code default and in `Game.unity`. The user picked these values instead of the plain "Common 35" of the roadmap. Section 4 synced.
 - **Checked:** edits only, not compiled in Unity nor played.
 - **Open issues:** re-check in the profiler how often Rare and above show up and that the power curve does not get too fast. Next: merge Slow Fall and Catch Zone.
+
+### [2026-11-01] - Safe Hands replaces Slow Fall and Catch Zone (by Claude)
+- **Done (branch `feature/merge-slowfall-catchzone`):** second rebalance, sixth task. New card **Safe Hands** (Uncommon, max 3): each pick makes bonus items fall 30% slower (compounding, capped by `MaxBonusFallSpeed`) and the paddle's catch area 30% wider (compounding). One `SafeHandsEffect` (`fallPercent`, `catchPercent`) with `Remove` (undoes both), so it is corruptible. Pause text "BONUSES FALL 66% SLOWER, CATCH AREA +120%" at 3 picks. Icon: a down arrow landing on a paddle (first draft). In `Game.unity` the pool swaps Slow Fall and Catch Zone for Safe Hands (28 > 27 cards). The Slow Fall and Catch Zone assets and `CatchZoneEffect` are kept; `SlowFallEffect` is still used by Leaden Bonuses (Cursed).
+- **Checked:** compiles clean in Unity, no console errors; the card loads, the effect describes itself. The card-to-effect link came up empty after the first import and was relinked from the editor (same as the Common cards).
+- **Open issues:** not played. Check the card text fits (name 3, description 2) and that the pool in the scene shows 27 cards. Re-check the pick rate in the profiler. Next: merge Buff Lasting and Zone Beacon.
