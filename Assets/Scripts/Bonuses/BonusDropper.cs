@@ -85,10 +85,11 @@ public class BonusDropper : MonoBehaviour
     // A cleared wall is an event: a Multi-Ball falls from the back of the field (the favourite moment of the runs).
     private void HandleBricksCleared()
     {
-        if (itemPrefab == null || bonuses == null || MultiBallCharge.Pending) return; // no Multi-Ball while a split is pending
+        if (itemPrefab == null || bonuses == null) return;
         foreach (BonusDefinition bonus in bonuses)
         {
             if (bonus == null || !(bonus.Effect is MultiBallEffect)) continue;
+            if (!IsDroppable(bonus)) return; // split pending, extras flying or one already falling
             var position = new Vector3(0f, itemPrefab.transform.position.y, 6f);
             BonusItem item = Instantiate(itemPrefab, position, Quaternion.identity);
             item.Initialize(bonus);
@@ -124,10 +125,6 @@ public class BonusDropper : MonoBehaviour
         NeonFx.Ring(at, definition.Color, 32, 6f);
         NeonFx.Burst(at, Color.Lerp(definition.Color, Color.white, 0.4f), 16, 3f, 0.08f, 0.4f);
 
-        // Multi-Ball is gated: grabbing one deletes every other Multi-Ball item still falling.
-        if (definition.Effect is MultiBallEffect && !MultiBallCharge.Pending)
-            RemoveFallingMultiBalls(item);
-
         if (definition.Effect != null)
         {
             // Copy the list: effects such as multi-ball add balls while they run.
@@ -136,15 +133,12 @@ public class BonusDropper : MonoBehaviour
         BonusCollected?.Invoke(definition, paddle);
     }
 
-    private static void RemoveFallingMultiBalls(BonusItem keep)
+    // True while an item of this bonus is already falling: a bonus never has two items going down at once.
+    private static bool IsFalling(BonusDefinition bonus)
     {
-        foreach (BonusItem other in FindObjectsByType<BonusItem>())
-        {
-            if (other == keep || other.Definition == null || !(other.Definition.Effect is MultiBallEffect)) continue;
-            Vector3 at = other.transform.position;
-            NeonFx.Burst(at, other.Definition.Color, 10, 2.5f, 0.08f, 0.3f);
-            Destroy(other.gameObject);
-        }
+        foreach (BonusItem item in FindObjectsByType<BonusItem>())
+            if (item.Definition == bonus) return true;
+        return false;
     }
 
     private BonusDefinition PickBonus()
@@ -168,7 +162,8 @@ public class BonusDropper : MonoBehaviour
         return last;
     }
 
-    // A bonus whose effect says it cannot drop right now (e.g. a shield is already up) is left out of the roll.
+    // A bonus whose effect says it cannot drop right now (e.g. Multi-Ball with extras flying) or that already has an
+    // item falling is left out of the roll.
     private static bool IsDroppable(BonusDefinition bonus) =>
-        bonus != null && (bonus.Effect == null || bonus.Effect.CanDrop);
+        bonus != null && (bonus.Effect == null || bonus.Effect.CanDrop) && !IsFalling(bonus);
 }
