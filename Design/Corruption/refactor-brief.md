@@ -18,7 +18,7 @@ Corrupting stops being an alternative to picking one of the offered cards. With 
 - **No more cap reduction.** Remove `GetMaxStacks` penalties, the "MAX LV 3 > 2" wording and the "gone for the run" case. A card at level 1 is removed from the owned list and may be offered again later like any card. The cap is untouched.
 - **No dowry.** A Cursed outcome pays nothing: delete `CorruptionDowry`, the guaranteed Rare+ / Legendary roll and the reroll bonus, and their texts and profiler detail.
 - **Cost is the same for both outcomes** (one level), as today for unlimited cards.
-- The outcome is a free extra pick, so a run with many charges gets stronger and more cursed over time. Watch this in the profiler.
+- The outcome is gained on top of the offered pick (cost text: "LOSE 1 LEVEL OF X (3 > 2). YOU GAIN A RANDOM EXQUISITE OR CURSED CARD."), so a run with many charges gets stronger and more cursed over time. Watch this in the profiler.
 - Exquisite and Cursed cards cannot be corrupted (unchanged).
 - Odds, pools (7 Exquisite, 5+ Cursed), Glitch Core and the `IsOpenOutcome` check (Brittle Pact vs Phoenix / Shield Plus) stay.
 - Open question for the user: Glitch Core can be corrupted too (it takes a charge back). Keep, or lock it.

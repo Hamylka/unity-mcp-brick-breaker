@@ -312,7 +312,7 @@ function updateB(){
   if(!d){$('#odds').innerHTML='PICK AN UPGRADE TO CORRUPT';$('#cost').textContent='DRAG TO SCROLL. EXQUISITE AND CURSED CARDS CANNOT BE CORRUPTED.';return}
   const [e,c]=odds(d);
   $('#odds').innerHTML=`<b>${e}% EXQUISITE</b>  ${c}% CURSED`;
-  $('#cost').textContent=d.lv>1?`LOSE 1 LEVEL OF ${d.name} (${d.lv} > ${d.lv-1}). THE RESULT IS A FREE EXTRA UPGRADE.`:`${d.name} IS REMOVED (1 > 0). THE RESULT IS A FREE EXTRA UPGRADE.`;
+  $('#cost').textContent=d.lv>1?`LOSE 1 LEVEL OF ${d.name} (${d.lv} > ${d.lv-1}). YOU GAIN A RANDOM EXQUISITE OR CURSED CARD.`:`${d.name} IS REMOVED (1 > 0). YOU GAIN A RANDOM EXQUISITE OR CURSED CARD.`;
 }
 function openCorrupt(){ if(busy)return;buildInv();$('#inv').scrollTop=0;phone.classList.add('corr');startNoise() }
 function closeCorrupt(){phone.classList.remove('corr');stopNoise();updateA()}
