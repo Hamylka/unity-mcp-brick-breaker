@@ -251,6 +251,7 @@ public partial class PowerUpScreen
             return;
         }
 
+        ApplyBackdrop(); // the Inspector choice may have changed since the last time
         BuildInventory();
         phase = Phase.Inventory;
         slideTarget = 1f;
@@ -585,6 +586,11 @@ public partial class PowerUpScreen
     private void AnimateBackground(float dt, float time, float level)
     {
         if (backgroundGroup.alpha <= 0f) return;
+        if (backdrop == CorruptionBackdrop.Veins)
+        {
+            AnimateVeins(dt, time, level);
+            return;
+        }
 
         float breathe = 0.86f + 0.07f * Mathf.Sin(time * 1.1f) + 0.05f * (Mathf.PerlinNoise(time * 0.6f, 0.2f) - 0.5f);
         if (bgDropLeft > 0f) bgDropLeft = Mathf.Max(0f, bgDropLeft - dt);
@@ -1605,27 +1611,31 @@ public partial class PowerUpScreen
         backgroundGroup.blocksRaycasts = false;
         field = NewRawIn("Field", background, BuildFieldTexture());
         field.enabled = true;
-        bgBand = NewImage("Band", background, Color.clear, false);
+        glitchLayer = NewRect("Glitch", background); // the Glitch backdrop (see PowerUpScreen.CorruptionBackdrop.cs)
+        Stretch(glitchLayer);
+        bgBand = NewImage("Band", glitchLayer, Color.clear, false);
         bgBand.sprite = null;
         bgBand.type = Image.Type.Simple;
         bgBand.rectTransform.anchorMin = new Vector2(0f, 0.5f);
         bgBand.rectTransform.anchorMax = new Vector2(1f, 0.5f);
         bgBand.rectTransform.sizeDelta = new Vector2(0f, 110f);
-        bgScan = NewRawIn("Scanlines", background, BuildScanlineTexture());
+        bgScan = NewRawIn("Scanlines", glitchLayer, BuildScanlineTexture());
         bgScan.enabled = true;
         bgNoiseTexture = new Texture2D(54, 96, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
         bgNoisePixels = new Color32[bgNoiseTexture.width * bgNoiseTexture.height];
-        bgNoise = NewRawIn("Noise", background, bgNoiseTexture);
+        bgNoise = NewRawIn("Noise", glitchLayer, bgNoiseTexture);
         bgNoise.enabled = true;
         for (int i = 0; i < bgTears.Length; i++)
         {
-            Image tear = NewImage("Tear", background, Color.clear, false);
+            Image tear = NewImage("Tear", glitchLayer, Color.clear, false);
             tear.sprite = null;
             tear.type = Image.Type.Simple;
             Place(tear.rectTransform, Vector2.zero, Vector2.zero, new Vector2(1200f, 8f));
             tear.enabled = false;
             bgTears[i] = tear;
         }
+        BuildVeinsLayer(background);
+        ApplyBackdrop();
 
         // Title, outside the fading inventory group: it turns into CORRUPTING... during the sequence.
         corruptTitle = NewText("Title", corruptRoot, "CORRUPT", 9f, CorruptRed, PixelText.Align.Center);
