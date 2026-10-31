@@ -185,7 +185,7 @@ public partial class PowerUpScreen
             // Unlimited card: the price is one level you own.
             if (owned <= 0) return "NEEDS AN OWNED LEVEL TO CORRUPT";
             if (!corruption.CanCorrupt(card)) return "THIS CARD CANNOT BE CORRUPTED";
-            string levelCost = $"{name} LV {owned} > {owned - 1}";
+            string levelCost = $"LOSE 1 LEVEL OF {name} ({owned} > {owned - 1})";
             if (corruption.Odds == null) return $"BECOMES A RANDOM EXQUISITE OR CURSED CARD\n{levelCost}";
             CorruptionOdds unlimitedOdds = corruption.Odds(card);
             string unlimitedDowry = unlimitedOdds.ExquisiteChance >= 1f ? "" : $"\n{RarityStyle.GetLabel(unlimitedOdds.CursedRarity)} PAYS: {CorruptionDowryInfo.Text(unlimitedOdds.Dowry)}";
@@ -227,7 +227,7 @@ public partial class PowerUpScreen
         absorbed = 0;
         punch = 0f;
         capText = corruptResult.LevelLost
-            ? $"{source.DisplayName.ToUpperInvariant()} LV {corruptResult.OldMax} > {corruptResult.NewMax}"
+            ? $"LOSE 1 LEVEL OF {source.DisplayName.ToUpperInvariant()} ({corruptResult.OldMax} > {corruptResult.NewMax})"
             : corruptResult.SourceGone
             ? $"{source.DisplayName.ToUpperInvariant()} GONE FOR THE RUN"
             : $"{source.DisplayName.ToUpperInvariant()} MAX LV {corruptResult.OldMax} > {corruptResult.NewMax}";
