@@ -44,12 +44,6 @@ public class ShieldBarrier : BallSurface
         bouncesTotal += count;
     }
 
-    /// <summary>A Shield caught while the barrier is up refills it to a fresh shield's worth of bounces (no stacking).</summary>
-    public void Refill()
-    {
-        bouncesLeft = bouncesTotal = 1 + PowerUpStats.ShieldExtraBounces;
-    }
-
     public static ShieldBarrier Create(Material material, float z, float width, float thickness)
     {
         GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube); // comes with a BoxCollider

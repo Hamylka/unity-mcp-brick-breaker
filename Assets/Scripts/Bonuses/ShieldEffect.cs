@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// Rare protection: raises a barrier behind the paddle that bounces a falling ball back once, then breaks.
-/// Only one shield barrier exists at a time; another one caught while it is up refills it.
+/// Only one shield barrier exists at a time; another one caught while it is up adds bounces to it.
 /// </summary>
 [CreateAssetMenu(fileName = "ShieldEffect", menuName = "BrickBreaker/Bonus Effects/Shield")]
 public class ShieldEffect : BonusEffect
@@ -21,8 +21,8 @@ public class ShieldEffect : BonusEffect
     {
         if (ShieldBarrier.Current != null)
         {
-            // Caught while a shield is up: it refills to a fresh shield's worth of bounces (no stacking).
-            ShieldBarrier.Current.Refill();
+            // Caught while a shield is up: it gains a fresh shield's worth of bounces.
+            ShieldBarrier.Current.AddBounces(1 + PowerUpStats.ShieldExtraBounces);
             SoundManager.Play(Sfx.ShieldUp);
             return;
         }
