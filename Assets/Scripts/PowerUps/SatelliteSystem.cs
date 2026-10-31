@@ -13,10 +13,16 @@ public class SatelliteSystem : MonoBehaviour
     private const float OrbRadius = 0.22f;     // contact radius against a brick footprint
     private const float DamageShare = 0.25f;   // of the ball's damage per touch
     private const float BrickCooldown = 0.5f;  // seconds before the same brick can be hit again by an orb
+    private const float BoltShare = 0.5f;      // of the ball's damage per orb bolt
+    private const float BoltInterval = 4f;     // seconds between two bolts of one orb with a single orb
+    private const float BoltFasterPerOrb = 0.15f; // each extra orb makes every orb fire this much faster
+    private const float BoltMinInterval = 1.5f;
+    private static readonly Color BoltColor = new(1f, 0.9f, 0.5f);
     private static readonly Color OrbColor = new(1f, 0.85f, 0.35f);
 
     private readonly Dictionary<BallController, List<Transform>> orbs = new();
     private readonly Dictionary<Brick, float> lastHit = new();
+    private readonly Dictionary<Transform, float> boltTimers = new(); // seconds until each orb fires its next bolt
     private readonly List<Brick> live = new();
     private readonly List<BallController> stale = new();
     private BrickGrid grid;
@@ -70,6 +76,7 @@ public class SatelliteSystem : MonoBehaviour
                 orb.localScale = Vector3.one * (1f + 0.15f * Mathf.Sin(Time.time * 12f + i));
 
                 TouchBricks(ball, position);
+                TickBolt(ball, orb, position, wanted);
             }
         }
     }
@@ -93,6 +100,47 @@ public class SatelliteSystem : MonoBehaviour
         }
     }
 
+    /// <summary>Seconds between the bolts of one orb: shorter with every extra orb (floored).</summary>
+    public static float BoltIntervalFor(int orbs) =>
+        Mathf.Max(BoltMinInterval, BoltInterval / (1f + BoltFasterPerOrb * Mathf.Max(0, orbs - 1)));
+
+    // Every few seconds an orb also shoots a bolt at the brick nearest to it, for a share of the ball's damage.
+    private void TickBolt(BallController ball, Transform orb, Vector3 position, int orbCount)
+    {
+        float interval = BoltIntervalFor(orbCount);
+        if (!boltTimers.TryGetValue(orb, out float timer)) timer = Random.Range(0.4f, 1f) * interval; // staggered first shots
+        timer -= Time.deltaTime; // scaled: pauses with the game
+        if (timer > 0f)
+        {
+            boltTimers[orb] = timer;
+            return;
+        }
+        boltTimers[orb] = interval;
+        if (area == null) return;
+
+        Brick nearest = null;
+        float bestSqr = float.MaxValue;
+        foreach (Brick brick in live)
+        {
+            if (brick == null || !brick.IsAlive) continue;
+            float sqr = (brick.transform.position - position).sqrMagnitude;
+            if (sqr < bestSqr)
+            {
+                bestSqr = sqr;
+                nearest = brick;
+            }
+        }
+        if (nearest == null) return;
+
+        Vector3 to = nearest.transform.position;
+        ChainBolt.Spawn(position, to, BoltColor * 1.8f, 0.01f, 0.14f, 0.07f);
+        NeonFx.Flash(position, OrbColor, 0.4f, 0.06f);
+        NeonFx.Sparks(to, Vector3.up, BoltColor, 5, 3f, 80f, 0.07f, 0.2f);
+        nearest.Pulse(OrbColor * 1.6f, 0.2f, 0.02f);
+        SoundManager.Play(Sfx.ChainZap, 1.4f, 0.3f);
+        area.DealSecondary(nearest, ball.Damage * BoltShare, DamageSource.Satellite);
+    }
+
     // A soft golden glow around a white-hot core, turned toward the camera every frame.
     private static Transform CreateOrb()
     {
@@ -108,7 +156,10 @@ public class SatelliteSystem : MonoBehaviour
     {
         if (!orbs.TryGetValue(ball, out List<Transform> list)) return;
         foreach (Transform orb in list)
+        {
+            boltTimers.Remove(orb);
             if (orb != null) Destroy(orb.gameObject);
+        }
         orbs.Remove(ball);
     }
 
