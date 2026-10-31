@@ -5552,10 +5552,10 @@ MonoBehaviour:
   baseChoiceCount: 3
   baseRerolls: 1
   rarityWeights:
-  - 35
-  - 25
-  - 11
-  - 6
+  - 44
+  - 30
+  - 16
+  - 7
   - 3
   passiveDamagePerLevel: 1
   slowDownTime: 0.8
