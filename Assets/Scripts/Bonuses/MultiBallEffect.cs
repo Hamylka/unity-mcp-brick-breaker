@@ -34,8 +34,16 @@ public class MultiBallEffect : BonusEffect
     public float TickInterval => tickInterval;
     public float MinUpward => minUpward;
 
-    // Not stackable while a split is pending: no drop, and a pickup that still gets through is ignored.
-    public override bool CanDrop => !MultiBallCharge.Pending;
+    // No drop while a split is pending or extra balls are still flying; a pickup that still gets through during a
+    // pending split is ignored.
+    public override bool CanDrop => !MultiBallCharge.Pending && !ExtrasFlying();
+
+    private static bool ExtrasFlying()
+    {
+        foreach (BallController ball in BallController.Active)
+            if (ball != null && ball.IsExtra && ball.IsFlying) return true;
+        return false;
+    }
 
     public override void Apply(BonusContext context)
     {
