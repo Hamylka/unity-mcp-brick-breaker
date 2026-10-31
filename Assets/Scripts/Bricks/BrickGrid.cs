@@ -94,8 +94,8 @@ public class BrickGrid : MonoBehaviour
     [Header("HP Window (follows ball damage)")]
     [Tooltip("Hits the toughest new brick takes at the start of a run.")]
     [SerializeField, Min(1f)] private float targetHitsStart = 5f;
-    [Tooltip("Hits added to the toughest brick's target per minute of play (5 at the start, 12 at 5 minutes with 1.4).")]
-    [SerializeField, Min(0f)] private float targetHitsPerMinute = 1.4f;
+    [Tooltip("Hits added to the toughest brick's target per minute of play (5 at the start, 13 at 4 minutes and 22 at 8.5 with 2.0).")]
+    [SerializeField, Min(0f)] private float targetHitsPerMinute = 2.0f;
     [Tooltip("The weakest brick has this fraction of the toughest one's HP (0.2 = 1:5).")]
     [SerializeField, Range(0.01f, 1f)] private float minHpRatio = 0.2f;
     [Tooltip("Time constant (s) of the average of the ball's base damage. A fresh damage upgrade makes the existing wall easy until new rows catch up.")]
@@ -619,7 +619,11 @@ public class BrickGrid : MonoBehaviour
         if (windowReady && runTime - lastPaceTime >= 2f)
         {
             lastPaceTime = runTime;
-            float ratio = KillRate / targetKillsPerSecond;
+            // Per ball in play: a Multi-Ball burst multiplies the kills without making the player stronger.
+            int flying = 0;
+            foreach (BallController b in BallController.Active)
+                if (b != null && b.IsFlying) flying++;
+            float ratio = KillRate / Mathf.Max(1, flying) / targetKillsPerSecond;
             // Already far tougher than the ball can handle (e.g. a percent-HP burn does the killing): stop pushing and relax.
             bool tooTough = CurrentMaxHp > smoothedDamage * TargetHits * maxPaceFactor;
             if (ratio > 1.25f && !tooTough) paceFactor = Mathf.Min(maxPaceFactor, paceFactor * Mathf.Min(ratio, maxPaceGrowthPerRow));
