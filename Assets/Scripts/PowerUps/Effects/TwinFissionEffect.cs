@@ -8,5 +8,8 @@ public class TwinFissionEffect : PowerUpEffect
 
     public override void Apply(PowerUpContext context) => PowerUpStats.ExtraMultiBalls += balls;
 
+    public override bool CanRemove => true;
+    public override void Remove(PowerUpContext context) => PowerUpStats.ExtraMultiBalls = Mathf.Max(0, PowerUpStats.ExtraMultiBalls - balls);
+
     public override string Describe(int stacks) => $"MULTI-BALL SPAWNS +{balls * stacks} BALL{(balls * stacks > 1 ? "S" : "")}";
 }

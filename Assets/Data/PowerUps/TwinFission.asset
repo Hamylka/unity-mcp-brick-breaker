@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: TwinFission
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Twin Fission
-  description: Multi-Ball spawns one more ball
-  rarity: 2
+  description: Every Multi-Ball spawns one more ball
+  rarity: 4
   icon: '.##.##.
 
     #..#..#
@@ -28,5 +28,5 @@ MonoBehaviour:
     ...#...
 
     ...#...'
-  maxStacks: 2
+  maxStacks: 1
   effect: {fileID: 11400000, guid: ead48935be5f7b24cba1cd1f37afcd43, type: 2}
