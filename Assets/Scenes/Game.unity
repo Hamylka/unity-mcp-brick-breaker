@@ -5269,7 +5269,7 @@ MonoBehaviour:
   clearWaveRows: 4
   difficultyPerRow: 0.05
   targetHitsStart: 5
-  targetHitsPerMinute: 1.4
+  targetHitsPerMinute: 2
   minHpRatio: 0.2
   damageSmoothing: 20
   maxGrowthPerRow: 2
