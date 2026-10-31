@@ -101,7 +101,7 @@ Single source of truth for what is left. Update it at the end of every task (tic
   - ~~**Piercing Ball** out of the pool for now (asset and code kept, like Overkill Spill).~~ **Done 2026-11-01 (branch `fix/piercing-out-of-pool`).**
   - ~~**Steady Ball** disabled for now (out of the pool, asset kept).~~ **Done 2026-11-01 (branch `fix/steady-ball-disabled`).**
   - ~~**Multi-Ball** drop weight a little lower (5 to 4, `Bonus_MultiBall`); re-check its uptime in the profiler afterwards.~~ **Done 2026-11-01 (branch `fix/multiball-weight`); uptime still to re-check in the profiler.**
-  - **Shockwave nerf:** +20% splash per pick (was 25%, so 80% at the cap of 4).
+  - ~~**Shockwave nerf:** +20% splash per pick (was 25%, so 80% at the cap of 4).~~ **Done 2026-11-01 (branch `fix/shockwave-nerf`).**
   - **Common weight 35** (was 55; rarity weights in `PowerUpManager`, code default and `Game.unity`). Re-check how often Rare and above show up, the power curve gets faster.
   - **Merge Slow Fall and Catch Zone** into one card (name and numbers to decide; one effect with `Remove`, the old assets kept out of the pool; keep corruption working on the merged card).
   - **Merge Buff Lasting and Zone Beacon** into one "Zone" card (longer zones, longer buffs, sooner respawn; one effect with `Remove`, old assets out of the pool; numbers to decide, same rule as the Slow Fall / Catch Zone merge).
@@ -822,3 +822,8 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Done (branch `fix/multiball-weight`):** second rebalance, third task. `Bonus_MultiBall` Drop Weight 5 to 4 (Laser 3, Shield 3 unchanged), so Multi-Ball is 4 of 10 drops instead of 5 of 11 (about 40% instead of 45%).
 - **Checked:** asset edit only, not opened in Unity.
 - **Open issues:** re-check Multi-Ball uptime in the profiler (it was up 14 to 25% of the time). Next: Shockwave nerf to +20% per pick.
+
+### [2026-11-01] - Shockwave nerf (by Claude)
+- **Done (branch `fix/shockwave-nerf`):** second rebalance, fourth task. Shockwave splash is +20% per pick (`ShockwaveEffect.asset` amount 0.25 to 0.2, linear, so 80% at the cap of 4 instead of 100%); card text "20% splash to neighbours". No code change: `AreaDamage.SplashFor` is `percent x picks`.
+- **Checked:** asset edits only, not opened in Unity.
+- **Open issues:** re-check Shockwave's damage share (it was 27 to 34%). Next: Common rarity weight 35.
