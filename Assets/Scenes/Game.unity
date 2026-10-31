@@ -5521,7 +5521,6 @@ MonoBehaviour:
   paddle: {fileID: 541308910}
   grid: {fileID: 1367461215}
   powerUps:
-  - {fileID: 11400000, guid: 462b5041babbe5249a785403d3504e72, type: 2}
   - {fileID: 11400000, guid: 1d1ce93e8a734994db098b363f869f4c, type: 2}
   - {fileID: 11400000, guid: 70a3c151c84ad7b4ea514f315fd89358, type: 2}
   - {fileID: 11400000, guid: d31e35a61da5f594e9d48512065e95b8, type: 2}

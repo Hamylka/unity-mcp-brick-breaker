@@ -99,7 +99,7 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - ~~**Special brick icons (Opus):** a pixel lock on Armored and a pixel plus on Healer, drawn by `BrickHpOverlay` on the UI canvas (new glyphs in `PixelFont`), icon then hits-left label (the icon never replaces the label).~~ **Done 2026-10-31 (branch `feature/special-brick-icons`); the Healer icon is a medkit, see the changelog. Check on a phone.**
 - **Second rebalance, from 3 phone runs (analysis 2026-10-31: 376 s / L39, 424 s / L40, 382 s / L27, all ended by losing the ball; decided with the user, nothing built yet, one `fix/...` branch per item).** Findings: 2 picks in 152 offers of Buff Lasting, Zone Beacon, Slow Fall, Lucky Orbs, Brake Pads and Catch Zone (also 0 of 20 Piercing, 0 of 8 Steady Ball, 0 of 6 Wide Paddle, 0 of 10 Laser Focus, 0 of 7 Bonus Extender): about half of all card slots are dead; Shockwave is the top damage source (27 / 28 / 34%) and picked 11 of 14 offers; Multi-Ball is up only 14 to 25% of the time; the main ball was lost at speed x1.4 to x1.5 while the wall was far from the line in 2 of 3 runs.
   - ~~**Piercing Ball** out of the pool for now (asset and code kept, like Overkill Spill).~~ **Done 2026-11-01 (branch `fix/piercing-out-of-pool`).**
-  - **Steady Ball** disabled for now (out of the pool, asset kept).
+  - ~~**Steady Ball** disabled for now (out of the pool, asset kept).~~ **Done 2026-11-01 (branch `fix/steady-ball-disabled`).**
   - **Multi-Ball** drop weight a little lower (5 to 4, `Bonus_MultiBall`); re-check its uptime in the profiler afterwards.
   - **Shockwave nerf:** +20% splash per pick (was 25%, so 80% at the cap of 4).
   - **Common weight 35** (was 55; rarity weights in `PowerUpManager`, code default and `Game.unity`). Re-check how often Rare and above show up, the power curve gets faster.
@@ -812,3 +812,8 @@ Single source of truth for what is left. Update it at the end of every task (tic
 - **Done (branch `fix/piercing-out-of-pool`):** second rebalance, first task. Piercing Ball (0 picks in 20 offers) is removed from `PowerUpManager > Pool` in `Game.unity` (one line); the asset and the `AreaDamage` code are kept, like Overkill Spill. The pool is now 29 cards.
 - **Checked:** the asset's GUID appears nowhere else in the project. Edit on disk only, not opened in Unity.
 - **Open issues:** `Game.unity` was edited on disk: if the scene is open in Unity, reload it and check the pool shows 29 cards. Next: Steady Ball disabled.
+
+### [2026-11-01] - Steady Ball out of the pool (by Claude)
+- **Done (branch `fix/steady-ball-disabled`):** second rebalance, second task. Steady Ball (0 picks in 8 offers) is removed from `PowerUpManager > Pool` in `Game.unity` (one line); the asset, the effect and the speed floor (`Min Speed Factor`) are kept. The pool is now 28 cards.
+- **Checked:** the asset's GUID appears nowhere else in the project. Edit on disk only, not opened in Unity.
+- **Open issues:** reload the scene if it is open in Unity and check the pool shows 28 cards. Next: Multi-Ball drop weight 5 to 4.
