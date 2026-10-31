@@ -128,6 +128,18 @@ public static class PowerUpStats
     /// <summary>Corruption charges left (Glitch Core). Each one lets the player corrupt a capped card on a level-up.</summary>
     public static int CorruptionCharges { get; set; }
 
+    /// <summary>
+    /// Charges won on the current card screen. They are only handed over once the screen has faded out
+    /// (<see cref="ReleasePendingCorruptionCharges"/>), so the CORRUPT button does not appear while the screen closes.
+    /// </summary>
+    public static int PendingCorruptionCharges { get; set; }
+
+    public static void ReleasePendingCorruptionCharges()
+    {
+        CorruptionCharges += PendingCorruptionCharges;
+        PendingCorruptionCharges = 0;
+    }
+
     /// <summary>Toll (Cursed--): rows the wall is pushed toward the paddle on every level-up. 0 = no Toll.</summary>
     public static int TollRows { get; set; }
     /// <summary>Hungry Wall (Cursed--): multiplier on the HP window of new bricks.</summary>
@@ -194,6 +206,7 @@ public static class PowerUpStats
         ZoneBeaconPicks = 0;
         BallSize = 1f;
         CorruptionCharges = 0;
+        PendingCorruptionCharges = 0;
         TollRows = 0;
         WallHpFactor = 1f;
         BrittlePact = false;
