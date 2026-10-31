@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Satellite
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Satellite
-  description: An orb circles the ball and hits bricks for 25% damage
+  description: An orb circles the ball, hits bricks it touches for 25% damage and shoots the nearest brick every few seconds
   rarity: 4
   icon: '....#..
 
