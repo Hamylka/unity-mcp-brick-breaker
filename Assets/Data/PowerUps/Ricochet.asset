@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Ricochet
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Ricochet
-  description: +10% damage per wall bounce until the next brick hit
+  description: +20% damage per side-wall bounce until the next brick hit
   rarity: 3
   icon: '#.....#
 

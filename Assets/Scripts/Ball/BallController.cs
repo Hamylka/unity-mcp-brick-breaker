@@ -248,7 +248,7 @@ public class BallController : MonoBehaviour
     /// <summary>Brick hits since the ball last touched the paddle (Rampage).</summary>
     public int HitsSincePaddle { get; private set; }
 
-    /// <summary>Wall bounces since the ball's last brick hit (Ricochet).</summary>
+    /// <summary>All wall bounces since the ball's last brick hit (side and back).</summary>
     public int WallBounces { get; private set; }
 
     /// <summary>Called by the brick after a ball hit landed: the streak grows, the wall bounces are spent.</summary>
@@ -261,10 +261,10 @@ public class BallController : MonoBehaviour
         BackBounces = 0;
     }
 
-    /// <summary>Side-wall bounces since the ball's last brick hit (profiler, future Ricochet / Backstop split).</summary>
+    /// <summary>Side-wall bounces since the ball's last brick hit (Ricochet, profiler).</summary>
     public int SideBounces { get; private set; }
 
-    /// <summary>Back-wall bounces since the ball's last brick hit.</summary>
+    /// <summary>Back-wall bounces since the ball's last brick hit (Backstop, profiler).</summary>
     public int BackBounces { get; private set; }
 
     /// <summary>Seconds since this ball last bounced on the paddle, -1 if it has not since it was launched.</summary>
