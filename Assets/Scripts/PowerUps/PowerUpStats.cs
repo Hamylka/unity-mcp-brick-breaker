@@ -24,8 +24,13 @@ public static class PowerUpStats
     public static float ExecutionerBonus { get; set; }
     public const float ExecutionerThreshold = 0.4f;
 
-    /// <summary>Extra bounces a new shield absorbs before it breaks (Shield Plus).</summary>
-    public static int ShieldExtraBounces { get; set; }
+    /// <summary>Charges a shield can hold without Shield Plus; each Shield bonus caught adds one charge, each bounce uses one.</summary>
+    public const int BaseShieldCharges = 3;
+
+    /// <summary>Charges Shield Plus adds to the shield maximum.</summary>
+    public static int ShieldExtraCharges { get; set; }
+
+    public static int ShieldMaxCharges => BaseShieldCharges + ShieldExtraCharges;
 
     /// <summary>Laser fire-rate factor (Laser Focus, Laser Frenzy; picks add up linearly). 1.2 = a shot every 1/1.2 of the base interval.</summary>
     public static float LaserFireRate { get; set; } = 1f;
@@ -171,7 +176,7 @@ public static class PowerUpStats
         BonusFallSpeed = 1f;
         CatchZoneScale = 1f;
         ExecutionerBonus = 0f;
-        ShieldExtraBounces = 0;
+        ShieldExtraCharges = 0;
         LaserFireRate = 1f;
         ExtraMultiBalls = 0;
         BonusDuration = 1f;

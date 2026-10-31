@@ -34,20 +34,17 @@ public class ShieldBarrier : BallSurface
     private float breakT = -1f;
     private float sparkTimer;
     private float age;
-    private int bouncesLeft = 1;
-    private int bouncesTotal = 1; // segments of the HUD ring
+    private int charges = 1;
 
-    /// <summary>Lets the shield absorb more bounces before it breaks (Shield Plus picked while it is up).</summary>
-    public void AddBounces(int count)
-    {
-        bouncesLeft += count;
-        bouncesTotal += count;
-    }
+    /// <summary>Charges the shield holds now (one per Shield bonus caught, up to <see cref="PowerUpStats.ShieldMaxCharges"/>).</summary>
+    public int Charges => charges;
 
-    /// <summary>A Shield caught while the barrier is up refills it to a fresh shield's worth of bounces (no stacking).</summary>
-    public void Refill()
+    /// <summary>A Shield bonus caught while the barrier is up adds one charge. Returns false when it is already full.</summary>
+    public bool AddCharge()
     {
-        bouncesLeft = bouncesTotal = 1 + PowerUpStats.ShieldExtraBounces;
+        if (charges >= PowerUpStats.ShieldMaxCharges) return false;
+        charges++;
+        return true;
     }
 
     public static ShieldBarrier Create(Material material, float z, float width, float thickness)
@@ -65,7 +62,7 @@ public class ShieldBarrier : BallSurface
         barrier.startScale = cube.transform.localScale;
         barrier.ApplyGlow(Glow + RaiseGlowBoost);
         cube.transform.localScale = new Vector3(0f, barrier.startScale.y, barrier.startScale.z);
-        barrier.bouncesLeft = barrier.bouncesTotal = 1 + PowerUpStats.ShieldExtraBounces;
+        barrier.charges = 1;
         Current = barrier;
 
         // A flash and a line of sparks along the barrier as it appears.
@@ -81,8 +78,8 @@ public class ShieldBarrier : BallSurface
         if (breakT >= 0f) return;
         ball.PassThroughPaddle(); // the rebound goes back up through the paddle instead of bouncing off its back
 
-        // Shield Plus: it survives until the last bounce, with a small flash for each one absorbed.
-        if (--bouncesLeft > 0)
+        // Each bounce uses one charge; it survives until the last, with a small flash for each one absorbed.
+        if (--charges > 0)
         {
             Vector3 spot = ball.Position;
             spot.z = transform.position.z;
@@ -123,7 +120,8 @@ public class ShieldBarrier : BallSurface
             return;
         }
 
-        ActiveBonusTracker.Report("shield", "shield", "SHIELD", ShieldColor, -1f, 0f, bouncesTotal, bouncesLeft);
+        // The ring is cut into one segment per charge held, all lit: a spent charge removes a segment instead of greying it.
+        ActiveBonusTracker.Report("shield", "shield", "SHIELD", ShieldColor, -1f, 0f, charges, charges);
 
         if (raiseT < 1f)
         {
