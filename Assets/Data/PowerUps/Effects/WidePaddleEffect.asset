@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e553a8751c1321a4690e6849963cfb60, type: 3}
   m_Name: WidePaddleEffect
   m_EditorClassIdentifier: Assembly-CSharp::PaddleWidthEffect
-  percent: 0.15
+  percent: 0.25
