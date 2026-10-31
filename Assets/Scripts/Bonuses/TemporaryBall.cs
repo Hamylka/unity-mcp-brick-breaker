@@ -48,6 +48,23 @@ public class TemporaryBall : MonoBehaviour
         ball.BallLost += HandleBallLost;
     }
 
+    /// <summary>Full length of this extra's life, used to size an extension.</summary>
+    public float TotalTime => totalTime;
+
+    /// <summary>
+    /// Adds time to the extra's life (Bonus Extender). A ball that was already shrinking away grows back to full size
+    /// when the extension lifts it out of the fade.
+    /// </summary>
+    public void Extend(float seconds)
+    {
+        remaining += seconds;
+        totalTime = Mathf.Max(totalTime, remaining);
+        if (remaining <= fadeTime) return;
+        transform.localScale = startScale;
+        if (visual != null) visual.LifeFade = 1f;
+        for (int i = 0; i < trails.Length; i++) trails[i].widthMultiplier = trailWidths[i];
+    }
+
     /// <summary>Hands this ball's remaining life to another ball (role swap with the main ball). This ball becomes permanent.</summary>
     public void TransferTo(BallController other)
     {

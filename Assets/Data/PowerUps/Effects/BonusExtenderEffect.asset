@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 176494f110c7ae946be4f40b08638400, type: 3}
   m_Name: BonusExtenderEffect
   m_EditorClassIdentifier: Assembly-CSharp::BonusExtenderEffect
-  percent: 0.2
+  percent: 0.1

@@ -52,6 +52,16 @@ public class LaserCannon : MonoBehaviour
         foreach (LaserSight sight in sights) sight.SetColor(boltColor);
     }
 
+    /// <summary>Adds time to the running cannon (Bonus Extender); the HUD ring never reads above full.</summary>
+    public void Extend(float seconds)
+    {
+        remaining += seconds;
+        totalTime = Mathf.Max(totalTime, remaining);
+    }
+
+    /// <summary>Full length of this cannon's run, used to size an extension.</summary>
+    public float TotalTime => totalTime;
+
     // Grows the bolt and sight lists to one pair per lane (they are never shrunk: extra lanes just stay hidden).
     private void EnsureLanes(int lanes)
     {
