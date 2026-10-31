@@ -5552,7 +5552,7 @@ MonoBehaviour:
   baseChoiceCount: 3
   baseRerolls: 1
   rarityWeights:
-  - 55
+  - 35
   - 25
   - 11
   - 6
