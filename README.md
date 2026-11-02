@@ -4,7 +4,7 @@
 
 Claude was connected to the Unity Editor through the **Model Context Protocol (MCP)**.
 From a single project brief ([`Assets/CLAUDE.md`](Assets/CLAUDE.md)), the agent generated the scene, the gameplay code,
-the visuals and the audio (**82 C# scripts, ~12,700 lines**) directly inside the editor.
+the visuals and the audio (**126 C# scripts, ~18,900 lines**) directly inside the editor.
 No line of code was written by hand: the only human input was the brief, the prompts, playtesting, and tuning
 public parameters in the Inspector.
 
@@ -13,9 +13,9 @@ onward, chosen per task: Sonnet for simple tasks and everything outside art, Opu
 enhancements (see [Two models, one project](#two-models-one-project)).
 
 **Result:** a playable prototype in **4 hours** on day 1 (work estimated at about a week by hand), then polished into
-a full game loop with a neon art direction, audio and an Android build. Two tagged releases so far (**v0.1** on
-2026-10-26, **v0.2** on 2026-10-29), the second adding area-of-effect power-ups, wall buff zones, a pause screen,
-a logo and a run profiler.
+a full game loop with a neon art direction, audio and an Android build. Three tagged releases so far (**v0.1** on
+2026-10-26, **v0.2** on 2026-10-29, **v0.3** on 2026-11-02): v0.2 added area-of-effect power-ups, wall buff zones, a pause screen,
+a logo and a run profiler; v0.3 rebuilt the progression and balanced it from real phone runs.
 
 <!-- TODO: add a gameplay GIF or screenshot, e.g. docs/gameplay.gif
 ![Gameplay](docs/gameplay.gif)
@@ -32,10 +32,10 @@ a logo and a run profiler.
 - **MCP bridge:** [MCP for Unity](https://github.com/CoplayDev/unity-mcp) (`com.coplaydev.unity-mcp`) exposes the
   editor to the agent: creating objects, writing and compiling scripts, reading console logs, capturing views.
 - **Spec-driven development:** [`Assets/CLAUDE.md`](Assets/CLAUDE.md) defines the agent's role, the tech stack,
-  the physics rules and the systems to build, and keeps a changelog of the project. It is the main artifact of this project.
+  the physics rules and the systems to build. It is the main artifact of this project, with [`CHANGELOG.md`](CHANGELOG.md) keeping the history.
 - **Human role:** writing the brief, steering the agent with prompts, playtesting (in the editor and on an Android phone),
   and tuning values in the Inspector.
-- **Workflow:** from day 2, Gitflow: `main` for stable versions (tagged `v0.1`, `v0.2`), `develop` for integration,
+- **Workflow:** from day 2, Gitflow: `main` for stable versions (tagged `v0.1`, `v0.2`, `v0.3`), `develop` for integration,
   one `feature/...` or `fix/...` branch per task and a `release/...` branch to cut each version. Every session starts
   from `CLAUDE.md` alone, and ends with a changelog entry so the next one picks up the latest state.
 - **Balancing data:** every run is recorded by a built-in profiler (damage per source, level-ups, card picks, snapshots)
@@ -113,17 +113,18 @@ The tables above show what each model did in the first phases, before the work w
 | Camera | Fixed pseudo-third-person view behind the paddle, tilted down over the playfield; on wide screens the horizontal field of view stays locked on a centered 9:16 column |
 | Paddle | Smooth touch/mouse drag, built for mobile portrait |
 | Ball | Arcade physics: constant speed, no gravity, exit angle depends on where it hits the paddle; damage stat that grows with every level-up |
-| Bricks | Rows of multi-hit bricks (7 columns), pushed one row toward the player every 5 seconds; new rows keep coming, tougher over time. HP window scales up with the rows, and the color is a heat ramp of the hits left |
+| Bricks | Rows of multi-hit bricks (7 columns), pushed one row toward the player every 5 seconds; new rows keep coming, tougher over time. The HP window follows the ball damage and the kill rate, the color is a heat ramp of the hits left, and Armored and Healer bricks appear later in a run |
 | Brick HP display | Pause-screen setting, saved between runs: PIPS (default), COLOR or NUMBERS, always showing the hits left to break the brick |
 | Clear bonus | Clearing every brick grants 25% of the current level's XP, shows "CLEAR!" and spawns a fresh wave immediately |
-| Progression | Endless XP: each hit grants XP equal to the damage dealt; XP orbs, color-coded by value, fly to the HUD bar |
-| Power-ups | Roguelite level-up screen: pick one of three cards rolled by rarity (Common to Legendary), with a Reroll button and level pips on each card. 13 cards: ball stats, paddle width, time slow, XP boost, and area-of-effect damage (Shockwave, Piercing Ball, Chain Lightning, Volatile Bricks, Cleave, Meltdown) |
+| Progression | Endless XP: a brick is worth a share of the current level cost, paid per HP removed; XP orbs, color-coded by value, fly to the HUD bar |
+| Power-ups | Roguelite level-up screen: pick one of three cards rolled by rarity (Common to Legendary), with a Reroll button and level pips on each card. 28 cards: multiplicative damage, area-of-effect damage, ball and paddle upgrades, bonus and laser builds |
+| Corruption | Glitch Core charges trade one level of an owned card for a random Exquisite (powerful) or Cursed (a real downside) card, with odds set by the rarity of the card given up |
 | Bonuses | Falling bonus items (6% per brick): Multi-Ball (telegraphed split), Laser (with an aim guide) and Shield, with a timer HUD |
 | Wall buff zones | Glowing zones appear on the side walls; a ball bouncing in one gets a timed buff: 2x damage or Phase (passes through bricks) |
 | Pause | Pause button, Escape / P, or automatic when the app goes to the background; shows run stats and every power-up picked, with a 3-2-1 resume and a two-tap restart |
 | Game Over | Losing the last ball or letting the wall reach the red line ends the run, with a short blow-up animation, then a results screen with best level, Restart and run data sharing |
 | Art | Neon retro look: low-resolution pixel rendering, glowing rounded bricks and paddle, grid floor, bloom, camera shake |
-| Audio | 52 synthesized retro sound effects and a synthwave music loop, all generated in code |
+| Audio | 58 synthesized retro sound effects and a synthwave music loop, all generated in code |
 | UI | Runtime-generated 5x7 pixel font, flat sprites and pooled pixel particles: no image or font assets |
 | Run profiler | Every run is saved as JSON (damage per source, level-ups, card offers and picks, events, snapshots) for balancing |
 
@@ -137,8 +138,9 @@ The tables above show what each model did in the first phases, before the work w
 
 ```
 CLAUDE.md              session guide for the agent (imports Assets/CLAUDE.md)
+CHANGELOG.md           the project changelog
 Assets/
-  CLAUDE.md            the brief given to the agent, with the roadmap and the project changelog
+  CLAUDE.md            the brief given to the agent, with the roadmap
   Scripts/
     Ball/  Paddle/  Bricks/  Camera/
     Walls/             side walls, buff zones and the buffs they give
@@ -171,19 +173,17 @@ Run recording is a developer tool, only in the editor and development builds: fi
 
 ## Status
 
-Version 0.2: playable build with a complete run loop, 13 power-up cards (including area-of-effect damage), three bonus
-items (Multi-Ball with a telegraphed split, Laser with an aim guide, Shield), wall buff zones (2x damage, Phase), a pause
-screen, a readable brick HP display, a Game Over animation, a logo and app icon, a first Windows landscape layout and a
-run profiler for balancing. Balancing is not final: the late game levels up too fast and the card pool runs dry.
+Version 0.3: the progression is rebuilt and balanced from profiled phone runs. XP per brick tied to the level cost, brick
+HP that follows the ball damage and the kill rate, 28 level-up cards with multiplicative damage cards, Corruption (trade a
+level of a card for an Exquisite or Cursed card), Armored and Healer bricks, a danger warning as the wall gets close, and
+a difficulty ramp that ends a strong run at about 8 minutes.
 
 ### Roadmap
 
-1. Progression rework (v0.3): bigger power-up pool with percent-based damage cards, XP per brick tied to the level cost,
-   brick HP that follows the ball damage.
+1. Run structure (v0.4): a final boss around 5:00, lighter elites before it, and less monotonous runs.
 2. Windows build in landscape (resize, fullscreen) and neon decoration for the side areas.
 3. Title screen using the wordmark.
 4. More bonus items and wall effects.
-5. Playtest on a real phone (HUD sizes, pause screen, sounds).
 
 ## Author
 

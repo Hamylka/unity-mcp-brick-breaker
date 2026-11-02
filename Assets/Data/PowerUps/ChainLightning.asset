@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Chain Lightning
   description: Hits arc to 2 bricks for 20% dmg, +1 arc per level
-  rarity: 2
+  rarity: 3
   icon: '...###.
 
     ..###..

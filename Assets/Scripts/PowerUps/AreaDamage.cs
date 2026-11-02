@@ -25,6 +25,8 @@ public class AreaDamage : MonoBehaviour
     [SerializeField, Min(0.5f)] private float neighbourRadius = 1.15f;
     [Tooltip("Reach of Volatile Bricks: 1.5 = the full 3x3 block around the brick.")]
     [SerializeField, Min(0.5f)] private float blastRadius = 1.5f;
+    [Tooltip("Chance that a hit that does not kill also sets off a Volatile blast on its brick (the blast is the liked explosion, kills alone are too rare).")]
+    [SerializeField, Range(0f, 1f)] private float blastHitChance = 0.1f;
     [Tooltip("Furthest an arc of Chain Lightning can jump, in world units.")]
     [SerializeField, Min(0.5f)] private float chainRange = 2.2f;
 
@@ -35,6 +37,8 @@ public class AreaDamage : MonoBehaviour
     [Header("Meltdown")]
     [Tooltip("Damage of one tick, as a share of the burning brick's maximum HP (0.2 = 20%).")]
     [SerializeField, Min(0f)] private float burnPercentMaxHp = 0.2f;
+    [Tooltip("A tick never deals more than this many hits of the ball's current damage (stops the burn from scaling with the HP window).")]
+    [SerializeField, Min(0.1f)] private float burnMaxBallHits = 1f;
     [SerializeField, Min(1)] private int burnTicks = 3;
     [SerializeField, Min(0.1f)] private float burnTickInterval = 1f;
 
@@ -83,7 +87,10 @@ public class AreaDamage : MonoBehaviour
         return grid.TryGetComponent(out AreaDamage existing) ? existing : grid.gameObject.AddComponent<AreaDamage>();
     }
 
+    /// <summary>Each pick adds the full card amount (25%), no diminishing returns.</summary>
     public void AddSplash(float percent) => splashPercent += Mathf.Max(0f, percent);
+    /// <summary>Total splash share after this many picks of a card worth <paramref name="percent"/> each.</summary>
+    public static float SplashFor(float percent, int picks) => percent * picks;
     /// <summary>First pick: 2 arcs. Each further pick adds one. Arc damage is a fixed share of the ball's hit damage (0.2 = 20%), it does not stack.</summary>
     public void AddChain(float percent)
     {
@@ -99,6 +106,18 @@ public class AreaDamage : MonoBehaviour
     /// <summary>Hits needed per Cleave sweep after this many picks (0 = no Cleave).</summary>
     public static int CleaveEveryFor(int picks) => picks <= 0 ? 0 : Mathf.Max(3, 7 - picks);
     public void EnableMeltdown() => meltdown = true;
+
+    // One level lost to a corruption: the reverse of each Add above.
+    public void RemoveSplash(float percent) => splashPercent = Mathf.Max(0f, splashPercent - percent);
+    public void RemoveChain() => chainJumps = chainJumps <= 2 ? 0 : chainJumps - 1;
+    public void RemovePierce(int depth) => pierceDepth = Mathf.Max(0, pierceDepth - depth);
+    public void RemoveBlast(float percent) => blastPercent = Mathf.Max(0f, blastPercent - percent);
+    public void RemoveCleave()
+    {
+        cleavePicks = Mathf.Max(0, cleavePicks - 1);
+        cleaveEvery = CleaveEveryFor(cleavePicks);
+        cleaveCounter = cleaveEvery > 0 ? Mathf.Min(cleaveCounter, cleaveEvery - 1) : 0;
+    }
 
     private void Awake() => grid = GetComponent<BrickGrid>();
 
@@ -148,6 +167,11 @@ public class AreaDamage : MonoBehaviour
             {
                 if (blastPercent > 0f) Blast(origin);
                 if (burns.Exists(b => b.Brick == brick)) SpreadBurn(brick);
+            }
+            else if (blastPercent > 0f && Random.value < blastHitChance)
+            {
+                Blast(origin);
+                if (meltdown) Ignite(brick);
             }
             else if (meltdown)
             {
@@ -211,6 +235,93 @@ public class AreaDamage : MonoBehaviour
             target.TakeHit(damage);
         }
         SoundManager.Play(Sfx.PierceZip, 1f + 0.06f * (count - 1));
+    }
+
+    /// <summary>
+    /// Damage from a continuous source (Satellite orbs): a fraction that piles up on the brick, tagged for the profiler,
+    /// and that does not trigger area effects again.
+    /// </summary>
+    public void DealSecondary(Brick target, float damage, DamageSource source)
+    {
+        if (applying || damage <= 0f || target == null) return;
+        applying = true;
+        try
+        {
+            using var tag = DamageTag.Begin(source);
+            DealFraction(target, damage);
+        }
+        finally
+        {
+            applying = false;
+        }
+    }
+
+    /// <summary>
+    /// Paddle Cannon: a bolt that killed its target sets off a small blast on the 4 direct neighbours (the Shockwave
+    /// reach, much smaller than Volatile's 3x3). Armored bricks ignore it, and it does not trigger area effects again.
+    /// </summary>
+    public void CannonBlast(Vector3 origin, float damage)
+    {
+        if (applying || damage <= 0f || grid == null) return;
+        applying = true;
+        try
+        {
+            using var tag = DamageTag.Begin(DamageSource.CannonBlast);
+            Collect(origin, neighbourRadius, null);
+            NeonFx.Flash(origin, BlastColor * 1.4f, 0.8f, 0.12f);
+            NeonFx.Ring(origin, BlastColor, 18, 3f, 0.08f, 0.25f);
+            NeonFx.Burst(origin, BlastColor, 8, 2.5f, 0.08f, 0.3f);
+            SoundManager.Play(Sfx.VolatileBlast, Random.Range(1.35f, 1.5f), 0.45f);
+            foreach (Brick neighbour in targets)
+            {
+                neighbour.Pulse(BlastColor * 1.6f, 0.25f, 0.03f);
+                DealFraction(neighbour, damage);
+            }
+        }
+        finally
+        {
+            applying = false;
+        }
+    }
+
+    /// <summary>
+    /// Overkill Spill: damage beyond what a killed brick had left carries on into the nearest brick behind it, in the
+    /// same column. Like the other secondary damage it does not trigger area effects again.
+    /// </summary>
+    public void OverkillSpill(Brick source, float damage)
+    {
+        if (applying || damage <= 0f) return;
+        applying = true;
+        try
+        {
+            using var tag = DamageTag.Begin(DamageSource.OverkillSpill);
+            grid.GetLiveBricks(live);
+            Vector3 origin = source.transform.position;
+            float halfWidth = grid.BrickWidth * 0.5f;
+            float halfDepth = grid.CellDepth * 0.5f;
+
+            Brick next = null;
+            float best = float.MaxValue;
+            foreach (Brick candidate in live)
+            {
+                if (candidate == source) continue;
+                Vector3 d = candidate.transform.position - origin;
+                if (Mathf.Abs(d.x) < halfWidth && d.z > halfDepth && d.z < best)
+                {
+                    best = d.z;
+                    next = candidate;
+                }
+            }
+            if (next == null) return;
+
+            next.Pulse(PierceColor * 1.5f, 0.2f, 0.04f);
+            ChainBolt.Spawn(origin, next.transform.position, PierceColor * 1.6f, 0.015f, 0.12f, 0.14f);
+            DealFraction(next, damage);
+        }
+        finally
+        {
+            applying = false;
+        }
     }
 
     // Cleave: a sweep along the whole row of the brick that was hit.
@@ -373,7 +484,8 @@ public class AreaDamage : MonoBehaviour
 
                 NeonFx.Embers(burn.Brick.transform.position, BurnColor, 3, 0.07f, 0.6f);
                 SoundManager.Play(Sfx.BurnTick);
-                DealFraction(burn.Brick, burn.Brick.MaxHitPoints * burnPercentMaxHp);
+                // Percent of max HP, but never more than a few ball hits: otherwise the burn scales with the HP window and does all the killing.
+                DealFraction(burn.Brick, Mathf.Min(burn.Brick.MaxHitPoints * burnPercentMaxHp, HitDamage() * burnMaxBallHits));
 
                 if (!burn.Brick.IsAlive)
                 {

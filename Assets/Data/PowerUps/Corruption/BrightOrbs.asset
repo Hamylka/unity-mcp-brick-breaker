@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a1108c46fae6bc4797e89ad530ee9d0, type: 3}
+  m_Name: BrightOrbs
+  m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
+  displayName: Bright Orbs
+  description: XP gained +25%
+  rarity: 5
+  icon: '...#...
+
+    ...#...
+
+    .#####.
+
+    #######
+
+    .#####.
+
+    ...#...
+
+    ...#...'
+  maxStacks: 3
+  effect: {fileID: 11400000, guid: fd555df987e820a438d2ff17d3d6cc73, type: 2}

@@ -16,6 +16,14 @@ public class CardView : MonoBehaviour, IPointerClickHandler
     public PowerUpRarity Rarity;
     public Color RarityColor;
 
+    // Parts the corruption sequence recolors and scrambles.
+    public Image Body;
+    public Color BodyColor;
+    public Image Icon;
+    public Image DiamondBorder;
+    public PixelText[] Texts;
+    public string[] TextsOriginal;
+
     // Level display: the pip of the level this pick grants (blinks), and the NEW!/MAX! corner tag (pulses). Both optional.
     public Image NextPip;
     public Color NextPipColor;

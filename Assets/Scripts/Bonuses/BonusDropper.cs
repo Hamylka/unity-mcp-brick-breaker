@@ -18,6 +18,27 @@ public class BonusDropper : MonoBehaviour
     [Tooltip("Extra chance per hit point above 1, so tougher bricks drop more often.")]
     [SerializeField, Range(0f, 0.3f)] private float extraChancePerHitPoint = 0.04f;
 
+    [Header("Drop Budget")]
+    [Tooltip("Scales the chance by target kill rate / actual kill rate, so drops per minute stay roughly constant " +
+             "whatever the kill rate does.")]
+    [SerializeField] private bool budgetByKillRate = true;
+    [Tooltip("Lowest and highest multiplier the budget can apply.")]
+    [SerializeField, Range(0.1f, 1f)] private float minBudgetFactor = 0.3f;
+    [SerializeField, Range(1f, 3f)] private float maxBudgetFactor = 1.5f;
+    [Tooltip("Under this kill rate (bricks per second, the 25 s average) the budget is not applied: the run has not " +
+             "started yet or the wall is nearly empty.")]
+    [SerializeField, Min(0f)] private float budgetMinKillRate = 0.2f;
+
+    /// <summary>The multiplier the drop chance gets from the kill-rate budget right now (1 = neutral).</summary>
+    public float BudgetFactor
+    {
+        get
+        {
+            if (!budgetByKillRate || grid == null || grid.KillRate < budgetMinKillRate) return 1f;
+            return Mathf.Clamp(grid.TargetKillsPerSecond / grid.KillRate, minBudgetFactor, maxBudgetFactor);
+        }
+    }
+
     /// <summary>Raised after a bonus was caught and its effect applied.</summary>
     public event Action<BonusDefinition, PaddleController> BonusCollected;
 
@@ -26,17 +47,28 @@ public class BonusDropper : MonoBehaviour
 
     private void OnEnable()
     {
-        if (grid != null) grid.BrickDestroyed += HandleBrickDestroyed;
+        if (grid != null)
+        {
+            grid.BrickDestroyed += HandleBrickDestroyed;
+            grid.BricksCleared += HandleBricksCleared;
+        }
     }
 
     private void OnDisable()
     {
-        if (grid != null) grid.BrickDestroyed -= HandleBrickDestroyed;
+        if (grid != null)
+        {
+            grid.BrickDestroyed -= HandleBrickDestroyed;
+            grid.BricksCleared -= HandleBricksCleared;
+        }
     }
 
     private void HandleBrickDestroyed(Brick brick)
     {
         float chance = dropChance + (brick.MaxHitPoints - 1) * extraChancePerHitPoint;
+        if (PowerUpStats.BonusDropBonus > 0f) // Greed
+            chance = Mathf.Min(chance + PowerUpStats.BonusDropBonus, Mathf.Max(chance, PowerUpStats.MaxDropChance));
+        chance *= BudgetFactor; // drops per minute stay roughly constant whatever the kill rate does
         if (UnityEngine.Random.value > chance) return;
 
         BonusDefinition definition = PickBonus();
@@ -48,6 +80,23 @@ public class BonusDropper : MonoBehaviour
         item.Initialize(definition);
         item.Collected += HandleItemCollected;
         BonusDropped?.Invoke(definition);
+    }
+
+    // A cleared wall is an event: a Multi-Ball falls from the back of the field (the favourite moment of the runs).
+    private void HandleBricksCleared()
+    {
+        if (itemPrefab == null || bonuses == null) return;
+        foreach (BonusDefinition bonus in bonuses)
+        {
+            if (bonus == null || !(bonus.Effect is MultiBallEffect)) continue;
+            if (!IsDroppable(bonus)) return; // split pending, extras flying or one already falling
+            var position = new Vector3(0f, itemPrefab.transform.position.y, 6f);
+            BonusItem item = Instantiate(itemPrefab, position, Quaternion.identity);
+            item.Initialize(bonus);
+            item.Collected += HandleItemCollected;
+            BonusDropped?.Invoke(bonus);
+            return;
+        }
     }
 
     /// <summary>Spawns one item of every bonus in a row near the back of the field, to test them without waiting for drops.</summary>
@@ -76,12 +125,46 @@ public class BonusDropper : MonoBehaviour
         NeonFx.Ring(at, definition.Color, 32, 6f);
         NeonFx.Burst(at, Color.Lerp(definition.Color, Color.white, 0.4f), 16, 3f, 0.08f, 0.4f);
 
+        ExtendRunningBonuses(definition, paddle);
+
         if (definition.Effect != null)
         {
             // Copy the list: effects such as multi-ball add balls while they run.
             definition.Effect.Apply(new BonusContext(paddle, new List<BallController>(BallController.Active)));
         }
         BonusCollected?.Invoke(definition, paddle);
+    }
+
+    // Bonus Extender: a catch extends every other timed bonus that is already running (before the new one starts, so a
+    // same-type pickup does nothing extra). The Laser and the Multi-Ball extras are the only timed bonuses.
+    private static void ExtendRunningBonuses(BonusDefinition caught, PaddleController paddle)
+    {
+        float fraction = PowerUpStats.BonusExtendFraction;
+        if (fraction <= 0f) return;
+
+        bool extended = false;
+        if (!(caught.Effect is LaserEffect) && paddle != null && paddle.TryGetComponent(out LaserCannon cannon))
+        {
+            cannon.Extend(cannon.TotalTime * fraction);
+            extended = true;
+        }
+        if (!(caught.Effect is MultiBallEffect))
+        {
+            foreach (TemporaryBall extra in FindObjectsByType<TemporaryBall>())
+            {
+                extra.Extend(extra.TotalTime * fraction);
+                extended = true;
+            }
+        }
+        if (extended) SoundManager.Play(Sfx.BonusPickup, 1.4f, 0.4f);
+    }
+
+    // True while an item of this bonus is already falling: a bonus never has two items going down at once.
+    private static bool IsFalling(BonusDefinition bonus)
+    {
+        foreach (BonusItem item in FindObjectsByType<BonusItem>())
+            if (item.Definition == bonus) return true;
+        return false;
     }
 
     private BonusDefinition PickBonus()
@@ -105,7 +188,8 @@ public class BonusDropper : MonoBehaviour
         return last;
     }
 
-    // A bonus whose effect says it cannot drop right now (e.g. a shield is already up) is left out of the roll.
+    // A bonus whose effect says it cannot drop right now (e.g. Multi-Ball with extras flying) or that already has an
+    // item falling is left out of the roll.
     private static bool IsDroppable(BonusDefinition bonus) =>
-        bonus != null && (bonus.Effect == null || bonus.Effect.CanDrop);
+        bonus != null && (bonus.Effect == null || bonus.Effect.CanDrop) && !IsFalling(bonus);
 }

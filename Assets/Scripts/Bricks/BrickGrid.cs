@@ -55,6 +55,21 @@ public class BrickGrid : MonoBehaviour
     [Tooltip("0 = a different layout every run, otherwise a fixed seed.")]
     [SerializeField] private int seed;
 
+    [Header("Special Bricks")]
+    [Tooltip("Armored bricks ignore splash and area damage. First row (counted from the start of the run) where one can appear.")]
+    [SerializeField, Min(0)] private int armoredFromRow = 6;
+    [Tooltip("Chance per brick once the ramp is complete.")]
+    [SerializeField, Range(0f, 0.4f)] private float armoredMaxChance = 0.1f;
+    [Tooltip("Healer bricks restore their neighbours. First row where one can appear.")]
+    [SerializeField, Min(0)] private int healerFromRow = 10;
+    [SerializeField, Range(0f, 0.4f)] private float healerMaxChance = 0.06f;
+    [Tooltip("Rows over which each chance climbs from 0 to its maximum.")]
+    [SerializeField, Min(1)] private int specialRampRows = 20;
+    [Tooltip("Seconds of play between two heals of a Healer brick.")]
+    [SerializeField, Min(0.5f)] private float healInterval = 4f;
+    [Tooltip("Share of a neighbour's maximum HP a heal restores (at least 1 HP).")]
+    [SerializeField, Range(0f, 1f)] private float healPercent = 0.25f;
+
     [Header("Advance (Space Invaders style)")]
     [Tooltip("Master switch for the advancing wall.")]
     [SerializeField] private bool advance = true;
@@ -76,18 +91,53 @@ public class BrickGrid : MonoBehaviour
     [SerializeField, Min(1)] private int clearWaveRows = 4;
     [Tooltip("Each row spawned after the starting wall makes tougher bricks more likely. 0 = no ramp.")]
     [SerializeField, Min(0f)] private float difficultyPerRow = 0.03f;
-    [Header("HP Scaling")]
-    [Tooltip("Weakest brick HP at the start of a run.")]
-    [SerializeField, Min(1)] private int baseMinHp = 1;
-    [Tooltip("Toughest brick HP at the start of a run. Also the end of the palette gradient.")]
-    [SerializeField, Min(1)] private int baseMaxHp = 5;
-    [Tooltip("Every this many rows spawned after the starting wall, the HP window scales up. 0 = never.")]
-    [SerializeField, Min(0)] private int rowsPerScaling = 10;
-    [Tooltip("Each scaling multiplies the min and max HP by this (compounding, rounded). 1.25 = +25% per proc.")]
-    [SerializeField, Min(1f)] private float hpMultiplier = 1.25f;
+    [Header("HP Window (follows ball damage)")]
+    [Tooltip("Hits the toughest new brick takes at the start of a run.")]
+    [SerializeField, Min(1f)] private float targetHitsStart = 5f;
+    [Tooltip("Hits added to the toughest brick's target per minute of play (5 at the start, 13 at 4 minutes and 22 at 8.5 with 2.0).")]
+    [SerializeField, Min(0f)] private float targetHitsPerMinute = 2.0f;
+    [Tooltip("The weakest brick has this fraction of the toughest one's HP (0.2 = 1:5).")]
+    [SerializeField, Range(0.01f, 1f)] private float minHpRatio = 0.2f;
+    [Tooltip("Time constant (s) of the average of the ball's base damage. A fresh damage upgrade makes the existing wall easy until new rows catch up.")]
+    [SerializeField, Min(0.1f)] private float damageSmoothing = 20f;
+    [Tooltip("The toughest HP can grow by at most this factor per row (avoids spikes after a streak of level-ups).")]
+    [SerializeField, Min(1f)] private float maxGrowthPerRow = 2f;
+    [Tooltip("\"Difficulty increased\" fires when the window max has grown by this factor since the last notice.")]
+    [SerializeField, Min(1.01f)] private float noticeGrowth = 1.75f;
 
-    [Tooltip("Bricks spawned at HP tier T give XP per HP x hpMultiplier^(-T x this). 0 = flat 1 XP per HP, 1 = XP per row stays constant as HP scales, 0.25 = a gentle drop.")]
-    [SerializeField, Range(0f, 1f)] private float xpScalingExponent = 0.25f;
+    [Header("Late ramp (after the first minutes)")]
+    [Tooltip("Run time (s) after which the late ramp starts. Before it, nothing changes.")]
+    [SerializeField, Min(0f)] private float lateRampStart = 300f;
+    [Tooltip("Extra hits on the toughest brick's target per minute past the start (linear part).")]
+    [SerializeField, Min(0f)] private float lateHitsPerMinute = 6f;
+    [Tooltip("Extra hits per minute squared past the start (the ramp keeps accelerating).")]
+    [SerializeField, Min(0f)] private float lateHitsAccel = 1.5f;
+    [Tooltip("The wall step interval shrinks to 1 / (1 + this x minutes past the start).")]
+    [SerializeField, Min(0f)] private float lateStepSpeedUp = 0.25f;
+    [Tooltip("The late step speed-up never goes below this share of the interval.")]
+    [SerializeField, Range(0.2f, 1f)] private float lateStepFloor = 0.4f;
+
+    [Header("HP Window (follows the kill rate)")]
+    [Tooltip("Bricks the player should destroy per second (about the rate rows are added). Faster than this means the player has more power than the ball damage shows (splash, cleave, orbs), so new bricks get tougher.")]
+    [SerializeField, Min(0.1f)] private float targetKillsPerSecond = 1.5f;
+    [Tooltip("Time constant (s) of the kill rate average.")]
+    [SerializeField, Min(0.5f)] private float killRateSmoothing = 25f;
+
+    [Header("Label damage (hits left shown on bricks)")]
+    [Tooltip("Seconds over which total damage and ball-hit damage are averaged to get the damage multiplier of the labels.")]
+    [SerializeField, Min(1f)] private float labelDamageWindow = 15f;
+    [Tooltip("Highest multiplier applied to the ball damage for the labels.")]
+    [SerializeField, Min(1f)] private float labelDamageMaxRatio = 25f;
+    [Tooltip("Seconds to follow a rising multiplier (falls 3x slower).")]
+    [SerializeField, Min(0.1f)] private float labelRiseTime = 1.5f;
+    [Tooltip("When the wanted window falls (pace relaxed), the toughest HP shrinks to at most this share of itself per row (0.9 = -10% per row).")]
+    [SerializeField, Range(0.5f, 1f)] private float shrinkPerRow = 0.9f;
+    [Tooltip("The pace factor multiplying the window grows by at most this factor per row while the kill rate is over target.")]
+    [SerializeField, Min(1f)] private float maxPaceGrowthPerRow = 1.3f;
+    [Tooltip("The pace factor never goes above this. Also, when the toughest brick already needs more than (smoothed damage x target hits x this) HP, it stops growing and relaxes.")]
+    [SerializeField, Min(1f)] private float maxPaceFactor = 4f;
+    [Tooltip("Below this share of the target kill rate the pace factor relaxes back toward 1 (x0.9 per update, every 2 s). It only grows above 1.25x the target.")]
+    [SerializeField, Range(0.1f, 1f)] private float relaxBelow = 0.6f;
 
     [Header("Endless Spawn Timing")]
     [Tooltip("Pop-in delay between neighbouring bricks of a new row (ripple from the center).")]
@@ -113,18 +163,86 @@ public class BrickGrid : MonoBehaviour
     public event Action BricksReachedPaddle;
     /// <summary>Raised when a step starts. Hook up camera shake or sound here.</summary>
     public event Action StepStarted;
-    /// <summary>Raised when the HP window scales up (min, max). Hook up the soft "it got harder" warning here.</summary>
+    /// <summary>Raised when the HP window has grown by <c>Notice Growth</c> since the last time (min, max). Hook up the soft "it got harder" warning here.</summary>
     public event Action<int, int> HpScaled;
+    /// <summary>Raised whenever the HP window grows (min, max), at most once per row.</summary>
+    public event Action<int, int> HpWindowGrew;
 
     /// <summary>Weakest brick HP that currently spawns.</summary>
     public int CurrentMinHp { get; private set; } = 1;
     /// <summary>Toughest brick HP that currently spawns.</summary>
     public int CurrentMaxHp { get; private set; } = 5;
-    /// <summary>How many times the HP window has scaled up this run.</summary>
-    public int HpScaleTier { get; private set; }
+    /// <summary>Seconds of play this run (only counts while the ball is in play, scaled time).</summary>
+    public float RunTime => runTime;
+    /// <summary>Smoothed base damage of the ball, the input of the HP window.</summary>
+    public float SmoothedDamage => smoothedDamage;
+    /// <summary>Hits the toughest brick spawning now is aimed at, <c>5 + 1.4 x minutes</c>.</summary>
+    public float TargetHits => targetHitsStart + targetHitsPerMinute * runTime / 60f + LateHits;
+
+    /// <summary>Minutes of play past <c>Late Ramp Start</c> (0 before it).</summary>
+    public float LateMinutes => Mathf.Max(0f, runTime - lateRampStart) / 60f;
+    /// <summary>Extra target hits from the late ramp: linear plus quadratic, so it keeps accelerating.</summary>
+    public float LateHits => lateHitsPerMinute * LateMinutes + lateHitsAccel * LateMinutes * LateMinutes;
+    /// <summary>Multiplier on the step interval from the late ramp (1 before it, down to <c>Late Step Floor</c>).</summary>
+    public float LateStepFactor => Mathf.Max(lateStepFloor, 1f / (1f + lateStepSpeedUp * LateMinutes));
+    private float StepWait => stepInterval * PowerUpStats.WallStepFactor * LateStepFactor;
+    /// <summary>Bricks destroyed per second, averaged over the last few seconds of play.</summary>
+    public float KillRate => killAccum / killRateSmoothing;
+    /// <summary>Multiplier (1 or more) on the HP window that tracks the damage the ball hit does not show; rises while the player kills faster than the target.</summary>
+    public float PaceFactor => paceFactor;
+
+    // Read by the run profiler (settings of the run).
+    public float TargetHitsPerMinute => targetHitsPerMinute;
+    public float TargetKillsPerSecond => targetKillsPerSecond;
+    public float MaxPaceFactor => maxPaceFactor;
+    public float LabelDamageWindow => labelDamageWindow;
+    public float LabelDamageMaxRatio => labelDamageMaxRatio;
+    /// <summary>Current seconds between wall steps (cards included).</summary>
+    public float StepInterval => stepInterval;
 
     /// <summary>Multiplies the time between steps (upgrades). 1.25 = the wall is 25% slower.</summary>
-    public void MultiplyStepInterval(float factor) => stepInterval *= Mathf.Max(0.1f, factor);
+    public void MultiplyStepInterval(float factor)
+    {
+        // Cards can shorten the interval (Rushing Wall), but never under MinWallStepFactor of the run's start value.
+        if (startStepInterval < 0f) startStepInterval = stepInterval;
+        stepInterval = Mathf.Max(startStepInterval * PowerUpStats.MinWallStepFactor, stepInterval * Mathf.Max(0.1f, factor));
+    }
+
+    private float startStepInterval = -1f;
+    private int extraSteps;
+
+    /// <summary>
+    /// Queues extra wall steps (Toll): each one runs like a normal step, one after the other, as soon as a ball is in
+    /// play. The step timer is not reset. Dropped if the wall is cleared before they run.
+    /// </summary>
+    public void QueueExtraSteps(int count) => extraSteps += Mathf.Max(0, count);
+
+    /// <summary>World Z of the lose line: a brick whose front edge reaches it after a step ends the run.</summary>
+    public float DangerZ => dangerZ;
+    /// <summary>The optional lose line marker (for the danger visuals).</summary>
+    public Transform DangerLine => dangerLine;
+    /// <summary>World distance the wall moves on one step.</summary>
+    public float StepDistance => stepInRows * cellSize;
+    /// <summary>0 right after a step, 1 when the next one starts (the timer only runs while a ball is in play).</summary>
+    public float StepProgress => Mathf.Clamp01(stepTimer / Mathf.Max(0.01f, StepWait));
+    /// <summary>Wall steps queued by Toll that will run without waiting for the timer.</summary>
+    public int QueuedSteps => extraSteps;
+
+    /// <summary>World Z of the front edge of the closest living brick (follows a step slide). +infinity with no brick.</summary>
+    public float FrontZ => FrontAt(offset);
+    /// <summary>Like <see cref="FrontZ"/>, but where the wall ends up once the current slide is over.</summary>
+    public float RestingFrontZ => FrontAt(stepping ? stepTo : offset);
+
+    private float FrontAt(float wallOffset)
+    {
+        float front = float.PositiveInfinity;
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            if (!transform.GetChild(i).TryGetComponent(out BrickStack stack) || stack.Count == 0) continue;
+            front = Mathf.Min(front, stack.LocalFrontZ + wallOffset);
+        }
+        return front;
+    }
 
     /// <summary>Width of one brick cell (X), for area-of-effect distances.</summary>
     public float BrickWidth => lengthInCells * cellSize;
@@ -168,6 +286,18 @@ public class BrickGrid : MonoBehaviour
     private float stepFrom;
     private float stepTo;
     private bool stepping;
+    private float runTime;
+    private float smoothedDamage = 1f;
+    private float killAccum;    // decaying count of recent kills (kill rate = killAccum / killRateSmoothing)
+    private float paceFactor = 1f;
+    private float lastPaceTime;
+    private bool windowReady;
+    private int lastNoticeMax;
+
+    // Effective damage for the labels: recent total damage / recent ball-hit damage (Phase excluded from both).
+    private float ballDealtAccum;
+    private float totalDealtAccum;
+    private float damageRatio = 1f;
 
     private void Awake()
     {
@@ -183,9 +313,23 @@ public class BrickGrid : MonoBehaviour
         if (generateOnStart) Generate();
     }
 
-    // Brick colors show the hits left with the current ball damage: recolor them when it changes
-    // (damage upgrade, wall buff, main ball lost to an extra). Does nothing while it stays the same.
-    private void Update() => Brick.SetHitDamage(BallController.MainDamage);
+    // Brick colors show the hits left with the permanent ball damage (level-ups and cards): recolor them when it
+    // changes. Temporary wall buffs (2x, Phase) are ignored so the wall does not flicker through colors every
+    // few seconds, and with no ball flying the last value is kept instead of dropping to 1 (which recolored everything).
+    private void Update()
+    {
+        if (BallController.Active.Count > 0) UpdateLabelDamage();
+
+        // The HP window input: run clock (ball in play only, like the wall advance) and the smoothed base damage.
+        if (IsGameOver || (ball != null && !ball.IsFlying)) return;
+        float dt = Time.deltaTime;
+        runTime += dt;
+        smoothedDamage += (BallController.MainBaseDamage - smoothedDamage) * (1f - Mathf.Exp(-dt / damageSmoothing));
+        killAccum *= Mathf.Exp(-dt / killRateSmoothing);
+        float decay = Mathf.Exp(-dt / labelDamageWindow);
+        ballDealtAccum *= decay;
+        totalDealtAccum *= decay;
+    }
 
     private void OnValidate()
     {
@@ -215,6 +359,7 @@ public class BrickGrid : MonoBehaviour
 
         if (RemainingBricks <= 0)
         {
+            extraSteps = 0; // nothing to push
             if (!endless) return;
 
             // Wall cleared with a delay set (or the immediate wave came out empty): spawn the wave now.
@@ -230,9 +375,11 @@ public class BrickGrid : MonoBehaviour
         if (ball != null && !ball.IsFlying) return;
 
         stepTimer += dt;
-        if (stepTimer >= stepInterval)
+        bool tolled = extraSteps > 0; // Toll: a queued step goes right away and leaves the step timer alone
+        if (tolled || stepTimer >= StepWait)
         {
-            stepTimer = 0f;
+            if (tolled) extraSteps--;
+            else stepTimer = 0f;
             stepFrom = offset;
             stepTo = offset - stepInRows * cellSize;
             stepT = 0f;
@@ -282,10 +429,14 @@ public class BrickGrid : MonoBehaviour
         }
         RemainingBricks = 0;
         rowsSpawned = 0;
-        HpScaleTier = 0;
-        ApplyHpWindow(0);
+        runTime = 0f;
+        smoothedDamage = BallController.MainBaseDamage;
+        windowReady = false;
+        UpdateHpWindow();
         Brick.ResetColorScale(CurrentMaxHp);
-        Brick.ResetHitDamage(BallController.MainDamage);
+        Brick.ResetHitDamage(BallController.MainBaseDamage);
+        ballDealtAccum = totalDealtAccum = 0f;
+        damageRatio = 1f;
 
         // Back to the starting position and fresh timers.
         offset = 0f;
@@ -319,15 +470,8 @@ public class BrickGrid : MonoBehaviour
 
         int rowNumber = rowsSpawned++;
 
-        // Scale before the row spawns: bricks already on the wall recolor, the new row starts on the new scale.
-        int tier = rowsPerScaling > 0 ? Mathf.Max(0, rowNumber - (rows - 1)) / rowsPerScaling : 0;
-        if (tier > HpScaleTier)
-        {
-            HpScaleTier = tier;
-            ApplyHpWindow(tier);
-            Brick.SetColorScale(CurrentMaxHp);
-            HpScaled?.Invoke(CurrentMinHp, CurrentMaxHp);
-        }
+        // Update the window before the row spawns: bricks already on the wall recolor, the new row uses the new window.
+        UpdateHpWindow();
 
         int buildColumns = mirror ? (columns + 1) / 2 : columns;
 
@@ -368,8 +512,10 @@ public class BrickGrid : MonoBehaviour
             Brick brick = Instantiate(brickPrefab, stackObject.transform);
             brick.name = $"Brick_{layer}";
             brick.ApplySize(size);
+            BrickKind kind = RollKind(rowNumber);
+            brick.SetKind(kind);
             brick.Initialize(layerHitPoints[layer], palette);
-            brick.XpPerHp = Mathf.Pow(hpMultiplier, -xpScalingExponent * HpScaleTier);
+            if (kind == BrickKind.Healer) brick.gameObject.AddComponent<BrickHealer>().Setup(this, healInterval, healPercent);
             stack.AddBrick(brick);
             brick.Destroyed += HandleBrickDestroyed;
             brick.Hit += HandleBrickHit;
@@ -378,13 +524,68 @@ public class BrickGrid : MonoBehaviour
         }
     }
 
-    private void HandleBrickHit(Brick brick, int damage) => BrickHit?.Invoke(brick, damage);
+    // Special bricks appear from their first row and get more common over specialRampRows rows.
+    private BrickKind RollKind(int rowNumber)
+    {
+        float armored = armoredMaxChance * Mathf.Clamp01((rowNumber - armoredFromRow + 1f) / specialRampRows);
+        float healer = healerMaxChance * Mathf.Clamp01((rowNumber - healerFromRow + 1f) / specialRampRows);
+        if (armored <= 0f && healer <= 0f) return BrickKind.Normal;
+        double roll = rng.NextDouble();
+        if (roll < armored) return BrickKind.Armored;
+        if (roll < armored + healer) return BrickKind.Healer;
+        return BrickKind.Normal;
+    }
+
+    // Phase is left out of both sums: its malus is not in MainBaseDamage.
+    private void RecordDamage(int dealt)
+    {
+        DamageSource source = DamageTag.Current;
+        if (source == DamageSource.Phase) return;
+        totalDealtAccum += dealt;
+        if (source == DamageSource.Ball) ballDealtAccum += dealt;
+    }
+
+    // Labels and colors count what a ball hit really does with the area effects: base damage x recent
+    // (total damage / ball-hit damage). The ratio is smoothed (quick up, slow down) and the value is only
+    // pushed when it moved by 8% or more, so labels do not flicker. With too few ball hits it keeps its value.
+    private void UpdateLabelDamage()
+    {
+        float baseDamage = BallController.MainBaseDamage;
+        if (ballDealtAccum >= 3f)
+        {
+            float target = Mathf.Clamp(totalDealtAccum / ballDealtAccum, 1f, labelDamageMaxRatio);
+            float time = target > damageRatio ? labelRiseTime : labelRiseTime * 3f;
+            damageRatio += (target - damageRatio) * (1f - Mathf.Exp(-Time.deltaTime / time));
+        }
+
+        int wanted = Mathf.Max(1, Mathf.RoundToInt(baseDamage * damageRatio));
+        int current = Brick.HitDamage;
+        if (Mathf.Abs(wanted - current) >= Mathf.Max(1f, current * 0.08f)) Brick.SetHitDamage(wanted);
+    }
+
+    private void HandleBrickHit(Brick brick, int damage)
+    {
+        RecordDamage(damage);
+        BrickHit?.Invoke(brick, damage);
+    }
 
     private void HandleBrickDestroyed(Brick brick)
     {
         RemainingBricks--;
+        killAccum += 1f;
         BrickDestroyed?.Invoke(brick);
         if (RemainingBricks > 0) return;
+
+        // Safety net: the counter must agree with the bricks really alive, or a "clear" fires with bricks left.
+        int alive = 0;
+        foreach (Brick b in GetComponentsInChildren<Brick>())
+            if (b.IsAlive) alive++;
+        if (alive > 0)
+        {
+            Debug.LogWarning($"BrickGrid: brick counter drifted (0 vs {alive} alive), resynced.", this);
+            RemainingBricks = alive;
+            return;
+        }
 
         BricksCleared?.Invoke();
 
@@ -439,12 +640,64 @@ public class BrickGrid : MonoBehaviour
         return max;
     }
 
-    // Min and max HP for a scaling tier: base values times hpMultiplier^tier, rounded.
-    private void ApplyHpWindow(int tier)
+    // HP window for the next row: max = ceil(smoothed ball damage x target hits), min = max x ratio.
+    // It grows at most x maxGrowthPerRow per row and shrinks at most to shrinkPerRow of itself per row.
+    private void UpdateHpWindow()
     {
-        float factor = Mathf.Pow(hpMultiplier, tier);
-        CurrentMinHp = Mathf.Max(1, Mathf.RoundToInt(baseMinHp * factor));
-        CurrentMaxHp = Mathf.Max(CurrentMinHp, Mathf.RoundToInt(baseMaxHp * factor));
+        // Pace factor: the ball's damage misses splash, cleave, orbs and bolts, so the window also follows how fast
+        // bricks actually die. Over the target kill rate it grows (at most maxPaceGrowthPerRow per row); well under, it relaxes.
+        // Updated at most once every 2 s of play, so a 4-row wave does not compound it four times.
+        if (windowReady && runTime - lastPaceTime >= 2f)
+        {
+            lastPaceTime = runTime;
+            // Per ball in play: a Multi-Ball burst multiplies the kills without making the player stronger.
+            int flying = 0;
+            foreach (BallController b in BallController.Active)
+                if (b != null && b.IsFlying) flying++;
+            float ratio = KillRate / Mathf.Max(1, flying) / targetKillsPerSecond;
+            // Already far tougher than the ball can handle (e.g. a percent-HP burn does the killing): stop pushing and relax.
+            bool tooTough = CurrentMaxHp > smoothedDamage * TargetHits * maxPaceFactor;
+            if (ratio > 1.25f && !tooTough) paceFactor = Mathf.Min(maxPaceFactor, paceFactor * Mathf.Min(ratio, maxPaceGrowthPerRow));
+            else if (ratio < relaxBelow || tooTough) paceFactor = Mathf.Max(1f, paceFactor * 0.9f);
+        }
+
+        int wanted = Mathf.Max(1, Mathf.CeilToInt(smoothedDamage * TargetHits * paceFactor * PowerUpStats.WallHpFactor));
+        int max = wanted;
+        if (windowReady)
+        {
+            // Grows toward the wanted value (at most x maxGrowthPerRow per row); when the wanted value falls (pace relaxed)
+            // it shrinks back too, by at most shrinkPerRow per row, so a short kill burst does not harden the wall for good.
+            if (wanted >= CurrentMaxHp)
+                max = Mathf.Min(wanted, Mathf.Max(CurrentMaxHp, Mathf.FloorToInt(CurrentMaxHp * maxGrowthPerRow)));
+            else
+                max = Mathf.Max(wanted, Mathf.CeilToInt(CurrentMaxHp * shrinkPerRow));
+        }
+
+        int min = Mathf.Clamp(Mathf.RoundToInt(max * minHpRatio), 1, max);
+        bool grew = windowReady && max > CurrentMaxHp;
+        bool shrank = windowReady && max < CurrentMaxHp;
+        CurrentMinHp = min;
+        CurrentMaxHp = max;
+
+        if (!windowReady)
+        {
+            windowReady = true;
+            lastNoticeMax = max;
+            return;
+        }
+        if (shrank)
+        {
+            Brick.SetColorScale(max, false);
+            lastNoticeMax = Mathf.Min(lastNoticeMax, max); // a later regrowth can warn again
+            return;
+        }
+        if (!grew) return;
+
+        bool notice = max >= lastNoticeMax * noticeGrowth;
+        if (notice) lastNoticeMax = max;
+        Brick.SetColorScale(max, notice);
+        HpWindowGrew?.Invoke(min, max);
+        if (notice) HpScaled?.Invoke(min, max);
     }
 
     // Fewer gaps the deeper into the run we are.

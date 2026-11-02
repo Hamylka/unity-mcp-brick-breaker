@@ -31,12 +31,27 @@ public class GameManager : MonoBehaviour
     [Tooltip("Seconds the game takes to slow down to a full stop before the Game Over screen opens.")]
     [SerializeField, Min(0f)] private float slowDownTime = 0.7f;
 
+    [Header("Ball speed ramp")]
+    [Tooltip("Seconds of play between two ball speed steps.")]
+    [SerializeField, Min(1f)] private float speedStepInterval = 60f;
+    [Tooltip("Speed added by each step, as a fraction of the start speed (0.2 = +20%). No cap for now.")]
+    [SerializeField, Min(0f)] private float speedStepAmount = 0.075f;
+
+    // Read by the run profiler (settings of the run).
+    public float SpeedStepInterval => speedStepInterval;
+    public float SpeedStepAmount => speedStepAmount;
+
     /// <summary>Raised once when the run ends.</summary>
     public event Action<LoseReason> GameOver;
+
+    /// <summary>Raised when the ball speed ramp steps up: the step number (1, 2...) and the new speed factor (1.2, 1.4...).</summary>
+    public static event Action<int, float> BallSpeedStepped;
 
     public bool IsGameOver { get; private set; }
     /// <summary>Seconds of actual play (stops while paused).</summary>
     public float RunTime { get; private set; }
+    private bool runStarted;
+    private int speedStep;
     public int BricksDestroyed { get; private set; }
 
     private void Awake()
@@ -45,6 +60,8 @@ public class GameManager : MonoBehaviour
         Application.targetFrameRate = 60;
         // The player only touches the screen while dragging, so stop it from dimming mid-run.
         Screen.sleepTimeout = SleepTimeout.NeverSleep;
+
+        BallController.RunSpeedFactor = 1f; // the ramp restarts with the run
 
         // A lost ball ends the run instead of going back to the paddle.
         if (ball != null) ball.AutoReset = false;
@@ -77,7 +94,25 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        if (!IsGameOver) RunTime += Time.deltaTime; // deltaTime is 0 while paused
+        // The clock starts when the ball first launches (not while it waits on the paddle).
+        if (!runStarted)
+        {
+            foreach (BallController b in BallController.Active)
+                if (b.IsFlying) { runStarted = true; break; }
+        }
+
+        if (runStarted && !IsGameOver) RunTime += Time.deltaTime; // deltaTime is 0 while paused
+
+        // Ball speed ramp: +speedStepAmount of the start speed every speedStepInterval seconds of play, no cap.
+        int step = Mathf.FloorToInt(RunTime / speedStepInterval);
+        if (step > speedStep && !IsGameOver)
+        {
+            speedStep = step;
+            float factor = 1f + speedStepAmount * step;
+            BallController.RunSpeedFactor = factor;
+            RunProfiler.Log("ball_speed", "step", factor, step.ToString());
+            BallSpeedStepped?.Invoke(step, factor);
+        }
     }
 
     private void HandleBallLost(BallController lostBall)
@@ -86,6 +121,11 @@ public class GameManager : MonoBehaviour
         BallController successor = FindSuccessor(lostBall);
         if (successor == null)
         {
+            if (PowerUpStats.PhoenixReady && !PowerUpStats.BrittlePact)
+            {
+                RevivePhoenix(lostBall);
+                return;
+            }
             EndRun(LoseReason.BallLost);
             return;
         }
@@ -95,6 +135,23 @@ public class GameManager : MonoBehaviour
         successor.PromoteToMain();
         SetMainBall(successor);
         PlayPromoteCue(successor);
+    }
+
+    // Phoenix Ball: once per run the last ball comes back on the paddle instead of ending the run.
+    private void RevivePhoenix(BallController lostBall)
+    {
+        PowerUpStats.PhoenixReady = false;
+        RunProfiler.Log("phoenix_used", "Phoenix Ball", RunTime, $"level={FindAnyObjectByType<ExperienceSystem>()?.Level}");
+        lostBall.ResetToPaddle();
+        foreach (TrailRenderer trail in lostBall.GetComponentsInChildren<TrailRenderer>()) trail.Clear();
+
+        Color fire = new(1f, 0.55f, 0.15f, 1f);
+        Vector3 at = lostBall.Position;
+        SoundManager.Play(Sfx.BallPromote, 0.8f);
+        SoftFlash.Spawn(at, fire, 2.2f, 0.4f);
+        NeonFx.Ring(at, fire, 32, 6f, 0.1f, 0.45f);
+        NeonFx.Burst(at, Color.Lerp(fire, Color.white, 0.3f), 24, 3.5f, 0.08f, 0.6f);
+        NeonFx.Embers(at, fire, 10, 0.07f, 1.0f);
     }
 
     // The ball that takes a wall buff zone becomes the main ball; the former main is now an extra.

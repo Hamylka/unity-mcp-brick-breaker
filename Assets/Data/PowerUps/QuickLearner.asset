@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: QuickLearner
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Quick Learner
-  description: XP gained +20%
+  description: XP gained +10%
   rarity: 1
   icon: '...#...
 

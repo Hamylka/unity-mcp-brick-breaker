@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 
 /// <summary>
-/// Endless XP progression. Every ball hit grants XP equal to the hit points it removed from the brick.
+/// Endless XP progression. A brick is worth 1/Bricks Per Level of the current level's cost, paid per hit point removed.
 /// If an <see cref="IXpVisuals"/> is registered (the HUD), the XP arrives later, when its orb reaches the bar.
 /// XP needed to go from level L to L + 1 is:  Required XP = Base XP x (L ^ Power)  (rounded to a whole number).
 /// Excess XP carries over, and a big gain can raise several levels at once.
@@ -18,9 +18,25 @@ public class ExperienceSystem : MonoBehaviour
     [Tooltip("Exponent of the curve. 1 = linear, higher = steeper.")]
     [SerializeField, Min(0.1f)] private float power = 1.2f;
 
+    [Header("XP per Brick")]
+    [Tooltip("A typical brick is worth (XP needed for the current level) / bricks per level, split over its HP. Higher = slower levels. This is the value at level 1.")]
+    [SerializeField, Min(0.5f)] private float bricksPerLevel = 8f;
+    [Tooltip("Bricks per level grow by this much for every level gained, so level-ups stay spaced out when the kill rate is high (8 + 0.4 x 49 = 27.6 at level 50).")]
+    [SerializeField, Min(0f)] private float bricksPerLevelGrowth = 0.4f;
+    [Tooltip("A brick's worth is scaled by its max HP / the middle of the HP window now spawning, clamped to this. Weak or outdated bricks pay less, tough ones more (1 = ignore HP).")]
+    [SerializeField, Min(1f)] private float maxHpWorth = 2f;
+
+    [Header("Kill Rate Brake")]
+    [Tooltip("The brake starts when the kill rate is this many times the target (BrickGrid > Target Kills Per Second).")]
+    [SerializeField, Min(1f)] private float brakeStartsAt = 2f;
+    [Tooltip("Lowest share of the XP a brick can pay under the brake.")]
+    [SerializeField, Range(0.05f, 1f)] private float brakeFloor = 0.25f;
+
     [Header("Wall Clear Bonus")]
     [Tooltip("Clearing every brick grants this share of the XP needed for the current level (0.5 = 50%).")]
     [SerializeField, Range(0f, 2f)] private float clearBonus = 0.25f;
+    [Tooltip("Seconds of play since the previous clear for the bonus to be paid in full; a faster clear pays proportionally less (min 10%). Stops clear spamming from paying a level each.")]
+    [SerializeField, Min(0f)] private float clearBonusFullAfter = 20f;
 
     [Header("XP Orbs")]
     [Tooltip("XP orbs leave the ball if one is within this distance of the brick that was hit, otherwise they leave the brick.")]
@@ -39,6 +55,7 @@ public class ExperienceSystem : MonoBehaviour
 
     private float xpMultiplier = 1f;
     private float xpRemainder;
+    private float lastClearTime = -999f;
     private Vector3 lastHitPosition;
     private int pendingXp;         // XP earned this frame, waiting to be sent as merged orbs
     private Vector3 pendingBrick;  // first brick hit this frame
@@ -49,8 +66,45 @@ public class ExperienceSystem : MonoBehaviour
     /// <summary>Raises the XP gained from bricks (upgrades). 0.2 = +20%.</summary>
     public void AddXpMultiplier(float amount) => xpMultiplier += amount;
 
+    /// <summary>
+    /// XP (before the Quick Learner multiplier) for removing <paramref name="damageDealt"/> HP from a brick:
+    /// the share of its HP times the brick's worth, <c>XpToNextLevel / Bricks Per Level</c>.
+    /// </summary>
+    public float XpForHit(Brick brick, int damageDealt)
+    {
+        int maxHp = Mathf.Max(1, brick.MaxHitPoints);
+        // HP worth: a brick of the middle of the current HP window pays 1x, tougher ones more, weaker or outdated ones less.
+        float worth = 1f;
+        if (grid != null)
+        {
+            float mid = Mathf.Max(1f, (grid.CurrentMinHp + grid.CurrentMaxHp) * 0.5f);
+            worth = Mathf.Clamp(maxHp / mid, 1f / maxHpWorth, maxHpWorth);
+        }
+        return damageDealt / (float)maxHp * worth * KillRateBrake * XpToNextLevel / BricksPerLevel;
+    }
+
+    /// <summary>
+    /// Second brake on a snowballing run (invisible to the player): when the kill rate (25 s average) is far over the
+    /// target, every brick pays less XP, so level-ups stay spaced out instead of coming every 2 to 3 s. 1 up to
+    /// <c>Brake Starts At</c> x the target rate, then <c>start / ratio</c> down to the floor.
+    /// </summary>
+    public float KillRateBrake
+    {
+        get
+        {
+            if (grid == null || grid.TargetKillsPerSecond <= 0f) return 1f;
+            float ratio = grid.KillRate / grid.TargetKillsPerSecond;
+            return ratio <= brakeStartsAt ? 1f : Mathf.Max(brakeFloor, brakeStartsAt / ratio);
+        }
+    }
+
     public int BaseXp => baseXp;
+    /// <summary>Bricks a level is worth now: the base value plus the growth per level gained.</summary>
+    public float BricksPerLevel => bricksPerLevel + bricksPerLevelGrowth * (Level - 1);
     public float Power => power;
+    /// <summary>Settings read by the run profiler.</summary>
+    public float BaseBricksPerLevel => bricksPerLevel;
+    public float BricksPerLevelGrowth => bricksPerLevelGrowth;
     public int Level { get; private set; } = 1;
     public int CurrentXp { get; private set; }
     public int TotalXp { get; private set; }
@@ -85,7 +139,11 @@ public class ExperienceSystem : MonoBehaviour
     // Every brick cleared: a bonus worth part of the current level, flying out of the last brick that was hit.
     private void HandleWallCleared()
     {
-        int amount = Mathf.CeilToInt(XpToNextLevel * clearBonus);
+        // Clears in quick succession pay less (a wall that dies in a second is a sign of too much power, not skill).
+        float now = grid != null ? grid.RunTime : 0f;
+        float share = clearBonusFullAfter <= 0f ? 1f : Mathf.Clamp((now - lastClearTime) / clearBonusFullAfter, 0.1f, 1f);
+        lastClearTime = now;
+        int amount = Mathf.CeilToInt(XpToNextLevel * clearBonus * share);
         if (amount <= 0) return;
 
         ClearBonusGranted?.Invoke(amount);
@@ -98,8 +156,8 @@ public class ExperienceSystem : MonoBehaviour
     {
         lastHitPosition = brick.transform.position;
 
-        // 1 XP per hit point removed (less on bricks spawned after the HP window scaled, see Brick.XpPerHp). Fractions of the multiplier carry over, so small bonuses still add up.
-        xpRemainder += damageDealt * brick.XpPerHp * xpMultiplier;
+        // A brick is worth a share of the level cost, split per HP removed (see XpForHit). Fractions carry over, so small hits still add up.
+        xpRemainder += XpForHit(brick, damageDealt) * Mathf.Max(PowerUpStats.MinXpMultiplier, xpMultiplier); // Dim Orbs floor
         int amount = Mathf.FloorToInt(xpRemainder);
         if (amount <= 0) return;
         xpRemainder -= amount;

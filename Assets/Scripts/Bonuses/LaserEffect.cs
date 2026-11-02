@@ -23,6 +23,6 @@ public class LaserEffect : BonusEffect
 
         LaserCannon cannon = context.Paddle.GetComponent<LaserCannon>();
         if (cannon == null) cannon = context.Paddle.gameObject.AddComponent<LaserCannon>();
-        cannon.Activate(duration, fireInterval, boltMaterial, boltColor, boltWidth);
+        cannon.Activate(duration * PowerUpStats.BonusDuration,fireInterval, boltMaterial, boltColor, boltWidth);
     }
 }

@@ -62,21 +62,38 @@ public class PaddleController : MonoBehaviour
     private float velocityZ;
     private bool dragging;
     private Vector2 lastPointerPosition;
+    private const float MinWidthFactor = 0.5f; // the paddle never gets narrower than half its start width
+    private float startScaleX;
+    private float startHalfWidth;
+    private float widthBonus;
 
     private float MaxX => Mathf.Max(0f, playfieldHalfWidth - paddleHalfWidth);
 
-    /// <summary>Makes the paddle wider or narrower (upgrades). 1.15 = 15% wider.</summary>
-    public void MultiplyWidth(float factor)
+    /// <summary>Makes the paddle wider or narrower (upgrades) by a share of its start width: 0.2 = +20% of the start width.</summary>
+    public void AddWidth(float share)
     {
+        widthBonus += share;
+        float factor = Mathf.Max(MinWidthFactor, 1f + widthBonus);
         Vector3 scale = transform.localScale;
-        scale.x *= factor;
+        scale.x = startScaleX * factor;
         transform.localScale = scale;
-        paddleHalfWidth *= factor;
+        paddleHalfWidth = startHalfWidth * factor;
     }
+
+    /// <summary>Makes the paddle catch up with the finger faster (upgrades): every smoothing time shrinks by <paramref name="factor"/>.</summary>
+    public void MultiplyFollowSpeed(float factor)
+    {
+        horizontalSmoothTime = Mathf.Max(0.001f, horizontalSmoothTime / factor);
+        depthSmoothTime = Mathf.Max(0.001f, depthSmoothTime / factor);
+        releaseSmoothTime = Mathf.Max(0.001f, releaseSmoothTime / factor);
+    }
+
+    private GameManager gameManager;
+    private bool frozen;
 
     private void Awake()
     {
-        body = GetComponent<Rigidbody>();
+        body =GetComponent<Rigidbody>();
         body.isKinematic = true;
         body.interpolation = RigidbodyInterpolation.Interpolate;
         body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
@@ -84,10 +101,32 @@ public class PaddleController : MonoBehaviour
         restZ = transform.position.z;
         targetX = transform.position.x;
         targetZ = restZ;
+
+        startScaleX = transform.localScale.x;
+        startHalfWidth = paddleHalfWidth;
+    }
+
+    private void Start()
+    {
+        gameManager = FindFirstObjectByType<GameManager>();
     }
 
     private void Update()
     {
+        // The run is over (Game Over animation, then the screen): the paddle stays where it is.
+        if (gameManager != null && gameManager.IsGameOver)
+        {
+            if (!frozen)
+            {
+                frozen = true;
+                dragging = false;
+                targetX = body.position.x;
+                targetZ = body.position.z;
+            }
+            return;
+        }
+        frozen = false;
+
         if (Time.timeScale == 0f)
         {
             dragging = false; // paused (menus): ignore the pointer
@@ -151,7 +190,7 @@ public class PaddleController : MonoBehaviour
         float axis = 0f;
         if (keyboard.leftArrowKey.isPressed || keyboard.aKey.isPressed) axis -= 1f;
         if (keyboard.rightArrowKey.isPressed || keyboard.dKey.isPressed) axis += 1f;
-        targetX += axis * keyboardSpeed * Time.deltaTime;
+        targetX += axis * keyboardSpeed * Time.unscaledDeltaTime; // unscaled: stays responsive while the time eases back after the cards
     }
 
 #if UNITY_EDITOR

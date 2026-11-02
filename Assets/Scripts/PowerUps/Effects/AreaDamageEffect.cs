@@ -4,6 +4,8 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "AreaDamageEffect", menuName = "BrickBreaker/Effects/Area Damage")]
 public class AreaDamageEffect : PowerUpEffect
 {
+    public override bool IsOffensive => true;
+
     public enum Kind
     {
         /// <summary>Amount = share of the damage dealt that splashes onto the neighbours (0.25 = 25%).</summary>
@@ -39,12 +41,29 @@ public class AreaDamageEffect : PowerUpEffect
         }
     }
 
+    // Meltdown is an Exquisite card (never corrupted), so it has no way back.
+    public override bool CanRemove => kind != Kind.Meltdown;
+
+    public override void Remove(PowerUpContext context)
+    {
+        if (context.Grid == null || !context.Grid.TryGetComponent(out AreaDamage area)) return;
+
+        switch (kind)
+        {
+            case Kind.Shockwave: area.RemoveSplash(amount); break;
+            case Kind.ChainLightning: area.RemoveChain(); break;
+            case Kind.Piercing: area.RemovePierce(Mathf.RoundToInt(amount)); break;
+            case Kind.Volatile: area.RemoveBlast(amount); break;
+            case Kind.Cleave: area.RemoveCleave(); break;
+        }
+    }
+
     public override string Describe(int stacks)
     {
         int percent = Mathf.RoundToInt(amount * 100f);
         switch (kind)
         {
-            case Kind.Shockwave: return $"{percent * stacks}% SPLASH TO NEIGHBOURS";
+            case Kind.Shockwave: return $"{Mathf.RoundToInt(AreaDamage.SplashFor(amount, stacks) * 100f)}% SPLASH TO NEIGHBOURS";
             case Kind.ChainLightning: return $"ARCS TO {stacks + 1} BRICKS FOR {percent}% DMG";
             case Kind.Piercing:
                 int depth = Mathf.RoundToInt(amount) * stacks;

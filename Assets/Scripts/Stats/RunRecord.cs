@@ -9,7 +9,7 @@ using System.Collections.Generic;
 [Serializable]
 public class RunRecord
 {
-    public int schema = 1;
+    public int schema = 3;
     public string runId;
     public string startedUtc;
     public string appVersion;
@@ -34,6 +34,19 @@ public class RunRecord
         public float xpPower;
         public int damagePerLevel;
         public int rerolls;
+
+        // Added in schema 2: the tuning values of the run (0 in older files).
+        public float baseBricksPerLevel;
+        public float bricksPerLevelGrowth;
+        public float targetHitsPerMinute;
+        public float targetKillsPerSecond;
+        public float maxPaceFactor;
+        public float labelDamageWindow;
+        public float labelDamageMaxRatio;
+        public float wallStepIntervalStart;
+        public float speedStepInterval;
+        public float speedStepAmount;
+        public float minSpeedFactor;
     }
 
     [Serializable]
@@ -45,7 +58,10 @@ public class RunRecord
         public int totalXp;
         public int bricksDestroyed;
         public int rowsSpawned;
-        public int hpScaleTier;
+        public float targetHits;
+        public float smoothedDamage;
+        public float paceFactor;
+        public float killRate;
         public int hpWindowMin;
         public int hpWindowMax;
         public int ballDamage;
@@ -56,6 +72,26 @@ public class RunRecord
         public int rerollsUsed;
         public int wallClears;
         public int totalDamage;
+
+        // Echo (0 without the card, and in older files): procs fired, repeats dealt, procs where the ball's own hit
+        // had already killed the brick, jumps to another brick, repeats lost with no living brick left, and the
+        // overkill damage carried onto the next brick.
+        public int echoProcs;
+        public int echoRepeats;
+        public int echoBallKills;
+        public int echoJumps;
+        public int echoNoTarget;
+        public int echoCarriedDamage;
+
+        // Wall bounces made between two brick hits of the same ball (0 in older files). "Hist" arrays count brick
+        // hits by how many side / back wall bounces came before them: index 0 to 5, index 6 = 6 or more.
+        // The totals are the raw bounce counts (not capped).
+        public int brickHitsCounted;
+        public int[] sideBounceHist = new int[7];
+        public int[] backBounceHist = new int[7];
+        public int sideBounceTotal;
+        public int backBounceTotal;
+        public int ballsLost;
     }
 
     /// <summary>Damage dealt by one source over the whole run.</summary>
@@ -126,5 +162,31 @@ public class RunRecord
         public int hpMax;
         public int totalDamage;
         public int flyingBalls;
+
+        // Added in schema 2 (0 in older files). ballDamage above is the live value (wall buffs and the Phase malus
+        // included); baseDamage is what the HP window follows.
+        public int baseDamage;
+        public float cardMultiplier;
+        public float smoothedDamage;
+        public float targetHits;
+        public float paceFactor;
+        public float killRate;
+        public int labelDamage;
+        public float speedFactor;
+        public float wallStepInterval;
+        public float ballSize;
+        public int corruptionCharges;
+        // Share of the XP a brick pays under the kill-rate brake (1 = no brake). Added with the brake; 0 in older files.
+        public float xpBrake;
+
+        // Added with the 2026-10-31 rebalance (0 in older files). stepsLeft = wall steps before the front row would
+        // cross the lose line (same measure as the danger meter), frontGap = that distance in world units,
+        // dangerLevel = DangerMeter.Level (0 to 1). killRatePerBall = killRate / balls flying (at least 1) and
+        // rampHits = the part of targetHits that comes from the steady per-minute ramp.
+        public float dangerLevel;
+        public float stepsLeft;
+        public float frontGap;
+        public float killRatePerBall;
+        public float rampHits;
     }
 }

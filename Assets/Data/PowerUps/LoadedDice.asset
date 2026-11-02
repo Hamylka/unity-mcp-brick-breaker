@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: LoadedDice
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Loaded Dice
-  description: +2 rerolls per level-up
+  description: +1 reroll per level-up
   rarity: 4
   icon: '#######
 

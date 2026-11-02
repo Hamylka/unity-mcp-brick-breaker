@@ -1,6 +1,15 @@
 using System;
 using UnityEngine;
 
+public enum BrickKind
+{
+    Normal,
+    /// <summary>Ignores splash and area damage (Shockwave, Chain, Volatile, Cleave, Meltdown, Overkill Spill).</summary>
+    Armored,
+    /// <summary>Periodically restores hit points to its neighbours (<see cref="BrickHealer"/>).</summary>
+    Healer
+}
+
 /// <summary>
 /// One brick (one layer of a <see cref="BrickStack"/>): hit points, color, and the animations
 /// (hit punch, destruction shrink, falling one layer with a soft landing).
@@ -75,13 +84,17 @@ public class Brick : MonoBehaviour
 
     private static event Action ColorScaleChanged;
 
-    /// <summary>Changes the gradient scale. Every living brick recolors with a small pulse.</summary>
-    public static void SetColorScale(int maxHitPoints)
+    /// <summary>
+    /// Changes the gradient scale. Every living brick recolors, with a small pulse when <paramref name="pulse"/>
+    /// is set (the "difficulty increased" moment), otherwise with a quiet fade (the window grows a little every row).
+    /// </summary>
+    public static void SetColorScale(int maxHitPoints, bool pulse = true)
     {
         int clamped = Mathf.Max(1, maxHitPoints);
         if (clamped == ColorScaleMaxHp) return;
         ColorScaleMaxHp = clamped;
-        ColorScaleChanged?.Invoke();
+        if (pulse) ColorScaleChanged?.Invoke();
+        else HitDamageChanged?.Invoke();
     }
 
     /// <summary>Sets the scale without recoloring anyone (new run).</summary>
@@ -113,13 +126,38 @@ public class Brick : MonoBehaviour
     /// <summary>Estimated ball hits left to break this brick.</summary>
     public int HitsLeft => HitsFor(HitPoints);
 
+    /// <summary>Special brick type (roadmap: Armored and Healer). Set by the grid before <see cref="Initialize"/>.</summary>
+    public BrickKind Kind { get; private set; }
+
+    /// <summary>Sets the brick type. Call before <see cref="Initialize"/> so the first color already carries the tint.</summary>
+    public void SetKind(BrickKind kind) => Kind = kind;
+
+    private static readonly Color ArmoredTint = new(0.72f, 0.84f, 1f);
+    private static readonly Color HealerTint = new(0.3f, 1f, 0.45f);
+
+    /// <summary>Times a Healer brick has healed its neighbours (its icon pops on each one).</summary>
+    public int HealCasts { get; private set; }
+    public void NotifyHealCast() => HealCasts++;
+
+    // Damage that comes from an area effect: an Armored brick ignores it (direct hits still land).
+    private static bool IsAreaSource(DamageSource source) =>
+        source == DamageSource.Shockwave || source == DamageSource.Chain || source == DamageSource.Volatile
+        || source == DamageSource.Cleave || source == DamageSource.Meltdown || source == DamageSource.OverkillSpill
+        || source == DamageSource.CannonBlast;
+
+    /// <summary>Restores hit points (Healer), never above the maximum. The color fades to the new value.</summary>
+    public void Heal(int amount)
+    {
+        if (!IsAlive || shrinking || HitPoints >= MaxHitPoints) return;
+        HitPoints = Mathf.Min(MaxHitPoints, HitPoints + Mathf.Max(0, amount));
+        StartColorFade(shownColor, shownToughness, colorFadeTime);
+    }
+
     public int MaxHitPoints { get; private set; } = 1;
     public int HitPoints { get; private set; } = 1;
     public bool IsAlive => HitPoints > 0;
     /// <summary>Fractional damage waiting to become a whole HP (splash power-ups at low damage).</summary>
     public float DamageCarry { get; set; }
-    /// <summary>XP granted per HP removed. Shrinks for bricks spawned after the HP window scaled up (set by <see cref="BrickGrid"/>).</summary>
-    public float XpPerHp { get; set; } = 1f;
 
     private MaterialPropertyBlock block;
     private Vector3 size = new(1f, 0.4f, 0.5f);
@@ -235,7 +273,17 @@ public class Brick : MonoBehaviour
     public Color HpColor => CurrentColor();
 
     // The ramp runs on hits left: white = breaks in one hit, hot red = as many hits as the toughest brick spawning now.
-    private Color CurrentColor() => palette != null ? palette.GetColor(HitsLeft, HitsFor(ColorScaleMaxHp)) : Color.white;
+    private Color CurrentColor()
+    {
+        Color heat = palette != null ? palette.GetColor(HitsLeft, HitsFor(ColorScaleMaxHp)) : Color.white;
+        // Special bricks keep a hint of the heat ramp (the labels carry the exact count) under their own tint.
+        return Kind switch
+        {
+            BrickKind.Armored => Color.Lerp(heat, ArmoredTint, 0.6f),
+            BrickKind.Healer => Color.Lerp(heat, HealerTint, 0.55f),
+            _ => heat
+        };
+    }
     private float CurrentToughness() => BrickPalette.GetToughness(HitsLeft, HitsFor(ColorScaleMaxHp));
 
     // Fades from a start color and toughness to the ones of the current HP.
@@ -296,6 +344,14 @@ public class Brick : MonoBehaviour
     {
         if (!IsAlive) return;
 
+        if (Kind == BrickKind.Armored && IsAreaSource(DamageTag.Current))
+        {
+            // Splash, chain, blast, sweep and fire glance off the plating: a few steel sparks, no damage.
+            NeonFx.Burst(transform.position, ArmoredTint, 2, 1.8f, 0.05f, 0.18f);
+            return;
+        }
+
+        damage = PowerUpStats.WithExecutioner(this, damage); // every damage source, on a brick that is already low
         int dealt = Mathf.Min(damage, HitPoints);
         HitPoints = Mathf.Max(0, HitPoints - damage);
         Hit?.Invoke(this, dealt);

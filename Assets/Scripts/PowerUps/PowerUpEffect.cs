@@ -5,6 +5,8 @@ using UnityEngine;
 public class PowerUpContext
 {
     public PowerUpManager Manager;
+    /// <summary>The card whose effect is being applied or removed.</summary>
+    public PowerUpDefinition Source;
     public PaddleController Paddle;
     public BrickGrid Grid;
     public ExperienceSystem Experience;
@@ -18,6 +20,18 @@ public class PowerUpContext
 public abstract class PowerUpEffect : ScriptableObject
 {
     public abstract void Apply(PowerUpContext context);
+
+    /// <summary>
+    /// True when <see cref="Remove"/> can take one level back. Only such cards can be corrupted (the cost of a
+    /// corruption is one owned level of the card).
+    /// </summary>
+    public virtual bool CanRemove => false;
+
+    /// <summary>Undoes one <see cref="Apply"/> (one level lost to a corruption). Only called when <see cref="CanRemove"/>.</summary>
+    public virtual void Remove(PowerUpContext context) { }
+
+    /// <summary>True for cards that make the player kill faster. Every card offer contains at least one when possible.</summary>
+    public virtual bool IsOffensive => false;
 
     /// <summary>
     /// Short text of what the power-up does in total after this many picks (pause screen), e.g. "+3 DAMAGE PER HIT".

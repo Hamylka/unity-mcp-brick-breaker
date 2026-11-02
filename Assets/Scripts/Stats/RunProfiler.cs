@@ -84,6 +84,8 @@ public class RunProfiler : MonoBehaviour
     private void OnDestroy()
     {
         if (Instance == this) Instance = null;
+        BallController.BrickHitRegistered -= HandleBrickHitRegistered;
+        BallController.AnyBallLost -= HandleAnyBallLost;
     }
 
     private void Start()
@@ -109,9 +111,26 @@ public class RunProfiler : MonoBehaviour
         record.settings.xpPower = experience != null ? Mathf.Round(experience.Power * 1000f) / 1000f : 0f;
         record.settings.damagePerLevel = powerUps != null ? powerUps.DamagePerLevel : 0;
         record.settings.rerolls = powerUps != null ? powerUps.RerollCount : 0;
+        if (experience != null)
+        {
+            record.settings.baseBricksPerLevel = experience.BaseBricksPerLevel;
+            record.settings.bricksPerLevelGrowth = experience.BricksPerLevelGrowth;
+        }
+        record.settings.targetHitsPerMinute = grid.TargetHitsPerMinute;
+        record.settings.targetKillsPerSecond = grid.TargetKillsPerSecond;
+        record.settings.maxPaceFactor = grid.MaxPaceFactor;
+        record.settings.labelDamageWindow = grid.LabelDamageWindow;
+        record.settings.labelDamageMaxRatio = grid.LabelDamageMaxRatio;
+        record.settings.wallStepIntervalStart = Round(grid.StepInterval);
+        record.settings.speedStepInterval = game.SpeedStepInterval;
+        record.settings.speedStepAmount = game.SpeedStepAmount;
+        BallController anyBall = FindAnyObjectByType<BallController>();
+        record.settings.minSpeedFactor = anyBall != null ? anyBall.MinSpeedFactor : 0f;
 
+        BallController.BrickHitRegistered += HandleBrickHitRegistered;
+        BallController.AnyBallLost += HandleAnyBallLost;
         grid.BrickHit += HandleBrickHit;
-        grid.HpScaled += HandleHpScaled;
+        grid.HpWindowGrew += HandleHpWindowGrew;
         game.GameOver += HandleGameOver;
         if (experience != null)
         {
@@ -122,6 +141,7 @@ public class RunProfiler : MonoBehaviour
         {
             powerUps.Offered += HandleOffered;
             powerUps.PowerUpChosen += HandlePowerUpChosen;
+            powerUps.Corrupted += HandleCorrupted;
         }
         if (bonuses != null)
         {
@@ -161,7 +181,7 @@ public class RunProfiler : MonoBehaviour
         int i = (int)DamageTag.Current;
         hits[i]++;
         damage[i] += dealt;
-        xp[i] += dealt * brick.XpPerHp;
+        if (experience != null) xp[i] += experience.XpForHit(brick, dealt);
         if (!brick.IsAlive) kills[i]++;
     }
 
@@ -199,9 +219,18 @@ public class RunProfiler : MonoBehaviour
     private void HandlePowerUpChosen(PowerUpDefinition definition, int stacks)
     {
         if (finished || record.offers.Count == 0) return;
+        if (RarityStyle.IsCorruption(definition.Rarity)) return; // a corruption outcome is logged by its corrupt event, not as the pick
         RunRecord.OfferEntry entry = record.offers[^1];
         entry.chosen = $"{definition.DisplayName} LV{stacks}";
         entry.chosenRarity = definition.Rarity.ToString();
+    }
+
+    private void HandleCorrupted(CorruptionResult result)
+    {
+        if (finished) return;
+        string outcome = result.Outcome != null ? $"{result.Outcome.DisplayName} ({result.Outcome.Rarity})" : "none";
+        AddEvent("corrupt", result.Source.DisplayName, result.LevelAfter,
+            $"{outcome}, {Mathf.RoundToInt(result.ExquisiteChance * 100f)}% exquisite, lv {result.LevelBefore}>{result.LevelAfter}");
     }
 
     private void HandleBonusDropped(BonusDefinition definition)
@@ -216,8 +245,9 @@ public class RunProfiler : MonoBehaviour
         AddEvent("bonus_collected", definition.DisplayName, 0f, "");
     }
 
-    private void HandleHpScaled(int min, int max) =>
-        AddEvent("hp_scale", "", grid.HpScaleTier, $"{min}-{max}");
+    // Logged every time the window grows (at most once per row): value = target hits, detail = min-max HP.
+    private void HandleHpWindowGrew(int min, int max) =>
+        AddEvent("hp_window", "", Round(grid.TargetHits), $"{min}-{max}");
 
     private void HandleClearBonus(int xpAmount)
     {
@@ -243,8 +273,49 @@ public class RunProfiler : MonoBehaviour
             wallHp = hp,
             hpMax = grid.CurrentMaxHp,
             totalDamage = total,
-            flyingBalls = flying
+            flyingBalls = flying,
+            baseDamage = BallController.MainBaseDamage,
+            cardMultiplier = Round(BallController.MainCardMultiplier),
+            smoothedDamage = Round(grid.SmoothedDamage),
+            targetHits = Round(grid.TargetHits),
+            paceFactor = Round(grid.PaceFactor),
+            killRate = Round(grid.KillRate),
+            labelDamage = Brick.HitDamage,
+            speedFactor = Round(BallController.RunSpeedFactor),
+            wallStepInterval = Round(grid.StepInterval),
+            ballSize = Round(PowerUpStats.BallSize),
+            corruptionCharges = PowerUpStats.CorruptionCharges,
+            xpBrake = experience != null ? Round(experience.KillRateBrake) : 1f,
+            dangerLevel = Round(DangerMeter.Level),
+            stepsLeft = Round((grid.RestingFrontZ - grid.DangerZ) / Mathf.Max(0.01f, grid.StepDistance)),
+            frontGap = Round(grid.RestingFrontZ - grid.DangerZ),
+            killRatePerBall = Round(grid.KillRate / Mathf.Max(1, flying)),
+            rampHits = Round(grid.TargetHitsPerMinute * grid.RunTime / 60f)
         };
+    }
+
+    // Brick hit by a ball: how many side / back wall bounces came since its previous brick hit.
+    private void HandleBrickHitRegistered(BallController ball, int side, int back)
+    {
+        if (finished) return;
+        RunRecord.Summary s = record.summary;
+        s.brickHitsCounted++;
+        s.sideBounceHist[Mathf.Min(side, 6)]++;
+        s.backBounceHist[Mathf.Min(back, 6)]++;
+        s.sideBounceTotal += side;
+        s.backBounceTotal += back;
+    }
+
+    // A ball fell past the paddle: what the player was doing. detail = key=value pairs.
+    private void HandleAnyBallLost(BallController lost)
+    {
+        if (finished) return;
+        int others = 0;
+        foreach (BallController ball in BallController.Active)
+            if (ball != null && ball != lost && ball.IsFlying) others++;
+        record.summary.ballsLost++;
+        AddEvent("ball_lost", lost.IsExtra ? "extra" : "main", Round(lost.TimeSincePaddleHit),
+            $"others={others};speed={Round(lost.CurrentSpeed)};paddleOffset={Round(lost.PaddleOffset)};sincePaddle={Round(lost.TimeSincePaddleHit)};phoenix={PowerUpStats.PhoenixReady}");
     }
 
     // Bricks on the wall and their total HP (the bottom brick of each stack, the only ones the ball can reach).
@@ -273,7 +344,16 @@ public class RunProfiler : MonoBehaviour
         s.totalXp = experience != null ? experience.TotalXp : 0;
         s.bricksDestroyed = game.BricksDestroyed;
         s.rowsSpawned = grid.RowsSpawned;
-        s.hpScaleTier = grid.HpScaleTier;
+        s.echoProcs = PowerUpStats.EchoProcs;
+        s.echoRepeats = PowerUpStats.EchoRepeats;
+        s.echoBallKills = PowerUpStats.EchoBallKills;
+        s.echoJumps = PowerUpStats.EchoJumps;
+        s.echoNoTarget = PowerUpStats.EchoNoTarget;
+        s.echoCarriedDamage = PowerUpStats.EchoCarried;
+        s.targetHits = Round(grid.TargetHits);
+        s.smoothedDamage = Round(grid.SmoothedDamage);
+        s.paceFactor = Round(grid.PaceFactor);
+        s.killRate = Round(grid.KillRate);
         s.hpWindowMin = grid.CurrentMinHp;
         s.hpWindowMax = grid.CurrentMaxHp;
         s.ballDamage = BallController.MainDamage;

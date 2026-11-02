@@ -34,6 +34,21 @@ public class ShieldBarrier : BallSurface
     private float breakT = -1f;
     private float sparkTimer;
     private float age;
+    private int charges = 1;
+
+    /// <summary>Charges the shield holds now (one per Shield bonus caught, up to <see cref="PowerUpStats.ShieldMaxCharges"/>).</summary>
+    public int Charges => charges;
+
+    /// <summary>A Shield bonus caught while the barrier is up adds one charge. Returns false when it is already full.</summary>
+    public bool AddCharge()
+    {
+        if (charges >= PowerUpStats.ShieldMaxCharges) return false;
+        charges++;
+        return true;
+    }
+
+    /// <summary>The maximum went down (Shield Plus corrupted away): charges above it are lost.</summary>
+    public void ClampCharges() => charges = Mathf.Min(charges, PowerUpStats.ShieldMaxCharges);
 
     public static ShieldBarrier Create(Material material, float z, float width, float thickness)
     {
@@ -50,6 +65,7 @@ public class ShieldBarrier : BallSurface
         barrier.startScale = cube.transform.localScale;
         barrier.ApplyGlow(Glow + RaiseGlowBoost);
         cube.transform.localScale = new Vector3(0f, barrier.startScale.y, barrier.startScale.z);
+        barrier.charges = 1;
         Current = barrier;
 
         // A flash and a line of sparks along the barrier as it appears.
@@ -63,9 +79,21 @@ public class ShieldBarrier : BallSurface
     public override void OnBallHit(BallController ball, Collision collision)
     {
         if (breakT >= 0f) return;
+        ball.PassThroughPaddle(); // the rebound goes back up through the paddle instead of bouncing off its back
+
+        // Each bounce uses one charge; it survives until the last, with a small flash for each one absorbed.
+        if (--charges > 0)
+        {
+            Vector3 spot = ball.Position;
+            spot.z = transform.position.z;
+            NeonFx.Flash(spot, ShieldColor, 0.8f, 0.1f);
+            NeonFx.Burst(spot, ShieldColor, 10, 4f, 0.08f, 0.3f);
+            SoundManager.Play(Sfx.ShieldUp);
+            return;
+        }
+
         barrierCollider.enabled = false; // the bounce was already computed, so this is safe
         breakT = 0f;
-        ball.PassThroughPaddle(); // the rebound goes back up through the paddle instead of bouncing off its back
         SoundManager.Play(Sfx.ShieldBreak);
 
         // Shatter: a flash where the ball struck, then shards spraying forward along the whole barrier.
@@ -95,7 +123,8 @@ public class ShieldBarrier : BallSurface
             return;
         }
 
-        ActiveBonusTracker.Report("shield", "shield", "SHIELD", ShieldColor, -1f, 0f);
+        // The ring is cut into one segment per charge held, all lit: a spent charge removes a segment instead of greying it.
+        ActiveBonusTracker.Report("shield", "shield", "SHIELD", ShieldColor, -1f, 0f, charges, charges);
 
         if (raiseT < 1f)
         {

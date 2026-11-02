@@ -10,23 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5a1108c46fae6bc4797e89ad530ee9d0, type: 3}
-  m_Name: QuickBall
+  m_Name: Backstop
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
-  displayName: Quick Ball
-  description: Ball speed +10%
-  rarity: 0
-  icon: '...#...
-
-    ...##..
-
-    #######
-
-    ...##..
+  displayName: Backstop
+  description: +60% damage per back-wall bounce until the next brick hit
+  rarity: 3
+  icon: '#######
 
     ...#...
+
+    ..#.#..
+
+    .#...#.
+
+    #.....#
 
     .......
 
     .......'
   maxStacks: 0
-  effect: {fileID: 11400000, guid: fc9be625dc5999a4282424439a9b3ca5, type: 2}
+  effect: {fileID: 11400000, guid: d61fcfc441f7ac8418d9e89c7d549f94, type: 2}

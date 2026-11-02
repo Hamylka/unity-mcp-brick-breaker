@@ -308,9 +308,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BallController
   baseSpeed: 10
+  minSpeedFactor: 0.7
+  startSpeed: 0
+  baseRadius: 0
   boostDecayTime: 1
   maxBoost: 1
   damage: 1
+  cardDamageMultiplier: 1
   minAngleFromHorizontal: 12
   paddle: {fileID: 541308909}
   restOffset: {x: 0, y: 0, z: 0.55}
@@ -568,6 +572,10 @@ MonoBehaviour:
   trailBrightness: 2.6
   coreTrailWidth: 0.38
   coreTrailTime: 0.1
+  speedTrailTimeGain: 0.2
+  speedTrailBrightnessGain: 0.15
+  speedLookMax: 1.5
+  speedLookEase: 1
   sparkCount: 7
   sparkSpeed: 4
   ghostMaterial: {fileID: 0}
@@ -603,7 +611,19 @@ MonoBehaviour:
   powerTrailBrightness: 1.2
   crackleInterval: 0.06
   boltInterval: 0.3
+  echoBallColor: {r: 0.15, g: 0.45, b: 1, a: 1}
+  echoTint: 1
+  echoTrailTint: 0.85
+  echoRimTint: 0.85
+  echoRimIntensity: 2.5
+  echoShimmer: 0.4
+  echoHaloGrow: 0.4
+  echoBodyPulse: 0.1
+  echoSparkleInterval: 0.07
+  echoShimmerRate: 14
+  echoChargeEase: 0.12
   warnTime: 2
+  baseTrailWidth: 0
 --- !u!1 &75570440
 GameObject:
   m_ObjectHideFlags: 0
@@ -1025,6 +1045,36 @@ MonoBehaviour:
     volume: 0.4
     pitchJitter: 0
     minInterval: 0.1
+  - id: 52
+    clip: {fileID: 8300000, guid: 6e6131c5bd9cd4a499e4aa4ffaab5ca6, type: 3}
+    volume: 0.6
+    pitchJitter: 0
+    minInterval: 0.1
+  - id: 53
+    clip: {fileID: 8300000, guid: 6bb9ab821ed0d854a8485df0b823e86a, type: 3}
+    volume: 0.5
+    pitchJitter: 0
+    minInterval: 0.1
+  - id: 54
+    clip: {fileID: 8300000, guid: 714f853513bd6b74283bbbe0223f5331, type: 3}
+    volume: 0.7
+    pitchJitter: 0
+    minInterval: 0.1
+  - id: 55
+    clip: {fileID: 8300000, guid: 65ebee41e4baba24080635742087dd27, type: 3}
+    volume: 0.65
+    pitchJitter: 0
+    minInterval: 0.1
+  - id: 56
+    clip: {fileID: 8300000, guid: e63a6b51084674744ad58e7459d88e9f, type: 3}
+    volume: 0.5
+    pitchJitter: 0
+    minInterval: 0.2
+  - id: 57
+    clip: {fileID: 8300000, guid: 729917ffe34b63b4e8828d62bd7a1071, type: 3}
+    volume: 0.4
+    pitchJitter: 0
+    minInterval: 0.3
 --- !u!4 &106477069
 Transform:
   m_ObjectHideFlags: 0
@@ -1403,7 +1453,7 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 60
-  field of view: 56.445835
+  field of view: 50.941975
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -1557,6 +1607,8 @@ MonoBehaviour:
   gameOverScreen: {fileID: 1033658656}
   gameOverAnimation: {fileID: 358591254}
   slowDownTime: 0.7
+  speedStepInterval: 60
+  speedStepAmount: 0.075
 --- !u!4 &358591253
 Transform:
   m_ObjectHideFlags: 0
@@ -1639,6 +1691,8 @@ MonoBehaviour:
   fadeInTime: 2
   muffledCutoff: 900
   muffledVolume: 0.6
+  dangerTempo: 0.08
+  dangerTempoEase: 1.5
   gameManager: {fileID: 358591252}
   gameOverFadeTime: 1.5
   gameOverPitch: 0.75
@@ -2027,6 +2081,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 3d1bf5ca0acce5243b3f79aa0be4917a, type: 2}
   dropChance: 0.06
   extraChancePerHitPoint: 0
+  budgetByKillRate: 1
+  minBudgetFactor: 0.3
+  maxBudgetFactor: 1.5
+  budgetMinKillRate: 0.2
 --- !u!1 &450154526
 GameObject:
   m_ObjectHideFlags: 0
@@ -4636,7 +4694,13 @@ MonoBehaviour:
   grid: {fileID: 1367461215}
   baseXp: 12
   power: 1.2
+  bricksPerLevel: 8
+  bricksPerLevelGrowth: 0.4
+  maxHpWorth: 2
+  brakeStartsAt: 2
+  brakeFloor: 0.25
   clearBonus: 0.25
+  clearBonusFullAfter: 20
   orbOriginRange: 1.5
   logLevelUps: 1
   showDebugOverlay: 0
@@ -5188,6 +5252,13 @@ MonoBehaviour:
   emptyChanceDropPerRow: 0.02
   mirror: 1
   seed: 0
+  armoredFromRow: 6
+  armoredMaxChance: 0.1
+  healerFromRow: 10
+  healerMaxChance: 0.06
+  specialRampRows: 20
+  healInterval: 4
+  healPercent: 0.25
   advance: 1
   ball: {fileID: 42821532}
   stepInterval: 5
@@ -5197,11 +5268,21 @@ MonoBehaviour:
   waveDelay: 0
   clearWaveRows: 4
   difficultyPerRow: 0.05
-  baseMinHp: 1
-  baseMaxHp: 5
-  rowsPerScaling: 5
-  hpMultiplier: 1.75
-  xpScalingExponent: 0.25
+  targetHitsStart: 5
+  targetHitsPerMinute: 2
+  minHpRatio: 0.2
+  damageSmoothing: 20
+  maxGrowthPerRow: 2
+  noticeGrowth: 1.75
+  targetKillsPerSecond: 1.5
+  killRateSmoothing: 8
+  labelDamageWindow: 15
+  labelDamageMaxRatio: 25
+  labelRiseTime: 1.5
+  shrinkPerRow: 0.9
+  maxPaceGrowthPerRow: 1.3
+  maxPaceFactor: 4
+  relaxBelow: 0.6
   spawnRipple: 0.04
   waveRowDelay: 0.06
   dangerZ: 1.8
@@ -5440,30 +5521,71 @@ MonoBehaviour:
   paddle: {fileID: 541308910}
   grid: {fileID: 1367461215}
   powerUps:
-  - {fileID: 11400000, guid: 462b5041babbe5249a785403d3504e72, type: 2}
   - {fileID: 11400000, guid: 1d1ce93e8a734994db098b363f869f4c, type: 2}
   - {fileID: 11400000, guid: 70a3c151c84ad7b4ea514f315fd89358, type: 2}
   - {fileID: 11400000, guid: d31e35a61da5f594e9d48512065e95b8, type: 2}
-  - {fileID: 11400000, guid: 2d6315afb6f474945bcd21e27d2d11bb, type: 2}
   - {fileID: 11400000, guid: 0020b002d16bdfc418532b5df9a015da, type: 2}
   - {fileID: 11400000, guid: 000a48554badc484880accfac3bd36c8, type: 2}
-  - {fileID: 11400000, guid: 6c439bd29420ab64b8b8014d0b172cda, type: 2}
   - {fileID: 11400000, guid: d3eb935b8fa98bc4a95c28fc20527f0b, type: 2}
   - {fileID: 11400000, guid: a7a8c92c8738091458e96dcc5a1e5ba6, type: 2}
   - {fileID: 11400000, guid: 4cb75c260a2e0d741a4b3b17633f985f, type: 2}
-  - {fileID: 11400000, guid: d6b26d4c7d49c704a82f16ec85c19b60, type: 2}
   - {fileID: 11400000, guid: 20acfaee587e9674cb36115261148392, type: 2}
+  - {fileID: 11400000, guid: 9c4e1b7a2d6f4830a5e8c1d3b7f20946, type: 2}
+  - {fileID: 11400000, guid: 96e5b0d4476c84140853aa9daad0c339, type: 2}
+  - {fileID: 11400000, guid: c600012268911e843980fe2e4b2a702f, type: 2}
+  - {fileID: 11400000, guid: 3f33debc5e41ca94ba1b20c4cc9132c5, type: 2}
+  - {fileID: 11400000, guid: b2961b5fe51249243b0fecb09cbb7076, type: 2}
+  - {fileID: 11400000, guid: 8e62ce5bc761a384da68ea206aaed35f, type: 2}
+  - {fileID: 11400000, guid: 490daccce5397b84ebd3f1c2c3aef4bf, type: 2}
+  - {fileID: 11400000, guid: 56c754817719e1842a5e5cbac2f65ec9, type: 2}
+  - {fileID: 11400000, guid: d89fbda97c9a2b94bb37dae51e15f052, type: 2}
+  - {fileID: 11400000, guid: 433f482b25fe9374f8cc9cffc8eaacc9, type: 2}
+  - {fileID: 11400000, guid: de1b1c4e494820a4d82179e703878da6, type: 2}
+  - {fileID: 11400000, guid: 2948f801bf0d4364dacc92756fa29099, type: 2}
+  - {fileID: 11400000, guid: 7b6f6bdc56a917e4ca8135e748f50832, type: 2}
+  - {fileID: 11400000, guid: b3a7e2d95c1048f6a9d0e4c7182f5b63, type: 2}
+  - {fileID: 11400000, guid: 8e918e7a82dbdbd4b9809c6f60b91002, type: 2}
+  - {fileID: 11400000, guid: 5974f0052e2621317b3bcedb4753dac5, type: 2}
+  - {fileID: 11400000, guid: 55cec0b2c9b3b892312c4649b50060c0, type: 2}
+  - {fileID: 11400000, guid: e4c12098d6b5876d475324be041f5f4b, type: 2}
+  - {fileID: 11400000, guid: e3f453e493c0401b8517e58470e26d85, type: 2}
   baseChoiceCount: 3
   baseRerolls: 1
   rarityWeights:
-  - 60
-  - 25
-  - 10
-  - 4
-  - 1
+  - 44
+  - 30
+  - 16
+  - 7
+  - 3
   passiveDamagePerLevel: 1
   slowDownTime: 0.8
   openDelay: 0.3
+  resumeTime: 1
+  exquisitePool:
+  - {fileID: 11400000, guid: e7a072294286e7f418fad67dc7d6094e, type: 2}
+  - {fileID: 11400000, guid: a21daa34fd35494490cbe79a68830394, type: 2}
+  - {fileID: 11400000, guid: 2ea8a983fe52478db873805ebf1c8814, type: 2}
+  - {fileID: 11400000, guid: 462a8533490948deb9d803167738d6fe, type: 2}
+  - {fileID: 11400000, guid: 0822c893da484b258e2abc8f380b33f3, type: 2}
+  - {fileID: 11400000, guid: d6b26d4c7d49c704a82f16ec85c19b60, type: 2}
+  - {fileID: 11400000, guid: 52438e06076635d41a28dff3a507a8d2, type: 2}
+  - {fileID: 11400000, guid: 985804aa21ece2643b8e5187a35a3cb3, type: 2}
+  cursedPool:
+  - {fileID: 11400000, guid: a5234148122845e5a580158d96475a0d, type: 2}
+  - {fileID: 11400000, guid: a7e498c33de845ac905643a9eac288e9, type: 2}
+  - {fileID: 11400000, guid: 2ab6cf78840b49889d91faaa66ab7845, type: 2}
+  - {fileID: 11400000, guid: 94106b8d13fa403f84498e8dae58fbf6, type: 2}
+  - {fileID: 11400000, guid: 0fb239691d1840eaa0f6271ce4bed344, type: 2}
+  - {fileID: 11400000, guid: 8b745f2073e1e8d48bc4c97daeeb665b, type: 2}
+  - {fileID: 11400000, guid: bc4aca2d00627c646ae3edfa19679723, type: 2}
+  - {fileID: 11400000, guid: 7a278131236017743baffe34ae664cd8, type: 2}
+  - {fileID: 11400000, guid: 554c95632961ca243a31c2431c461a47, type: 2}
+  exquisiteChances:
+  - 0.3
+  - 0.4
+  - 0.55
+  - 0.7
+  - 0.8
 --- !u!4 &1463217167
 Transform:
   m_ObjectHideFlags: 0

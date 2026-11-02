@@ -25,6 +25,7 @@ public class PauseScreen : MonoBehaviour
     private const float RowHeight = 124f;
     private const float RowGap = 14f;
     private const float ButtonsY = -755f;
+    private const float EndRunY = -890f; // dev-only "END RUN" button, under the Restart / Resume row
 
     // Timeline, in seconds after opening.
     private const float DimTime = 0.18f;
@@ -105,6 +106,8 @@ public class PauseScreen : MonoBehaviour
     private Image restartImage;
     private PixelText restartLabel;
     private UiButton restartButton;
+    private UiButton endRunButton;
+    private RectTransform endRunRect;
     private CanvasGroup buttonsGroup;
     private readonly List<(BrickHpDisplay.Mode mode, Image image, PixelText label, UiButton button)> hpDisplayOptions = new();
     private PixelText countText;
@@ -238,15 +241,20 @@ public class PauseScreen : MonoBehaviour
         int damage = 1;
         foreach (BallController ball in BallController.Active) damage = Mathf.Max(damage, ball.Damage);
 
-        statValues[0].Text = level.ToString();
+        statValues[0].Text = NumberFormat.Short(level);
         statValues[1].Text = $"{seconds / 60}:{seconds % 60:00}";
-        statValues[2].Text = game != null ? game.BricksDestroyed.ToString() : "0";
-        statValues[DamageStat].Text = damage.ToString();
-        // The label also tells how much damage each level-up adds (passive + cards).
+        statValues[2].Text = game != null ? NumberFormat.Short(game.BricksDestroyed) : "0";
+        statValues[DamageStat].Text = NumberFormat.Short(damage);
+        // The label also tells how much base damage each level-up adds, and the card multiplier on top of it.
         if (damageLabel != null)
-            damageLabel.Text = powerUps != null ? $"DAMAGE +{powerUps.DamagePerLevel}/LV" : "DAMAGE";
-        statValues[4].Text = grid != null ? $"{grid.CurrentMinHp}-{grid.CurrentMaxHp}" : "-";
-        statValues[5].Text = experience != null ? $"{experience.CurrentXp}/{experience.XpToNextLevel}" : "-";
+        {
+            float cardFactor = 1f;
+            foreach (BallController ball in BallController.Active) cardFactor = Mathf.Max(cardFactor, ball.CardDamageMultiplier);
+            string factor = cardFactor > 1.001f ? $" X{cardFactor:0.0#}" : "";
+            damageLabel.Text = powerUps != null ? $"DAMAGE +{powerUps.DamagePerLevel}/LV{factor}" : "DAMAGE";
+        }
+        statValues[4].Text = grid != null ? $"{NumberFormat.Short(grid.CurrentMinHp)}-{NumberFormat.Short(grid.CurrentMaxHp)}" : "-";
+        statValues[5].Text = experience != null ? $"{NumberFormat.Short(experience.CurrentXp)}/{NumberFormat.Short(experience.XpToNextLevel)}" : "-";
 
         foreach (Row row in rows) Destroy(row.rect.gameObject);
         rows.Clear();
@@ -264,7 +272,7 @@ public class PauseScreen : MonoBehaviour
         // Rarest first, then the most picked.
         owned.Sort((a, b) =>
         {
-            int byRarity = b.Key.Rarity.CompareTo(a.Key.Rarity);
+            int byRarity = RarityStyle.SortRank(b.Key.Rarity).CompareTo(RarityStyle.SortRank(a.Key.Rarity));
             if (byRarity != 0) return byRarity;
             int byStacks = b.Value.CompareTo(a.Value);
             return byStacks != 0 ? byStacks : string.CompareOrdinal(a.Key.DisplayName, b.Key.DisplayName);
@@ -370,6 +378,11 @@ public class PauseScreen : MonoBehaviour
         bool interactive = state == State.Open && k >= 1f;
         resumeButton.Interactable = interactive;
         restartButton.Interactable = interactive;
+        if (endRunButton != null)
+        {
+            endRunButton.Interactable = interactive;
+            endRunRect.localScale = Vector3.one * (EaseOutBack(k) * (endRunButton.IsPressed ? 0.93f : 1f));
+        }
         foreach (var option in hpDisplayOptions)
         {
             option.button.Interactable = interactive;
@@ -752,6 +765,32 @@ public class PauseScreen : MonoBehaviour
         Stretch(resumeLabel.rectTransform);
 
         BuildHpDisplaySelector(buttons);
+
+        // Developer tool (editor and development builds only): end the run on purpose, to get the Game Over screen
+        // and its run data without having to lose a long run.
+        if (RunProfiler.Available)
+        {
+            Image endImage = NewImage("EndRunButton", buttons, new Color(1f, 0.75f, 0.2f, 1f), UiSprites.RoundedRect);
+            endImage.raycastTarget = true;
+            endRunRect = endImage.rectTransform;
+            Place(endRunRect, new Vector2(0f, EndRunY), new Vector2(460f, 90f));
+            endRunButton = endRunRect.gameObject.AddComponent<UiButton>();
+            endRunButton.Clicked += HandleEndRunClicked;
+            PixelText endLabel = NewText("Label", endRunRect, "END RUN (DEV)", 4f, ink);
+            Stretch(endLabel.rectTransform);
+        }
+    }
+
+    // Closes the pause screen at once and ends the run as a lost ball (animation, Game Over screen, run data).
+    private void HandleEndRunClicked()
+    {
+        if (state != State.Open || game == null) return;
+        state = State.Hidden;
+        root.gameObject.SetActive(false);
+        particles.Clear();
+        Time.timeScale = savedTimeScale;
+        SoundManager.Play(Sfx.Confirm);
+        game.EndRun(GameManager.LoseReason.BallLost);
     }
 
     // "BRICK HP" setting: a segmented control (PIPS / COLOR / NUMBERS) between the list and the buttons.

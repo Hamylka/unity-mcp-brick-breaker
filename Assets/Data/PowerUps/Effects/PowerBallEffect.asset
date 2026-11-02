@@ -11,5 +11,5 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c82a0e9d5511613479c6682427c1b0a3, type: 3}
   m_Name: PowerBallEffect
-  m_EditorClassIdentifier: Assembly-CSharp::DamagePerLevelEffect
-  amount: 1
+  m_EditorClassIdentifier: Assembly-CSharp::DamageMultiplierEffect
+  percent: 0.1

@@ -95,6 +95,16 @@ public class PixelText : MaskableGraphic
         raycastTarget = false;
     }
 
+    /// <summary>Size of the wrapped text block for a given width: x = widest line (more than the width when a single word does not fit), y = height.</summary>
+    public Vector2 Measure(float maxWidth)
+    {
+        BuildLines(maxWidth);
+        float widest = 0f;
+        foreach (string line in lines) widest = Mathf.Max(widest, WidthOf(line));
+        float glyphH = PixelFont.GlyphHeight * pixelSize;
+        return new Vector2(widest, lines.Count * glyphH + (lines.Count - 1) * lineGap * pixelSize);
+    }
+
     private float WidthOf(string s) => s.Length * (PixelFont.GlyphWidth + spacing) * pixelSize - spacing * pixelSize;
 
     private void BuildLines(float maxWidth)

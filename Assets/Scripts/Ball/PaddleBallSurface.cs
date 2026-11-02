@@ -34,5 +34,7 @@ public class PaddleBallSurface : BallSurface
 
         if (paddle != null && slingshotSpeedBonus > 0f)
             ball.AddSpeedBoost(paddle.SlingshotPower * slingshotSpeedBonus);
+
+        if (PowerUpStats.CannonPicks > 0) PaddleCannon.Fire(bounds, ball); // Paddle Cannon card
     }
 }

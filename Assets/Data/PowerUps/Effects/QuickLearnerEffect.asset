@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7496f0b5bcfa0cd46a79ac1e03e22b2e, type: 3}
   m_Name: QuickLearnerEffect
   m_EditorClassIdentifier: Assembly-CSharp::XpBoostEffect
-  percent: 0.2
+  percent: 0.1

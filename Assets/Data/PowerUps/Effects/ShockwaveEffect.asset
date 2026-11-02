@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: ShockwaveEffect
   m_EditorClassIdentifier: Assembly-CSharp::AreaDamageEffect
   kind: 0
-  amount: 0.25
+  amount: 0.12

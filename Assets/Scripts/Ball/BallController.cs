@@ -15,8 +15,17 @@ public class BallController : MonoBehaviour
 {
     private enum State { Waiting, Flying, Lost }
 
+    /// <summary>Default floor of the card speed (share of the start speed), also used by card texts.</summary>
+    public const float DefaultMinSpeedFactor = 0.7f;
+
     [Header("Speed")]
     [SerializeField, Min(0.1f)] private float baseSpeed = 10f;
+    [Tooltip("Slowest the ball can get from cards (Steady Ball), as a share of its start speed. The run ramp comes on top.")]
+    [SerializeField, Range(0.1f, 1f)] private float minSpeedFactor = DefaultMinSpeedFactor;
+    // Speed at the start of the run, kept so clones made by SpawnExtra share the same floor.
+    [SerializeField, HideInInspector] private float startSpeed;
+    // Collider radius at the start of the run; Marble scales it (clones inherit the original, not a shrunk value).
+    [SerializeField, HideInInspector] private float baseRadius;
     [Tooltip("Seconds for a 100% speed boost to fade back to the base speed.")]
     [SerializeField, Min(0.05f)] private float boostDecayTime = 1f;
     [Tooltip("Upper limit of the temporary boost (1 = +100% speed).")]
@@ -25,6 +34,7 @@ public class BallController : MonoBehaviour
     [Header("Combat")]
     [Tooltip("Hit points removed from a brick per hit. Upgrades can raise it.")]
     [SerializeField, Min(1)] private int damage = 1;
+    [SerializeField, HideInInspector] private float cardDamageMultiplier = 1f; // serialized so SpawnExtra clones keep it
 
     [Header("Safety")]
     [Tooltip("Minimum angle from the horizontal (X) axis. Prevents endless side-to-side bouncing.")]
@@ -51,7 +61,12 @@ public class BallController : MonoBehaviour
 
     public Vector3 Position => body.position;
     public Vector3 Direction { get; private set; } = Vector3.forward;
-    public float CurrentSpeed => baseSpeed * (1f + boost);
+    /// <summary>Run-clock speed ramp (1 = start speed), set by <see cref="GameManager"/>; applies to every ball, on top of upgrades.</summary>
+    public static float RunSpeedFactor { get; set; } = 1f;
+    /// <summary>Card speed with the run ramp applied, never below the floor (<see cref="minSpeedFactor"/> of the start speed).</summary>
+    public float CurrentSpeed => Mathf.Max(baseSpeed * RunSpeedFactor, startSpeed * minSpeedFactor) * (1f + boost);
+    /// <summary>Slowest card speed as a multiplier of the start speed (Steady Ball stops here).</summary>
+    public float MinSpeedFactor => minSpeedFactor;
     public bool IsFlying => state == State.Flying;
 
     /// <summary>
@@ -61,7 +76,22 @@ public class BallController : MonoBehaviour
     public bool AutoReset { get; set; } = true;
 
     /// <summary>Hit points removed from a brick per hit.</summary>
-    public int Damage => Mathf.Max(1, Mathf.RoundToInt(damage * DamageMultiplier));
+    public int Damage => WholeDamage(damage * cardDamageMultiplier * DamageMultiplier);
+
+    /// <summary>
+    /// Damage for things that are not the ball itself (Laser, Paddle Cannon) and for hits-left estimates: like
+    /// <see cref="Damage"/> but a buff below 1 (the Phase malus) is ignored, so only boosts such as the 2x buff count.
+    /// </summary>
+    public int AttackDamage => WholeDamage(damage * cardDamageMultiplier * Mathf.Max(1f, DamageMultiplier));
+
+    /// <summary>Permanent damage per hit (level-ups and cards), without temporary wall buffs (what the wall HP window follows).</summary>
+    public int BaseDamage => WholeDamage(damage * cardDamageMultiplier);
+
+    /// <summary>Permanent damage factor from cards (Power Ball, Meteor Ball), compounding. Clones inherit it.</summary>
+    public float CardDamageMultiplier => cardDamageMultiplier;
+
+    // Rounded up so damage stays whole; the epsilon stops float noise (11.0000001) from adding a point.
+    private static int WholeDamage(float value) => Mathf.Max(1, Mathf.CeilToInt(value - 0.001f));
 
     /// <summary>Temporary damage factor (wall buffs). 1 = normal.</summary>
     public float DamageMultiplier { get; set; } = 1f;
@@ -99,6 +129,57 @@ public class BallController : MonoBehaviour
                 if (ball == null) continue;
                 if (!ball.IsExtra) return ball.Damage;
                 best = Mathf.Max(best, ball.Damage);
+            }
+            return best;
+        }
+    }
+
+    /// <summary>
+    /// Like <see cref="MainDamage"/> but ignoring the Phase malus (<see cref="AttackDamage"/>): the reference for
+    /// hits-left colors and labels, so bricks do not turn into skulls when the player grabs Phase.
+    /// </summary>
+    public static int MainAttackDamage
+    {
+        get
+        {
+            int best = 1;
+            foreach (BallController ball in active)
+            {
+                if (ball == null) continue;
+                if (!ball.IsExtra) return ball.AttackDamage;
+                best = Mathf.Max(best, ball.AttackDamage);
+            }
+            return best;
+        }
+    }
+
+    /// <summary>Like <see cref="MainDamage"/> but without temporary wall buffs (<see cref="BaseDamage"/>).</summary>
+    public static int MainBaseDamage
+    {
+        get
+        {
+            int best = 1;
+            foreach (BallController ball in active)
+            {
+                if (ball == null) continue;
+                if (!ball.IsExtra) return ball.BaseDamage;
+                best = Mathf.Max(best, ball.BaseDamage);
+            }
+            return best;
+        }
+    }
+
+    /// <summary>Card damage multiplier (Power Ball / Meteor Ball) of the main ball, 1 with no ball. Used by the run profiler.</summary>
+    public static float MainCardMultiplier
+    {
+        get
+        {
+            float best = 1f;
+            foreach (BallController ball in active)
+            {
+                if (ball == null) continue;
+                if (!ball.IsExtra) return ball.cardDamageMultiplier;
+                best = Mathf.Max(best, ball.cardDamageMultiplier);
             }
             return best;
         }
@@ -164,6 +245,45 @@ public class BallController : MonoBehaviour
     /// <summary>Permanently changes the damage per hit (upgrades, perks).</summary>
     public void AddDamage(int amount) => damage = Mathf.Max(1, damage + amount);
 
+    /// <summary>Brick hits since the ball last touched the paddle (Rampage).</summary>
+    public int HitsSincePaddle { get; private set; }
+
+    /// <summary>All wall bounces since the ball's last brick hit (side and back).</summary>
+    public int WallBounces { get; private set; }
+
+    /// <summary>Called by the brick after a ball hit landed: the streak grows, the wall bounces are spent.</summary>
+    public void RegisterBrickHit()
+    {
+        BrickHitRegistered?.Invoke(this, SideBounces, BackBounces);
+        HitsSincePaddle++;
+        WallBounces = 0;
+        SideBounces = 0;
+        BackBounces = 0;
+    }
+
+    /// <summary>Side-wall bounces since the ball's last brick hit (Ricochet, profiler).</summary>
+    public int SideBounces { get; private set; }
+
+    /// <summary>Back-wall bounces since the ball's last brick hit (Backstop, profiler).</summary>
+    public int BackBounces { get; private set; }
+
+    /// <summary>Seconds since this ball last bounced on the paddle, -1 if it has not since it was launched.</summary>
+    public float TimeSincePaddleHit => lastPaddleHitTime < 0f ? -1f : Time.time - lastPaddleHitTime;
+
+    private float lastPaddleHitTime = -1f;
+
+    /// <summary>Sideways distance between the ball and the paddle centre (0 when there is no paddle).</summary>
+    public float PaddleOffset => paddle != null ? transform.position.x - paddle.position.x : 0f;
+
+    /// <summary>Raised on every brick hit by a ball with the side / back wall bounces it made since its previous brick hit.</summary>
+    public static event Action<BallController, int, int> BrickHitRegistered;
+
+    /// <summary>Raised when any ball falls past the paddle (before the run decides what happens next).</summary>
+    public static event Action<BallController> AnyBallLost;
+
+    /// <summary>Permanently multiplies the damage per hit by <paramref name="factor"/> (cards), on top of earlier picks.</summary>
+    public void MultiplyDamage(float factor) => cardDamageMultiplier *= factor;
+
     private Rigidbody body;
     private State state = State.Waiting;
     private float boost;
@@ -173,6 +293,9 @@ public class BallController : MonoBehaviour
     private void Awake()
     {
         body = GetComponent<Rigidbody>();
+        if (startSpeed <= 0f) startSpeed = baseSpeed;
+        if (sphere == null) sphere = GetComponent<SphereCollider>();
+        if (baseRadius <= 0f) baseRadius = sphere.radius;
         body.useGravity = false;
         body.linearDamping = 0f;
         body.angularDamping = 0f;
@@ -196,6 +319,9 @@ public class BallController : MonoBehaviour
 
     private void FixedUpdate()
     {
+        // Marble: the collider follows the run's ball size (the look follows it in BallVisual).
+        sphere.radius = baseRadius * PowerUpStats.BallSize;
+
         if (state == State.Lost) return;
 
         if (state == State.Waiting)
@@ -216,6 +342,7 @@ public class BallController : MonoBehaviour
         {
             if (AutoReset)
             {
+                AnyBallLost?.Invoke(this);
                 BallLost?.Invoke(this);
                 ResetToPaddle();
             }
@@ -225,6 +352,7 @@ public class BallController : MonoBehaviour
                 state = State.Lost;
                 body.linearVelocity = Vector3.zero;
                 body.isKinematic = true;
+                AnyBallLost?.Invoke(this);
                 BallLost?.Invoke(this);
             }
         }
@@ -272,7 +400,7 @@ public class BallController : MonoBehaviour
             // removes an HP every second brick it passes through.
             Brick bottom = stack.Bottom;
             if (bottom == null) continue;
-            bottom.DamageCarry += damage * DamageMultiplier;
+            bottom.DamageCarry += damage * cardDamageMultiplier * DamageMultiplier;
             int whole = Mathf.FloorToInt(bottom.DamageCarry + 0.001f);
             if (whole <= 0) continue;
             bottom.DamageCarry = Mathf.Max(0f, bottom.DamageCarry - whole);
@@ -302,6 +430,16 @@ public class BallController : MonoBehaviour
         // 2) Let the surface customise the result (paddle angles, wall zones, ...).
         BallSurface surface = collision.collider.GetComponentInParent<BallSurface>();
         if (surface != null) surface.OnBallHit(this, collision);
+        if (surface is PaddleBallSurface)
+        {
+            HitsSincePaddle = 0;                                 // Rampage streak ends
+            lastPaddleHitTime = Time.time;
+        }
+        else if (surface is Wall wall)
+        {
+            WallBounces++;                                       // Ricochet charge
+            if (wall.IsSideWall) SideBounces++; else BackBounces++;
+        }
 
         // 3) Apply, including the anti-horizontal-loop safeguard.
         Direction = ClampDirection(Direction);
@@ -393,6 +531,7 @@ public class BallController : MonoBehaviour
     {
         state = State.Waiting;
         boost = 0f;
+        lastPaddleHitTime = -1f;
         if (!body.isKinematic) body.linearVelocity = Vector3.zero;
         body.isKinematic = true;
         FollowPaddle();

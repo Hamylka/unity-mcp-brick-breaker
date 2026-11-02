@@ -58,6 +58,15 @@ public class BallVisual : MonoBehaviour
     [SerializeField, Min(0f)] private float trailBrightness = 2.6f;
     [SerializeField, Range(0f, 1f)] private float coreTrailWidth = 0.38f;
     [SerializeField, Min(0f)] private float coreTrailTime = 0.1f;
+    [Header("Speed Look (run ramp)")]
+    [Tooltip("Extra trail time per +100% of run speed (the trail is already longer in space since the ball is faster).")]
+    [SerializeField, Min(0f)] private float speedTrailTimeGain = 0.2f;
+    [Tooltip("Extra trail brightness per +100% of run speed.")]
+    [SerializeField, Min(0f)] private float speedTrailBrightnessGain = 0.15f;
+    [Tooltip("Run speed bonus (1 = +100%) after which the look stops growing.")]
+    [SerializeField, Min(0.1f)] private float speedLookMax = 1.5f;
+    [Tooltip("Seconds to ease the look to a new speed step.")]
+    [SerializeField, Min(0.05f)] private float speedLookEase = 1f;
 
     [Header("Bounce Sparks")]
     [SerializeField, Min(0)] private int sparkCount = 7;
@@ -116,6 +125,29 @@ public class BallVisual : MonoBehaviour
     [Tooltip("Seconds between two tiny lightning arcs jumping off the powered ball.")]
     [SerializeField, Min(0.05f)] private float boltInterval = 0.3f;
 
+    [Header("Echo Charge")]
+    [Tooltip("Color of the charging ball. More saturated than the pale echo color of the bricks, so the bloom keeps it blue.")]
+    [SerializeField] private Color echoBallColor = new(0.15f, 0.45f, 1f, 1f);
+    [Tooltip("How far the halo and floor light turn echo blue when the next hit echoes (0 = off).")]
+    [SerializeField, Range(0f, 1f)] private float echoTint = 1f;
+    [Tooltip("How far both trails turn echo blue when the next hit echoes.")]
+    [SerializeField, Range(0f, 1f)] private float echoTrailTint = 0.85f;
+    [Tooltip("How far the ball's core and rim turn echo blue when the next hit echoes.")]
+    [SerializeField, Range(0f, 1f)] private float echoRimTint = 0.85f;
+    [Tooltip("HDR brightness of the echo rim (bloom).")]
+    [SerializeField, Min(0f)] private float echoRimIntensity = 2.5f;
+    [Tooltip("Extra halo brightness from the shimmer at full charge.")]
+    [SerializeField, Min(0f)] private float echoShimmer = 0.4f;
+    [Tooltip("Halo size added at full charge (0.4 = 40% bigger).")]
+    [SerializeField, Min(0f)] private float echoHaloGrow = 0.4f;
+    [Tooltip("Ball size flicker at full charge (0.1 = up to 10% bigger).")]
+    [SerializeField, Min(0f)] private float echoBodyPulse = 0.1f;
+    [Tooltip("Seconds between two sparkles while the next hit echoes.")]
+    [SerializeField, Min(0.01f)] private float echoSparkleInterval = 0.07f;
+    [Tooltip("Shimmer flicker speed at full charge, in cycles per second (slower at lower charge).")]
+    [SerializeField, Min(0f)] private float echoShimmerRate = 14f;
+    [SerializeField, Min(0.01f)] private float echoChargeEase = 0.12f;
+
     [Header("Buff Ending")]
     [Tooltip("The buffed look strobes for this many seconds before the wall buff runs out.")]
     [SerializeField, Min(0f)] private float warnTime = 2f;
@@ -170,12 +202,19 @@ public class BallVisual : MonoBehaviour
     private LineRenderer arcA, arcB;
     private float powerBlend;
     private float trailPower = -1f;
+    private float speedLook;          // eased run-speed bonus (0 = start speed), drives the trail length and brightness
+    private float trailSpeedLook = -1f;
     private bool wasPowered;
     private float arcAngle;
     private float arcKick;     // 1 right after a powered brick hit, eases back to 0
     private float nextCrackle;
     private float nextBolt;
     private float warn = 1f;   // brightness factor of the buffed look (strobes before the buff ends)
+    private float echoBlend;   // eased PowerUpStats.EchoCharge (0 = far from an echo, 1 = the next hit echoes)
+    private float echoWave;    // 0-1 flicker of the echo charge, faster as it nears
+    private Gradient outerEcho, coreEcho;
+    private float trailEcho = -1f;
+    private float nextEchoSparkle;
 
     private void Awake()
     {
@@ -335,6 +374,24 @@ public class BallVisual : MonoBehaviour
         coreTrail = core;
         BuildPhaseGradients();
         BuildPowerGradients();
+        BuildEchoGradients();
+    }
+
+    /// <summary>
+    /// Echo-charge versions of the two trails, same key layout as the normal ones: white head into the echo blue,
+    /// then a deep indigo fade, so a charging ball is blue from head to tail.
+    /// </summary>
+    private void BuildEchoGradients()
+    {
+        Color pale = Color.Lerp(Color.white, echoBallColor, 0.4f);
+        Color deep = Color.Lerp(echoBallColor, new Color(0.35f, 0.1f, 1f), 0.5f);
+        outerEcho = MakeGradient(
+            new[] { new GradientColorKey(pale, 0f), new GradientColorKey(echoBallColor, 0.25f), new GradientColorKey(deep, 1f) },
+            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0.85f, 0.3f), new GradientAlphaKey(0f, 1f) });
+        coreEcho = MakeGradient(
+            new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(pale, 1f) },
+            new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(0f, 1f) });
+        trailEcho = -1f; // force a refresh
     }
 
     /// <summary>
@@ -453,8 +510,11 @@ public class BallVisual : MonoBehaviour
         float throb = Mathf.Pow(0.5f + 0.5f * Mathf.Sin(time * throbRate * 2f * Mathf.PI), 6f) * power;
         float powerScale = Mathf.Lerp(1f, powerBodyScale, power) * (1f + 0.07f * throb);
         float coreScale = Mathf.Lerp(1f, phaseCoreScale, UpdatePhaseBlend(dt)) * powerScale;
+        float echo = UpdateEchoCharge(dt, flying);
+        coreScale *= 1f + echoBodyPulse * echo * echoWave;
         body.rotation = axis;
-        body.localScale = new Vector3(across, across, along) * coreScale;
+        float size = PowerUpStats.BallSize; // Marble: the whole look shrinks with the collider
+        body.localScale = new Vector3(across, across, along) * (coreScale * size);
         UpdateGhost(dt, axis, stretch, flying);
         UpdatePower(dt, throb);
 
@@ -467,11 +527,15 @@ public class BallVisual : MonoBehaviour
         // While powered it turns gold, grows and throbs with the heartbeat.
         Color glow = Color.Lerp(Color.Lerp(glowColor, PowerGlow, power), ghostHue, phaseBlend);
         intensity *= Mathf.Lerp(1f, (1.15f + 0.6f * throb) * warn, power);
+        // Echo charging: the halo turns echo blue, swells and flickers with the charge.
+        glow = Color.Lerp(glow, echoBallColor, echoTint * echo);
+        intensity *= 1f + echoShimmer * echo * echoWave;
         float haloScale = haloSize * Mathf.Lerp(1f, 1.3f + 0.15f * Mathf.Sin(phaseTime * 9f), phaseBlend)
-                          * Mathf.Lerp(1f, powerHaloScale * (1f + 0.15f * throb), power);
+                          * Mathf.Lerp(1f, powerHaloScale * (1f + 0.15f * throb), power)
+                          * (1f + echoHaloGrow * echo);
         float inverseScale = 1f / Mathf.Max(0.0001f, transform.lossyScale.x);
-        halo.transform.localScale = Vector3.one * (haloScale * inverseScale);
-        floorGlow.transform.localScale = Vector3.one * (floorGlowSize * Mathf.Lerp(1f, 1.4f, power) * inverseScale);
+        halo.transform.localScale = Vector3.one * (haloScale * inverseScale * size);
+        floorGlow.transform.localScale = Vector3.one * (floorGlowSize * Mathf.Lerp(1f, 1.4f, power) * inverseScale * size);
 
         if (viewCamera == null) viewCamera = Camera.main;
         if (viewCamera != null) halo.transform.rotation = viewCamera.transform.rotation;
@@ -479,6 +543,25 @@ public class BallVisual : MonoBehaviour
 
         floorGlow.transform.SetPositionAndRotation(new Vector3(position.x, floorY, position.z), Quaternion.Euler(90f, 0f, 0f));
         NeonGlow.SetColor(floorGlow, NeonGlow.Hdr(glow, floorGlowIntensity * intensity));
+    }
+
+    /// <summary>
+    /// Echo charging: every flying ball (any of them can fire the shared counter) turns echo blue over the last hits
+    /// before an echo, flickering faster as it nears, with sparkles at full charge. Drops at once when the echo fires.
+    /// </summary>
+    private float UpdateEchoCharge(float dt, bool flying)
+    {
+        float target = flying ? PowerUpStats.EchoCharge : 0f;
+        echoBlend = target < echoBlend ? target : Mathf.MoveTowards(echoBlend, target, dt / echoChargeEase);
+        echoWave = 0.5f + 0.5f * Mathf.Sin(time * echoShimmerRate * Mathf.Lerp(0.4f, 1f, echoBlend) * 2f * Mathf.PI);
+
+        if (echoBlend > 0.99f && Time.timeScale > 0f && Time.time >= nextEchoSparkle)
+        {
+            nextEchoSparkle = Time.time + echoSparkleInterval;
+            Vector3 side = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f) * Vector3.forward;
+            NeonFx.Sparks(ball.Position + side * 0.25f, side, NeonGlow.Hdr(echoBallColor, 2f), 2, 2f, 40f, 0.06f, 0.18f);
+        }
+        return echoBlend;
     }
 
     /// <summary>Strobes the buffed look in the last seconds of a wall buff, faster and faster.</summary>
@@ -588,11 +671,17 @@ public class BallVisual : MonoBehaviour
         // Core: white-hot in a gold rim while powered, pale violet while phasing.
         // Cleared at 0 so the ball keeps its plain material (and batching).
         float power = Mathf.SmoothStep(0f, 1f, powerBlend);
-        if (blend > 0f || power > 0f)
+        if (blend > 0f || power > 0f || echoBlend > 0f)
         {
             Color pale = Color.Lerp(Color.white, ghostHue, 0.5f);
             Color coreColor = Color.Lerp(baseCoreColor, NeonGlow.Hdr(Color.Lerp(Color.white, powerColor, 0.5f), 1.5f * (0.6f + 0.4f * warn)), power);
             Color rimColor = Color.Lerp(baseRimColor, NeonGlow.Hdr(powerColor, 3.5f * (0.5f + 0.5f * warn)), power);
+            // Echo charging: the orange shell turns echo blue, flickering with the charge.
+            rimColor = Color.Lerp(rimColor, NeonGlow.Hdr(echoBallColor, echoRimIntensity * (0.6f + 0.4f * echoWave)),
+                echoRimTint * echoBlend);
+            // The core covers most of a ~10 px ball at the game resolution, so it takes the blue too.
+            coreColor = Color.Lerp(coreColor, NeonGlow.Hdr(Color.Lerp(Color.white, echoBallColor, 0.75f), 1.2f + 0.4f * echoWave),
+                echoRimTint * echoBlend);
             bodyBlock.SetColor(CoreColorId, Color.Lerp(coreColor, NeonGlow.Hdr(pale, 1.4f), blend));
             bodyBlock.SetColor(RimColorId, Color.Lerp(rimColor, NeonGlow.Hdr(ghostHue, 2f), blend));
             bodyRenderer.SetPropertyBlock(bodyBlock);
@@ -624,20 +713,26 @@ public class BallVisual : MonoBehaviour
             }
         }
 
-        // Trails: blend toward the power, then the ghost gradients (rebuilt only while a blend moves).
+        // Trails: blend toward the power, the echo charge, then the ghost gradients (rebuilt only while a blend moves).
+        float echo = echoTrailTint * echoBlend;
         bool settled = (blend == 0f || blend == 1f) && (power == 0f || power == 1f);
+        speedLook = Mathf.MoveTowards(speedLook, Mathf.Min(speedLookMax, BallController.RunSpeedFactor - 1f), dt * speedLookMax / speedLookEase);
+        bool speedMoved = Mathf.Abs(speedLook - trailSpeedLook) > 0.01f;
         bool moved = Mathf.Abs(blend - trailBlend) > 0.02f || Mathf.Abs(power - trailPower) > 0.02f;
-        if (outerTrail != null && (moved || (settled && (blend != trailBlend || power != trailPower))))
+        bool echoMoved = echo != trailEcho && (Mathf.Abs(echo - trailEcho) > 0.02f || echo == 0f);
+        if (outerTrail != null && (moved || speedMoved || echoMoved || (settled && (blend != trailBlend || power != trailPower))))
         {
             trailBlend = blend;
             trailPower = power;
-            float brightness = Mathf.Lerp(Mathf.Lerp(trailBrightness, powerTrailBrightness, power), phaseTrailBrightness, blend);
-            outerTrail.colorGradient = LerpGradient(LerpGradient(outerNormal, outerPower, power), outerPhase, blend);
-            outerTrail.time = Mathf.Lerp(Mathf.Lerp(trailTime, trailTime * 1.15f, power), phaseTrailTime, blend);
+            trailEcho = echo;
+            trailSpeedLook = speedLook;
+            float brightness = Mathf.Lerp(Mathf.Lerp(trailBrightness, powerTrailBrightness, power), phaseTrailBrightness, blend) * (1f + speedTrailBrightnessGain * speedLook);
+            outerTrail.colorGradient = LerpGradient(LerpGradient(LerpGradient(outerNormal, outerPower, power), outerEcho, echo), outerPhase, blend);
+            outerTrail.time = Mathf.Lerp(Mathf.Lerp(trailTime, trailTime * 1.15f, power), phaseTrailTime, blend) * (1f + speedTrailTimeGain * speedLook);
             NeonGlow.SetColor(outerTrail, NeonGlow.Hdr(Color.white, brightness));
             if (coreTrail != null)
             {
-                coreTrail.colorGradient = LerpGradient(LerpGradient(coreNormal, corePower, power), corePhase, blend);
+                coreTrail.colorGradient = LerpGradient(LerpGradient(LerpGradient(coreNormal, corePower, power), coreEcho, echo), corePhase, blend);
                 NeonGlow.SetColor(coreTrail, NeonGlow.Hdr(Color.white, brightness * 1.3f));
             }
         }
@@ -646,8 +741,9 @@ public class BallVisual : MonoBehaviour
         if (outerTrail != null)
         {
             float powerWidth = Mathf.Lerp(1f, powerTrailWidth, power);
-            outerTrail.widthMultiplier = outerWidth * powerWidth * Mathf.Lerp(1f, 1.2f, blend) * LifeFade;
-            if (coreTrail != null) coreTrail.widthMultiplier = outerWidth * coreTrailWidth * powerWidth * LifeFade;
+            float sizeFade = PowerUpStats.BallSize * LifeFade;
+            outerTrail.widthMultiplier = outerWidth * powerWidth * Mathf.Lerp(1f, 1.2f, blend) * sizeFade;
+            if (coreTrail != null) coreTrail.widthMultiplier = outerWidth * coreTrailWidth * powerWidth * sizeFade;
         }
 
         // Afterimages: fading squares left along the path, so the ghost reads even at the pixelated resolution.
