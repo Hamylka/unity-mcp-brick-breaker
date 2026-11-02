@@ -799,3 +799,19 @@ Newest entries are at the end. Older entries mention sections of `Assets/CLAUDE.
 - **Build settings added to the release (user decision):** Android custom keystore path and alias (no password in the repo), the new `Web - Mobile - Release` build profile, render scale and shader prefilter values on the render pipeline assets.
 - **Open issues:** the committed Android profile has Development Build on (`m_Development` 1), so a build from it keeps the run profiler and the END RUN (DEV) button; turn it off for a public Android build. The README script and line counts include every `.cs` file under `Assets/Scripts`.
 - **Next:** v0.4 (roadmap), plan with Opus before building.
+
+## [2026-11-02] - Hotfix v0.3.1: brick HP display defaults to Numbers (by Claude)
+- **Done (branch `hotfix/0.3.1`, from `main`):** a player who never picked a mode now gets NUMBERS (`BrickHpDisplay.Default`), and the pause screen lists NUMBERS / PIPS / COLOR (`BrickHpDisplay.Order`). A choice already saved is kept. Version 0.3.1, Android version code 5, also in the settings copy of the Web profile.
+- **Checked:** edits only, in a separate checkout: not compiled in Unity nor played.
+- **Also in the hotfix (cherry-picked from `develop`, see the next two entries):** the Android release profile and the build size fixes, so a build of 0.3.1 is the one to publish.
+- **Open issues:** merged into `main` and `develop` and tagged `v0.3.1` without a test build (user decision). Play a full run in a build to check Medium stripping, the logo on the splash screen and Numbers on a fresh install.
+
+## [2026-11-02] - Android profile back to release, build size audit (by Claude)
+- **Done (branch `fix/android-release-profile`):** the Android build profile is a release build again (`m_Development` 0, `m_BuildType` 2), through the editor. It only reaches `develop`: the `v0.3` tag still holds the development setting. Build from `develop` for a public Android build.
+- **Size audit for itch.io (nothing changed yet), from the build report of the last Android development build (71 MB APK):** unused assets are not the problem: 68 unreferenced files, 3.5 MB on disk, and Unity does not ship them. The big costs are `com.unity.ai.inference` (about 27 MB of shaders in its `Resources`, always packed) and `com.unity.dt.app-ui` (a 12.5 MB native plugin), which come with the AI Assistant package; `Logo_Wordmark` (8 MB uncompressed, used by the splash); TextMesh Pro (about 1.4 MB, used by no script nor by the scene); managed stripping at Minimal.
+- **Open issues:** no Web build was measured. The Unity MCP tools come from `com.unity.ai.assistant`, so removing it for a build needs the manifest restored afterwards. Web profile has Brotli with no decompression fallback: check that the build loads on itch.
+
+## [2026-11-02] - Build size: logo, TextMesh Pro, stripping (by Claude)
+- **Done (branch `fix/build-size`):** three safe fixes from the size audit. `Logo_Wordmark` (splash screen) is limited to 1024 and compressed (1024x512, ASTC 6x6 on Android; was 2048x1024 RGBA32, 8 MB). `Assets/TextMesh Pro` is deleted (no asset, script or scene used it; the UI is the built-in pixel font). Managed stripping is Medium on Web, Android and Windows, also written into the settings copy of the `Web - Mobile - Release` profile.
+- **Checked:** no console errors after the changes, the splash screen still points at the logo. **No build was made:** the sizes saved are not measured, and Medium stripping has not run in a player.
+- **Open issues:** play a full run in a build (cards, corruption, bonuses, Game Over): stripping errors only show there, usually as a missing type or method; roll back to Minimal or add a `link.xml` if one shows. Check the logo on the splash screen for compression blocks around the glow. Then compare Web builds with and without `com.unity.ai.assistant` and `com.unity.ai.inference`.
