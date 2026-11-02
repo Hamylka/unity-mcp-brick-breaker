@@ -12,7 +12,11 @@ public class BonusExtenderEffect : PowerUpEffect
 
     public override void Apply(PowerUpContext context) => PowerUpStats.BonusExtendFraction += percent;
     public override bool CanRemove => true;
-    public override void Remove(PowerUpContext context) => PowerUpStats.BonusExtendFraction = Mathf.Max(0f, PowerUpStats.BonusExtendFraction - percent);
+    public override void Remove(PowerUpContext context)
+    {
+        float left = PowerUpStats.BonusExtendFraction - percent;
+        PowerUpStats.BonusExtendFraction = left > 0.001f ? left : 0f; // no rounding leftover once every pick is gone
+    }
 
     public override string Describe(int stacks) => $"CATCHING A BONUS EXTENDS THE OTHERS +{Mathf.RoundToInt(percent * stacks * 100f)}%";
 }
