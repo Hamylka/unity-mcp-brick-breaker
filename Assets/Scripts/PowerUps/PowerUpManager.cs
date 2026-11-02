@@ -243,7 +243,8 @@ public class PowerUpManager : MonoBehaviour
                     CanOpen = CanOpenCorruption,
                     ExquisiteChance = GetExquisiteChance,
                     Corrupt = Corrupt,
-                    Grant = GrantOutcome
+                    Grant = GrantOutcome,
+                    ReplaceBlocked = ReplaceBlockedChoices
                 };
                 screen.Show(choices, GetStacks, Apply, () =>
                 {
@@ -328,13 +329,7 @@ public class PowerUpManager : MonoBehaviour
     // Picks a rarity by weight (among rarities that still have something to offer), then a random power-up of it.
     private List<PowerUpDefinition> Roll(int count)
     {
-        var pool = new List<PowerUpDefinition>();
-        foreach (PowerUpDefinition definition in powerUps)
-        {
-            if (definition == null || RarityStyle.IsCorruption(definition.Rarity)) continue;
-            if (IsMaxed(definition) || IsBlocked(definition)) continue;
-            pool.Add(definition);
-        }
+        List<PowerUpDefinition> pool = OpenPool();
 
         var result = new List<PowerUpDefinition>();
         while (result.Count < count && pool.Count > 0)
@@ -353,6 +348,37 @@ public class PowerUpManager : MonoBehaviour
         }
 
         return result;
+    }
+
+    // The cards a level-up may offer right now.
+    private List<PowerUpDefinition> OpenPool()
+    {
+        var pool = new List<PowerUpDefinition>();
+        foreach (PowerUpDefinition definition in powerUps)
+        {
+            if (definition == null || RarityStyle.IsCorruption(definition.Rarity)) continue;
+            if (IsMaxed(definition) || IsBlocked(definition)) continue;
+            pool.Add(definition);
+        }
+        return pool;
+    }
+
+    /// <summary>
+    /// A corruption outcome can block a card already on the offer (Brittle Pact and Shield Plus): it is swapped for
+    /// another card, or dropped if none is left and the offer keeps at least one card.
+    /// </summary>
+    public void ReplaceBlockedChoices(List<PowerUpDefinition> choices)
+    {
+        for (int i = choices.Count - 1; i >= 0; i--)
+        {
+            if (!IsBlocked(choices[i])) continue;
+
+            List<PowerUpDefinition> pool = OpenPool();
+            pool.RemoveAll(choices.Contains);
+            RunProfiler.Log("offer_swap", choices[i].DisplayName, i, pool.Count > 0 ? "replaced" : "dropped");
+            if (pool.Count > 0) choices[i] = PickByRarity(pool);
+            else if (choices.Count > 1) choices.RemoveAt(i);
+        }
     }
 
     // Rolls a rarity among those present in the pool (by weight), then a random card of that rarity.

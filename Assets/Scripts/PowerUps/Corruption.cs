@@ -46,4 +46,6 @@ public sealed class CorruptionHooks
     public Func<PowerUpDefinition, CorruptionResult> Corrupt;
     /// <summary>Adds the outcome card to the run (on CONFIRM after the reveal).</summary>
     public Action<PowerUpDefinition> Grant;
+    /// <summary>Swaps out cards of the offer that the outcome just blocked (Brittle Pact and Shield Plus).</summary>
+    public Action<List<PowerUpDefinition>> ReplaceBlocked;
 }
