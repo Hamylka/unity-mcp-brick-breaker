@@ -799,3 +799,8 @@ Newest entries are at the end. Older entries mention sections of `Assets/CLAUDE.
 - **Build settings added to the release (user decision):** Android custom keystore path and alias (no password in the repo), the new `Web - Mobile - Release` build profile, render scale and shader prefilter values on the render pipeline assets.
 - **Open issues:** the committed Android profile has Development Build on (`m_Development` 1), so a build from it keeps the run profiler and the END RUN (DEV) button; turn it off for a public Android build. The README script and line counts include every `.cs` file under `Assets/Scripts`.
 - **Next:** v0.4 (roadmap), plan with Opus before building.
+
+## [2026-11-02] - Hotfix v0.3.1: brick HP display defaults to Numbers (by Claude)
+- **Done (branch `hotfix/0.3.1`, from `main`):** a player who never picked a mode now gets NUMBERS (`BrickHpDisplay.Default`), and the pause screen lists NUMBERS / PIPS / COLOR (`BrickHpDisplay.Order`). A choice already saved is kept. Version 0.3.1, Android version code 5, also in the settings copy of the Web profile.
+- **Checked:** edits only, in a separate checkout: not compiled in Unity nor played.
+- **Open issues:** not merged into `main` or `develop`, not tagged. `main` does not hold the Android release profile or the build size fixes of `develop`.

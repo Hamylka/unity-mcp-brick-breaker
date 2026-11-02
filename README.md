@@ -114,7 +114,7 @@ The tables above show what each model did in the first phases, before the work w
 | Paddle | Smooth touch/mouse drag, built for mobile portrait |
 | Ball | Arcade physics: constant speed, no gravity, exit angle depends on where it hits the paddle; damage stat that grows with every level-up |
 | Bricks | Rows of multi-hit bricks (7 columns), pushed one row toward the player every 5 seconds; new rows keep coming, tougher over time. The HP window follows the ball damage and the kill rate, the color is a heat ramp of the hits left, and Armored and Healer bricks appear later in a run |
-| Brick HP display | Pause-screen setting, saved between runs: PIPS (default), COLOR or NUMBERS, always showing the hits left to break the brick |
+| Brick HP display | Pause-screen setting, saved between runs: NUMBERS (default), PIPS or COLOR, always showing the hits left to break the brick |
 | Clear bonus | Clearing every brick grants 25% of the current level's XP, shows "CLEAR!" and spawns a fresh wave immediately |
 | Progression | Endless XP: a brick is worth a share of the current level cost, paid per HP removed; XP orbs, color-coded by value, fly to the HUD bar |
 | Power-ups | Roguelite level-up screen: pick one of three cards rolled by rarity (Common to Legendary), with a Reroll button and level pips on each card. 28 cards: multiplicative damage, area-of-effect damage, ball and paddle upgrades, bonus and laser builds |

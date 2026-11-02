@@ -793,7 +793,7 @@ public class PauseScreen : MonoBehaviour
         game.EndRun(GameManager.LoseReason.BallLost);
     }
 
-    // "BRICK HP" setting: a segmented control (PIPS / COLOR / NUMBERS) between the list and the buttons.
+    // "BRICK HP" setting: a segmented control (NUMBERS / PIPS / COLOR) between the list and the buttons.
     private void BuildHpDisplaySelector(RectTransform parent)
     {
         Image panel = NewImage("HpDisplay", parent, panelColor, UiSprites.RoundedRect);

@@ -20,10 +20,10 @@ public static class BrickHpDisplay
     }
 
     /// <summary>The modes in the order the pause screen lists them.</summary>
-    public static readonly Mode[] Order = { Mode.Pips, Mode.Color, Mode.Numbers };
+    public static readonly Mode[] Order = { Mode.Numbers, Mode.Pips, Mode.Color };
 
     /// <summary>Used until the player picks something.</summary>
-    public const Mode Default = Mode.Pips;
+    public const Mode Default = Mode.Numbers;
 
     private const string PrefKey = "BrickHpDisplay";
 
