@@ -62,16 +62,22 @@ public class PaddleController : MonoBehaviour
     private float velocityZ;
     private bool dragging;
     private Vector2 lastPointerPosition;
+    private const float MinWidthFactor = 0.5f; // the paddle never gets narrower than half its start width
+    private float startScaleX;
+    private float startHalfWidth;
+    private float widthBonus;
 
     private float MaxX => Mathf.Max(0f, playfieldHalfWidth - paddleHalfWidth);
 
-    /// <summary>Makes the paddle wider or narrower (upgrades). 1.15 = 15% wider.</summary>
-    public void MultiplyWidth(float factor)
+    /// <summary>Makes the paddle wider or narrower (upgrades) by a share of its start width: 0.2 = +20% of the start width.</summary>
+    public void AddWidth(float share)
     {
+        widthBonus += share;
+        float factor = Mathf.Max(MinWidthFactor, 1f + widthBonus);
         Vector3 scale = transform.localScale;
-        scale.x *= factor;
+        scale.x = startScaleX * factor;
         transform.localScale = scale;
-        paddleHalfWidth *= factor;
+        paddleHalfWidth = startHalfWidth * factor;
     }
 
     /// <summary>Makes the paddle catch up with the finger faster (upgrades): every smoothing time shrinks by <paramref name="factor"/>.</summary>
@@ -95,6 +101,9 @@ public class PaddleController : MonoBehaviour
         restZ = transform.position.z;
         targetX = transform.position.x;
         targetZ = restZ;
+
+        startScaleX = transform.localScale.x;
+        startHalfWidth = paddleHalfWidth;
     }
 
     private void Start()
