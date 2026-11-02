@@ -47,6 +47,9 @@ public class ShieldBarrier : BallSurface
         return true;
     }
 
+    /// <summary>The maximum went down (Shield Plus corrupted away): charges above it are lost.</summary>
+    public void ClampCharges() => charges = Mathf.Min(charges, PowerUpStats.ShieldMaxCharges);
+
     public static ShieldBarrier Create(Material material, float z, float width, float thickness)
     {
         GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube); // comes with a BoxCollider

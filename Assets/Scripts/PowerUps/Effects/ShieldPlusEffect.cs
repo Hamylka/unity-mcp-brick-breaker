@@ -11,8 +11,12 @@ public class ShieldPlusEffect : PowerUpEffect
 
     public override void Apply(PowerUpContext context) => PowerUpStats.ShieldExtraCharges += extraCharges;
     public override bool CanRemove => true;
-    // A shield already up keeps the charges it holds; the new maximum only limits the next ones.
-    public override void Remove(PowerUpContext context) => PowerUpStats.ShieldExtraCharges = Mathf.Max(0, PowerUpStats.ShieldExtraCharges - extraCharges);
+    // A shield already up drops back to the new maximum.
+    public override void Remove(PowerUpContext context)
+    {
+        PowerUpStats.ShieldExtraCharges = Mathf.Max(0, PowerUpStats.ShieldExtraCharges - extraCharges);
+        if (ShieldBarrier.Current != null) ShieldBarrier.Current.ClampCharges();
+    }
 
     public override string Describe(int stacks) => $"SHIELD HOLDS UP TO {PowerUpStats.BaseShieldCharges + extraCharges * stacks} CHARGES";
 }
