@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: WidePaddle
   m_EditorClassIdentifier: Assembly-CSharp::PowerUpDefinition
   displayName: Wide Paddle
-  description: Paddle width +25%
+  description: Paddle width +20%
   rarity: 1
   icon: '.......
 
