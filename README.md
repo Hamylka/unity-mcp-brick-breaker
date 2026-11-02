@@ -32,7 +32,7 @@ a logo and a run profiler.
 - **MCP bridge:** [MCP for Unity](https://github.com/CoplayDev/unity-mcp) (`com.coplaydev.unity-mcp`) exposes the
   editor to the agent: creating objects, writing and compiling scripts, reading console logs, capturing views.
 - **Spec-driven development:** [`Assets/CLAUDE.md`](Assets/CLAUDE.md) defines the agent's role, the tech stack,
-  the physics rules and the systems to build, and keeps a changelog of the project. It is the main artifact of this project.
+  the physics rules and the systems to build. It is the main artifact of this project, with [`CHANGELOG.md`](CHANGELOG.md) keeping the history.
 - **Human role:** writing the brief, steering the agent with prompts, playtesting (in the editor and on an Android phone),
   and tuning values in the Inspector.
 - **Workflow:** from day 2, Gitflow: `main` for stable versions (tagged `v0.1`, `v0.2`), `develop` for integration,
@@ -137,8 +137,9 @@ The tables above show what each model did in the first phases, before the work w
 
 ```
 CLAUDE.md              session guide for the agent (imports Assets/CLAUDE.md)
+CHANGELOG.md           the project changelog
 Assets/
-  CLAUDE.md            the brief given to the agent, with the roadmap and the project changelog
+  CLAUDE.md            the brief given to the agent, with the roadmap
   Scripts/
     Ball/  Paddle/  Bricks/  Camera/
     Walls/             side walls, buff zones and the buffs they give

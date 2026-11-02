@@ -1,18 +1,18 @@
 # Neon Breaker: session guide
 
-This file is loaded automatically at the start of every session. The full project brief, systems and changelog live in
+This file is loaded automatically at the start of every session. The full project brief, systems and roadmap live in
 `Assets/CLAUDE.md`, imported here:
 
 @Assets/CLAUDE.md
 
 ## How we work
 
-- **One task per session.** Sessions start fresh; the context comes from this file and `Assets/CLAUDE.md`,
+- **One task per session.** Sessions start fresh; the context comes from this file, `Assets/CLAUDE.md` and `CHANGELOG.md`,
   not from older conversations. Do not ask the user to paste previous chats.
 - **Gitflow.** Branch from `develop` (`feature/...`, `fix/...`, `docs/...`). Commit there, then merge into `develop`
   with `--no-ff`, push, and delete the branch only when the user asks. `main` is only updated for releases.
-- **End of task.** When a feature is done, add a short entry to the changelog in `Assets/CLAUDE.md` (what changed,
-  open issues, next steps) so the next session starts from the latest state.
+- **Changelog.** Before starting: check `CHANGELOG.md` for recent updates. After finishing a task: append a new entry
+  (what changed, open issues, next steps). The file is long and newest entries are at the end: read only its tail.
 
 ## Model per task
 
