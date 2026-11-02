@@ -891,3 +891,6 @@ Single source of truth for what is left. Update it at the end of every task (tic
 
 ### [2026-11-02] - Corrupted Satellite orbs go away (by Claude)
 - **Done (branch `fix/satellite-orb-removal`, user report):** corrupting a Satellite level lowered `PowerUpStats.SatelliteOrbs`, but `SatelliteSystem` only ever added orbs, so the old ones kept circling, touching bricks and firing bolts (run 703084da: 535 of its 810 Satellite damage came after the card was gone). The system now removes the extra orbs of every ball when the count drops. The other `Remove` effects were read for the same mistake: see the 2026-11-02 balance pass.
+
+### [2026-11-02] - Shield ring: only the blue arcs (by Claude)
+- **Done (branch `fix/shield-ring-track`, user report):** the grey behind the Shield ring was the track image shared by all rings (white at 16%). `ActiveBonusHud.RefreshSegments` now hides it, so only the lit arcs show; Laser and Multi-Ball keep their track, it shows the time drained. Also fixed, found by reading the code: going from 2 charges to 1 left both arcs lit, because `Entry.Segmented` was false for one segment and the ring was no longer refreshed. Every charge count now goes through the arcs (`Segmented` = at least 1 segment), and one charge is a full arc with no gap.

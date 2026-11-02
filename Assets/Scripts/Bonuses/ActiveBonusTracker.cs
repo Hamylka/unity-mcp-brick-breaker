@@ -24,7 +24,7 @@ public static class ActiveBonusTracker
         public int SegmentsLeft;
 
         public bool Timed => Remaining >= 0f && Total > 0f;
-        public bool Segmented => Segments > 1;
+        public bool Segmented => Segments > 0;
     }
 
     private static readonly List<Entry> entries = new();

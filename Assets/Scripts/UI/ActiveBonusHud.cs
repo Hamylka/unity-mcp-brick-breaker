@@ -28,6 +28,7 @@ public class ActiveBonusHud : MonoBehaviour
     {
         public string Id;
         public RectTransform Rect;
+        public Image Track;
         public CanvasGroup Group;
         public Image Fill;
         public PixelText Time;
@@ -187,17 +188,18 @@ public class ActiveBonusHud : MonoBehaviour
         ring.Time.color = warning ? color : Color.white;
     }
 
-    // Segmented ring (Shield: one arc per bounce left). Spent arcs go dark; the plain fill is hidden.
+    // Segmented ring (Shield: one arc per charge held). Only the lit arcs show: the grey track and the plain fill are hidden.
     private static void RefreshSegments(Ring ring, ActiveBonusTracker.Entry entry)
     {
         ring.Fill.enabled = false;
+        ring.Track.enabled = false;
 
         if (ring.Segments.Count != entry.Segments)
         {
             foreach (Image old in ring.Segments) Destroy(old.gameObject);
             ring.Segments.Clear();
 
-            float gap = 0.04f; // fraction of the circle left empty between arcs
+            float gap = entry.Segments > 1 ? 0.04f : 0f; // fraction of the circle left empty between arcs
             for (int i = 0; i < entry.Segments; i++)
             {
                 Image seg = NewImage("Segment" + i, ring.Rect, Color.white);
@@ -217,7 +219,10 @@ public class ActiveBonusHud : MonoBehaviour
         }
 
         for (int i = 0; i < ring.Segments.Count; i++)
-            ring.Segments[i].color = i < entry.SegmentsLeft ? entry.Color : TrackColor;
+        {
+            ring.Segments[i].color = entry.Color;
+            ring.Segments[i].enabled = i < entry.SegmentsLeft;
+        }
     }
 
     private Ring CreateRing(string id)
@@ -225,6 +230,7 @@ public class ActiveBonusHud : MonoBehaviour
         var ring = new Ring { Id = id };
 
         Image track = NewImage("Ring_" + id, root, TrackColor);
+        ring.Track = track;
         ring.Rect = track.rectTransform;
         ring.Rect.anchorMin = ring.Rect.anchorMax = ring.Rect.pivot = new Vector2(1f, 1f);
         ring.Rect.sizeDelta = new Vector2(RingSize, RingSize);
