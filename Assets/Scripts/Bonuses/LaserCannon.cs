@@ -235,7 +235,7 @@ public class LaserCannon : MonoBehaviour
         int damage = 1;
         foreach (BallController ball in BallController.Active)
             if (!ball.IsExtra) damage = Mathf.Max(damage, ball.AttackDamage);
-        return damage;
+        return Mathf.CeilToInt(damage * (1f + PowerUpStats.LaserDamageBonus) - 0.001f); // Hot Laser
     }
 
     private static bool AnyBallFlying()

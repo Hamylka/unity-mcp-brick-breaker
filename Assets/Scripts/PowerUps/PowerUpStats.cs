@@ -47,6 +47,15 @@ public static class PowerUpStats
     /// <summary>Bonus Extender: catching a bonus adds this fraction of their full duration to every other timed bonus still running (0.1 per pick).</summary>
     public static float BonusExtendFraction { get; set; }
 
+    /// <summary>Damage added to ball hits on a brick still at full HP (First Strike), as a fraction.</summary>
+    public static float FirstStrikePercent { get; set; }
+
+    /// <summary>Damage added to the first brick hit after the paddle (Launch), as a fraction.</summary>
+    public static float LaunchPercent { get; set; }
+
+    /// <summary>Damage added to Laser bolts (Hot Laser), as a fraction.</summary>
+    public static float LaserDamageBonus { get; set; }
+
     /// <summary>Damage added per brick hit since the ball last touched the paddle (Rampage), as a fraction.</summary>
     public static float RampagePercent { get; set; }
 
@@ -184,6 +193,9 @@ public static class PowerUpStats
         BonusDropBonus = 0f;
         BonusMagnet = false;
         PhoenixReady = false;
+        FirstStrikePercent = 0f;
+        LaunchPercent = 0f;
+        LaserDamageBonus = 0f;
         RampagePercent = 0f;
         RicochetPercent = 0f;
         BackstopPercent = 0f;
@@ -213,7 +225,7 @@ public static class PowerUpStats
     }
 
     /// <summary>
-    /// Damage of this ball's next hit on <paramref name="brick"/>: the ball's damage with Rampage, Ricochet and Backstop
+    /// Damage of this ball's next hit on <paramref name="brick"/>: the ball's damage with First Strike, Launch, Rampage, Ricochet and Backstop
     /// counted (rounded up). Executioner is applied later, in <see cref="Brick.TakeHit"/>.
     /// </summary>
     public static int BallHitDamage(BallController ball, Brick brick)
@@ -221,6 +233,8 @@ public static class PowerUpStats
         float factor = 1f + RampagePercent * ball.HitsSincePaddle
             + RicochetPercent * Mathf.Min(ball.SideBounces, MaxCountedBounces)
             + BackstopPercent * Mathf.Min(ball.BackBounces, MaxCountedBounces);
+        if (ball.HitsSincePaddle == 0) factor += LaunchPercent;
+        if (brick != null && brick.HitPoints >= brick.MaxHitPoints) factor += FirstStrikePercent;
         return factor > 1f ? Mathf.CeilToInt(ball.Damage * factor - 0.001f) : ball.Damage;
     }
 
