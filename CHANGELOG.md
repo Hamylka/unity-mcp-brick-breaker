@@ -800,6 +800,12 @@ Newest entries are at the end. Older entries mention sections of `Assets/CLAUDE.
 - **Open issues:** the committed Android profile has Development Build on (`m_Development` 1), so a build from it keeps the run profiler and the END RUN (DEV) button; turn it off for a public Android build. The README script and line counts include every `.cs` file under `Assets/Scripts`.
 - **Next:** v0.4 (roadmap), plan with Opus before building.
 
+## [2026-11-02] - Hotfix v0.3.1: brick HP display defaults to Numbers (by Claude)
+- **Done (branch `hotfix/0.3.1`, from `main`):** a player who never picked a mode now gets NUMBERS (`BrickHpDisplay.Default`), and the pause screen lists NUMBERS / PIPS / COLOR (`BrickHpDisplay.Order`). A choice already saved is kept. Version 0.3.1, Android version code 5, also in the settings copy of the Web profile.
+- **Checked:** edits only, in a separate checkout: not compiled in Unity nor played.
+- **Also in the hotfix (cherry-picked from `develop`, see the next two entries):** the Android release profile and the build size fixes, so a build of 0.3.1 is the one to publish.
+- **Open issues:** merged into `main` and `develop` and tagged `v0.3.1` without a test build (user decision). Play a full run in a build to check Medium stripping, the logo on the splash screen and Numbers on a fresh install.
+
 ## [2026-11-02] - Android profile back to release, build size audit (by Claude)
 - **Done (branch `fix/android-release-profile`):** the Android build profile is a release build again (`m_Development` 0, `m_BuildType` 2), through the editor. It only reaches `develop`: the `v0.3` tag still holds the development setting. Build from `develop` for a public Android build.
 - **Size audit for itch.io (nothing changed yet), from the build report of the last Android development build (71 MB APK):** unused assets are not the problem: 68 unreferenced files, 3.5 MB on disk, and Unity does not ship them. The big costs are `com.unity.ai.inference` (about 27 MB of shaders in its `Resources`, always packed) and `com.unity.dt.app-ui` (a 12.5 MB native plugin), which come with the AI Assistant package; `Logo_Wordmark` (8 MB uncompressed, used by the splash); TextMesh Pro (about 1.4 MB, used by no script nor by the scene); managed stripping at Minimal.
