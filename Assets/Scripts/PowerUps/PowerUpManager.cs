@@ -339,38 +339,44 @@ public class PowerUpManager : MonoBehaviour
         var result = new List<PowerUpDefinition>();
         while (result.Count < count && pool.Count > 0)
         {
-            float total = 0f;
-            for (int r = 0; r < rarityWeights.Length; r++)
-                if (HasRarity(pool, (PowerUpRarity)r)) total += Mathf.Max(0f, rarityWeights[r]);
-
-            PowerUpRarity chosenRarity = pool[0].Rarity;
-            if (total > 0f)
-            {
-                float roll = UnityEngine.Random.value * total;
-                for (int r = 0; r < rarityWeights.Length; r++)
-                {
-                    if (!HasRarity(pool, (PowerUpRarity)r)) continue;
-                    roll -= Mathf.Max(0f, rarityWeights[r]);
-                    chosenRarity = (PowerUpRarity)r;
-                    if (roll <= 0f) break;
-                }
-            }
-
-            var candidates = pool.FindAll(p => p.Rarity == chosenRarity);
-            PowerUpDefinition pick = candidates[UnityEngine.Random.Range(0, candidates.Count)];
+            PowerUpDefinition pick = PickByRarity(pool);
             result.Add(pick);
             pool.Remove(pick);
         }
 
-        // Soft rescue for casual players: an offer made only of utility cards swaps one for a random damage card.
+        // Soft rescue for casual players: an offer made only of utility cards swaps one for a damage card, rolled with the same rarity weights.
         if (result.Count > 1 && !result.Exists(IsOffensive))
         {
             var offensive = pool.FindAll(IsOffensive);
             if (offensive.Count > 0)
-                result[UnityEngine.Random.Range(0, result.Count)] = offensive[UnityEngine.Random.Range(0, offensive.Count)];
+                result[UnityEngine.Random.Range(0, result.Count)] = PickByRarity(offensive);
         }
 
         return result;
+    }
+
+    // Rolls a rarity among those present in the pool (by weight), then a random card of that rarity.
+    private PowerUpDefinition PickByRarity(List<PowerUpDefinition> pool)
+    {
+        float total = 0f;
+        for (int r = 0; r < rarityWeights.Length; r++)
+            if (HasRarity(pool, (PowerUpRarity)r)) total += Mathf.Max(0f, rarityWeights[r]);
+
+        PowerUpRarity chosenRarity = pool[0].Rarity;
+        if (total > 0f)
+        {
+            float roll = UnityEngine.Random.value * total;
+            for (int r = 0; r < rarityWeights.Length; r++)
+            {
+                if (!HasRarity(pool, (PowerUpRarity)r)) continue;
+                roll -= Mathf.Max(0f, rarityWeights[r]);
+                chosenRarity = (PowerUpRarity)r;
+                if (roll <= 0f) break;
+            }
+        }
+
+        var candidates = pool.FindAll(p => p.Rarity == chosenRarity);
+        return candidates[UnityEngine.Random.Range(0, candidates.Count)];
     }
 
     private static bool IsOffensive(PowerUpDefinition definition) => definition.Effect != null && definition.Effect.IsOffensive;
