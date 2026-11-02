@@ -1300,8 +1300,12 @@ public partial class PowerUpScreen
         foreach (Image block in blocks) block.enabled = false;
         ringA.enabled = ringB.enabled = false;
 
-        // The offer is rebuilt out of sight, so the levels it shows include the level just lost.
+        // The offer is rebuilt out of sight, so the levels it shows include the level just lost. A card the outcome
+        // blocked is swapped first, and the selection does not carry over to its replacement.
         int keep = selected;
+        PowerUpDefinition keptCard = keep >= 0 && keep < choices.Count ? choices[keep] : null;
+        corruption.ReplaceBlocked?.Invoke(choices);
+        if (keptCard != null && (keep >= choices.Count || choices[keep] != keptCard)) keep = -1;
         BuildChoices(choices);
         selected = keep;
         foreach (CardView card in cards)

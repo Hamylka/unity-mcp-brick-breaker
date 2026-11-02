@@ -914,3 +914,6 @@ Single source of truth for what is left. Update it at the end of every task (tic
 
 ### [2026-11-02] - Corrupting Shield Plus lowers the charges held (by Claude)
 - **Done (branch `fix/shield-plus-corrupt-charges`, user request):** a shield holding 4 or 5 charges kept them after Shield Plus was corrupted away. The case is possible: the barrier stays up during the card screen. `ShieldPlusEffect.Remove` now calls `ShieldBarrier.ClampCharges`, so the shield drops to the new maximum of 3 and the HUD ring follows.
+
+### [2026-11-02] - Brittle Pact no longer leaves Shield Plus on the offer (by Claude)
+- **Done (branch `fix/brittle-pact-offer`, found while checking the `Remove` effects):** Brittle Pact blocked Shield Plus only when an offer was rolled, so a corruption granting it left Shield Plus on the card screen it returned to, and picking it did nothing. When the screen comes back, `PowerUpManager.ReplaceBlockedChoices` swaps a blocked card for another card by rarity weight (dropped only if the pool has nothing left). If the blocked card was selected, nothing is selected afterwards. A swap is logged as an `offer_swap` event; the offer entry in the run file keeps the original cards.
