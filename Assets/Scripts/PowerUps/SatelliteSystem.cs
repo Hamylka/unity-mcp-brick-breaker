@@ -63,6 +63,14 @@ public class SatelliteSystem : MonoBehaviour
             bool show = ball.IsFlying;
 
             while (list.Count < wanted) list.Add(CreateOrb());
+            // Fewer orbs wanted (a Satellite level was corrupted away): the extra ones go, and stop dealing damage.
+            while (list.Count > wanted)
+            {
+                Transform extra = list[list.Count - 1];
+                list.RemoveAt(list.Count - 1);
+                boltTimers.Remove(extra);
+                if (extra != null) Destroy(extra.gameObject);
+            }
             for (int i = 0; i < list.Count; i++)
             {
                 Transform orb = list[i];

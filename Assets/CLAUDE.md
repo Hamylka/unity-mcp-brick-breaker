@@ -888,3 +888,6 @@ Single source of truth for what is left. Update it at the end of every task (tic
 ### [2026-11-02] - Paddle width is additive from the start width (by Claude)
 - **Done (branch `fix/paddle-width-additive`, user request):** Wide Paddle is +20% of the start width per pick, no longer compounding: x1.2, x1.4, x1.6, x1.8 at the cap of 4 (was x1.25 up to x2.44). Withered Paddle (Cursed, -12%) adds up in the same sum: `PaddleController.AddWidth` keeps one bonus, width = start width x (1 + bonus), floored at x0.5. `PaddleWidthEffect.Describe` prints the plain sum.
 - **Checked:** see the compile check of the 2026-11-02 balance pass. Not played.
+
+### [2026-11-02] - Corrupted Satellite orbs go away (by Claude)
+- **Done (branch `fix/satellite-orb-removal`, user report):** corrupting a Satellite level lowered `PowerUpStats.SatelliteOrbs`, but `SatelliteSystem` only ever added orbs, so the old ones kept circling, touching bricks and firing bolts (run 703084da: 535 of its 810 Satellite damage came after the card was gone). The system now removes the extra orbs of every ball when the count drops. The other `Remove` effects were read for the same mistake: see the 2026-11-02 balance pass.
